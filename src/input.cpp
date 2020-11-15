@@ -1,10 +1,15 @@
-// #include <iostream>
 #include <map>
 
 std::map<char, bool> keymap = {};
 SDL_Event e;
 
-// https://wiki.libsdl.org/SDL_Keycode
+/**
+Updates keyboard input states.
+Check if a key is down or up using is_pressed(char).
+List of SDLK symbols:
+	https://wiki.libsdl.org/SDL_Keycode
+Returns false if user wants to quit.
+*/
 bool process_inputs() {
 	// Handle events on queue
 	while (SDL_PollEvent(&e) != 0) {
@@ -12,17 +17,17 @@ bool process_inputs() {
 			return false;
 		}
 		else if (e.type == SDL_KEYDOWN) {
-			// std::cout << "DOWN " << e.key.keysym.sym << std::endl;
+			// Set key down state. Create mapping if not found.
 			if (keymap.find(e.key.keysym.sym) == keymap.end())
 				keymap.insert(std::make_pair(e.key.keysym.sym, true));
 			else
 				keymap[e.key.keysym.sym] = true;
 		}
 		else if (e.type == SDL_KEYUP) {
-			// std::cout << "UP " << e.key.keysym.sym << std::endl;
 			if (e.key.keysym.sym == SDLK_ESCAPE)
 				return false;
-			else if (keymap.find(e.key.keysym.sym) == keymap.end())
+			// Set key up state. Create mapping if not found.
+			if (keymap.find(e.key.keysym.sym) == keymap.end())
 				keymap.insert(std::make_pair(e.key.keysym.sym, false));
 			else
 				keymap[e.key.keysym.sym] = false;

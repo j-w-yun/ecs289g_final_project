@@ -1,11 +1,11 @@
 # ECS 289G Final Project
 
-To build & run project in Linux
+Build & run project in Linux
 ```
 $ ./build.sh
 ```
 
-To build & run project in Windows
+Build & run project in Windows (TODO)
 ```
 > build.bat
 ```
