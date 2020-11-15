@@ -1,13 +1,13 @@
 # SDL_LIB = ./lib/SDL2_windows/lib
 # SDL_INCLUDE = ./lib/SDL2_windows/include
-SDL_LIB = ./SDL2_linux/lib
-SDL_INCLUDE = ./SDL2_linux/include
+SDL_LIB = ./lib/SDL2_linux/lib
+SDL_INCLUDE = ./lib/SDL2_linux/include
 
 OUTPUT_FILE = run
 COMPILER = g++
 
 COMPILER_FLAGS = -Wall -c -std=c++11 -I$(SDL_INCLUDE)
-LINKER_FLAGS = -L$(SDL_LIB) -lSDL2 -Wl,-rpath=$(SDL_LIB)
+LINKER_FLAGS = -L$(SDL_LIB) -lSDL2 -lSDL2_ttf -Wl,-rpath=$(SDL_LIB)
 
 all: ./bin/$(OUTPUT_FILE)
 

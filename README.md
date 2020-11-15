@@ -14,8 +14,8 @@ Build & run project in Windows (TODO)
 
 Linux Makefile configuration
 ```
-SDL_LIB = ./SDL2_linux/lib
-SDL_INCLUDE = ./SDL2_linux/include
+SDL_LIB = ./lib/SDL2_linux/lib
+SDL_INCLUDE = ./lib/SDL2_linux/include
 ```
 
 Windows Makefile configuration
