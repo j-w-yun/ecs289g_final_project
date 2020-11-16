@@ -57,8 +57,8 @@ World* gWorld = NULL;
 bool is_running = false;
 
 // Pathfinding test variables
-int x_tiles = 50;
-int y_tiles = 50;
+int x_tiles = 10;
+int y_tiles = 10;
 auto origin = std::make_pair(0, 0);
 auto target = std::make_pair(x_tiles-1, y_tiles-1);
 std::vector<ip> path;
@@ -148,8 +148,8 @@ void run_test() {
 	// level lev(x_tiles, y_tiles, obstructions);
 	// path = astar(lev, origin, target);
 	path = astar(map_level, origin, target);
-	for (auto& p : path)
-		std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
+	// for (auto& p : path)
+	// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
 }
 
 bool init() {
@@ -191,6 +191,11 @@ bool init() {
 	// Initialize renderer color
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 	SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
+
+	// Clear screen
+	SDL_SetRenderDrawColor(gRenderer, 0x11, 0x11, 0x11, 0xFF);
+	SDL_RenderClear(gRenderer);
+	SDL_RenderPresent(gRenderer);
 
 	// Grab mouse
 	SDL_SetWindowGrab(gWindow, SDL_TRUE);

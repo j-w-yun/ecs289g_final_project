@@ -10,9 +10,9 @@
 #include "GameObject.cpp"
 #include "Noise.cpp"
 
-const int MIN_OCTAVE = 3;
-const int MAX_OCTAVE = 20;
-const float DENSITY = 0.35;
+const int MIN_OCTAVE = 1;
+const int MAX_OCTAVE = 10;
+const float DENSITY = 0.2;
 
 MapLevel::MapLevel() {
 	class_string = MapLevel::static_class();
@@ -64,7 +64,7 @@ std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::
 
 		obs.clear();
 		std::cout << " n_octaves: " << n_octaves << " persistence: " << persistence << " prime_index: " << prime_index << std::endl;
-		float threshold = 0.1f;
+		float threshold = 0.01f;
 		double noise[tiles_x*tiles_y-1];
 		for (int j = 0; j < tiles_x; j++)
 			for (int k = 0; k < tiles_y; k++)
@@ -82,14 +82,16 @@ std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::
 }
 
 std::vector<std::pair<int, int>> MapLevel::generate_obstructions(std::vector<std::pair<int, int>> bases) {
-	// std::vector<std::pair<int, int>> obs;
+	std::vector<std::pair<int, int>> obs;
 	std::vector<std::pair<int, int>> path;
+	MapLevel* level = new MapLevel();
+	level->set_size(tiles_x, tiles_y, tile_width, tile_height);
 	bool found = false;
 	while (!found) {
-		obstructions.clear();
+		obs.clear();
 
-		// Create random obstructions
-		obstructions = random_obstructions(bases, tiles_x * tiles_y * DENSITY);
+		// Create random
+		obs = random_obstructions(bases, tiles_x * tiles_y * DENSITY);
 
 		// Check if path exists among all bases
 		found = true;
@@ -97,19 +99,19 @@ std::vector<std::pair<int, int>> MapLevel::generate_obstructions(std::vector<std
 			for (int k = j+1; k < (int)bases.size(); k++) {
 				auto a = bases.at(j);
 				auto b = bases.at(k);
-				for (auto& o : obstructions) {
+				for (auto& o : obs) {
 					if (o.first == a.first && o.second == a.second) {
 						found = false;
 						break;
 					}
 				}
+				level->set_obstructions(obs);
 				path.clear();
-				path = astar(this, a, b);
-				std::cout << path.size() << std::endl;
-				for (auto& p : path)
-					std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
+				path = astar(level, a, b);
+				// std::cout << path.size() << std::endl;
+				// for (auto& p : path)
+				// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
 				if (path.size() == 0) {
-					std::cout << "not found" << std::endl;
 					found = false;
 					break;
 				}
@@ -118,7 +120,7 @@ std::vector<std::pair<int, int>> MapLevel::generate_obstructions(std::vector<std
 				break;
 		}
 	}
-	return obstructions;
+	return obs;
 }
 
 void MapLevel::render(SDL_Renderer* renderer) {

@@ -39,7 +39,7 @@ double SmoothedNoise(int i, int x, int y) {
 double Interpolate(double a, double b, double x) {
 	double ft = x * 3.1415927;
 	double f = (1 - cos(ft)) * 0.5;
-	return  a*(1-f) + b*f;
+	return a*(1-f) + b*f;
 }
 
 double InterpolatedNoise(int i, double x, double y) {
