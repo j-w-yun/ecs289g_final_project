@@ -1,10 +1,10 @@
 #pragma once
 
-#include<vector>
-#include<map>
-#include<set>
-#include<algorithm>
-#include<iostream>
+#include <vector>
+#include <map>
+#include <set>
+#include <algorithm>
+#include <iostream>
 
 typedef std::pair<int, int> ip;
 
@@ -112,11 +112,14 @@ std::vector<ip> reconstruct_path(mp& map, ip src, ip dest) {
 	return path;
 }
 
-std::vector<ip> astar(level& lev, ip src, ip dest) {
-	std::cout << "In A*" << std::endl;
+// std::vector<ip> astar(level& lev, ip src, ip dest) {
+std::vector<ip> astar(MapLevel* lev, ip src, ip dest) {
+	// std::cout << "In A*" << std::endl;
 
-	auto width = lev.width;
-	auto height = lev.height;
+	// auto width = lev.width;
+	// auto height = lev.height;
+	auto width = lev->get_width();
+	auto height = lev->get_height();
 
 	//auto comp = [&](ip l, ip r) { return l.first + l.second*height < r.first + r.second*height; };
 	//auto heapcomp = [&](astar_node l, astar_node r) { return l.pos.first + l.pos.second*height < r.pos.first + r.pos.second*height; };
@@ -128,15 +131,16 @@ std::vector<ip> astar(level& lev, ip src, ip dest) {
 		}
 	};
 
-	for (auto& obs : lev.obstructions) {
+	// for (auto& obs : lev.obstructions) {
+	for (auto& obs : lev->get_obstructions()) {
 		auto n = astar_node(obs, obs, 0, 0, true);
 		visited[obs] = n;
-		std::cout << "Adding obstacle " << n << std::endl;
+		// std::cout << "Adding obstacle " << n << std::endl;
 	}
 
 	astar_node first(src, src, 0, dist(src, dest));
 
-	std::cout << "First is " << first << std::endl;
+	// std::cout << "First is " << first << std::endl;
 
 	//minheap(std::vector<astar_node>({first}), heapcomp);
 	//minheap hp(std::vector<astar_node>({first}), [&](astar_node l, astar_node r) { return l.pos.first + l.pos.second*height < r.pos.first + r.pos.second*height; });
@@ -158,7 +162,7 @@ std::vector<ip> astar(level& lev, ip src, ip dest) {
 
 		auto current = hp.pop();
 
-		std::cout << "Processing " << current << std::endl;
+		// std::cout << "Processing " << current << std::endl;
 
 		// construct path and return
 		if (current.pos == dest)
@@ -190,11 +194,11 @@ std::vector<ip> astar(level& lev, ip src, ip dest) {
 				auto it = std::find(hp.vec.begin(), hp.vec.end(), nnode);
 				if (it == hp.vec.end()) {
 					hp.insert(nnode);
-					std::cout << "Inserting " << nnode << std::endl;
+					// std::cout << "Inserting " << nnode << std::endl;
 				}
 				else {
 					*it = nnode;
-					std::cout << "Updating " << nnode << std::endl;
+					// std::cout << "Updating " << nnode << std::endl;
 				}
 			}
 		}

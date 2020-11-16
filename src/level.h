@@ -9,7 +9,6 @@ typedef std::pair<int, int> ip;
 struct level {
 	int width;
 	int height;
-	//std::vector<std::pair<int, int>> obstructed;
 	std::vector<ip> obstructions;
 	std::function<bool(ip, ip)> comp = [&](ip l, ip r) {
 		return l.first + l.second*height < r.first + r.second*height;

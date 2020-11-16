@@ -11,7 +11,10 @@ class Vector2f {
 		float x();
 		float y();
 		Vector2f* add(Vector2f* v);
-		Vector2f* mul(float v);
+		Vector2f* sub(Vector2f* v);
+		Vector2f* mul(Vector2f* v);
+		Vector2f* div(Vector2f* v);
+		Vector2f* scale(float v);
 		float dot(Vector2f* v);
 		float len2();
 		float len();

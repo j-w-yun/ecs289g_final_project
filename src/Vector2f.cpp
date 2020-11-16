@@ -24,7 +24,19 @@ Vector2f* Vector2f::add(Vector2f* v) {
 	return new Vector2f(_x + v->x(), _y + v->y());
 }
 
-Vector2f* Vector2f::mul(float v) {
+Vector2f* Vector2f::sub(Vector2f* v) {
+	return new Vector2f(_x - v->x(), _y - v->y());
+}
+
+Vector2f* Vector2f::mul(Vector2f* v) {
+	return new Vector2f(_x * v->x(), _y * v->y());
+}
+
+Vector2f* Vector2f::div(Vector2f* v) {
+	return new Vector2f(_x / v->x(), _y / v->y());
+}
+
+Vector2f* Vector2f::scale(float v) {
 	return new Vector2f(_x * v, _y * v);
 }
 

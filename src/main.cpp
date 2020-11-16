@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
+#include <math.h>
 #include <utility>
 
 #include "Stat.h"
@@ -14,6 +15,11 @@
 #include "Vector2f.cpp"
 #include "GameObject.h"
 #include "GameObject.cpp"
+#include "Map.h"
+#include "Map.cpp"
+#include "World.h"
+#include "World.cpp"
+#include "Noise.cpp"
 
 #include "rts_unit.h"
 #include "level.h"
@@ -23,10 +29,10 @@
 const unsigned int SCREEN_WIDTH = 800;
 const unsigned int SCREEN_HEIGHT = 600;
 
+// Update time slice
 const unsigned int MS_PER_UPDATE = 10;
-// const char* FONT = "./res/fonts/Bebas-Regular.ttf";
-// const char* FONT = "./res/fonts/veteran_typewriter.ttf";
-// const char* FONT = "./res/fonts/underwood_champion.ttf";
+
+// Font file
 const char* FONT = "./res/fonts/Roboto-Medium.ttf";
 
 // Starts up SDL and creates window
@@ -44,13 +50,107 @@ SDL_Renderer* gRenderer = NULL;
 // Globally used font
 TTF_Font* gFont = NULL;
 
-// Test ball
-bool run_test = false;
-GameObject* ball = new GameObject(
-	new Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2),
-	new Vector2f(0, 0),
-	10
-);
+// World game objects
+World* gWorld = NULL;
+
+// Update if true
+bool is_running = false;
+
+// Pathfinding test variables
+int x_tiles = 50;
+int y_tiles = 50;
+auto origin = std::make_pair(0, 0);
+auto target = std::make_pair(x_tiles-1, y_tiles-1);
+std::vector<ip> path;
+void run_test() {
+	// Test ball
+	GameObject* ball = new GameObject(
+		new Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2),
+		new Vector2f(0, 0),
+		10
+	);
+	// Draw circle
+	auto render_callback = [ball](SDL_Renderer* renderer) {
+		float x = ball->p()->x();
+		float y = ball->p()->y();
+		int r = (int)ball->r();
+		// SDL_SetRenderDrawColor(renderer, 0xFF, 0x77, 0x55, 0xFF);
+		for (int w = 0; w < r * 2; w++) {
+			for (int h = 0; h < r * 2; h++) {
+				float dx = (float)r - w;
+				float dy = (float)r - h;
+				float distance = dx*dx + dy*dy;
+				float max_length = r*r;
+				if (distance <= max_length) {
+					// Make edges more transluscent
+					float transparency = distance / max_length;
+					float opacity = 1.0f - (transparency * 0.8f);
+					SDL_SetRenderDrawColor(renderer, 0xFF, 0x22, 0x22, (int)(255*opacity));
+					SDL_RenderDrawPoint(renderer, (int)(x+dx), (int)(y+dy));
+				}
+			}
+		}
+	};
+	// Enable user control and bouncing
+	auto update_callback = [ball](float t) {
+		Vector2f* v = ball->v();
+		Vector2f* p = ball->p();
+		int r = (int)ball->r();
+		// Input changes velocity
+		const float dv = 0.01;
+		if (Input::is_key_pressed(SDLK_UP))
+			v->set(v->x(), v->y()-dv);
+		if (Input::is_key_pressed(SDLK_DOWN))
+			v->set(v->x(), v->y()+dv);
+		if (Input::is_key_pressed(SDLK_LEFT))
+			v->set(v->x()-dv, v->y());
+		if (Input::is_key_pressed(SDLK_RIGHT))
+			v->set(v->x()+dv, v->y());
+		// Bounce off walls
+		if (p->x() > SCREEN_WIDTH-r) {
+			p->set(SCREEN_WIDTH-r, p->y());
+			v->set(v->x() * -1, v->y());
+		}
+		if (p->y() > SCREEN_HEIGHT-r) {
+			p->set(p->x(), SCREEN_HEIGHT-r);
+			v->set(v->x(), v->y() * -1);
+		}
+		if (p->x() < r) {
+			p->set(r, p->y());
+			v->set(v->x() * -1, v->y());
+		}
+		if (p->y() < r) {
+			p->set(p->x(), r);
+			v->set(v->x(), v->y() * -1);
+		}
+		// Discount velocity
+		v = v->scale(0.99f);
+		ball->set_p(p);
+		ball->set_v(v);
+	};
+	// Set callbacks
+	ball->set_render_callback(render_callback);
+	ball->set_update_callback(update_callback);
+	// Add to world
+	gWorld->add(ball);
+
+	MapLevel* map_level = new MapLevel();
+	map_level->set_size(x_tiles, y_tiles, SCREEN_WIDTH/x_tiles, SCREEN_HEIGHT/y_tiles);
+	std::vector<std::pair<int, int>> bases = {
+		origin,
+		target,
+	};
+	auto obstructions = map_level->generate_obstructions(bases);
+	map_level->set_obstructions(obstructions);
+	gWorld->add(map_level);
+
+	// Test pathfinding
+	// level lev(x_tiles, y_tiles, obstructions);
+	// path = astar(lev, origin, target);
+	path = astar(map_level, origin, target);
+	for (auto& p : path)
+		std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
+}
 
 bool init() {
 	// Initialize SDL
@@ -95,14 +195,10 @@ bool init() {
 	// Grab mouse
 	SDL_SetWindowGrab(gWindow, SDL_TRUE);
 
-	std::cout << "Hello" << std::endl;
-	level lev(5, 5, {std::make_pair(1, 2), std::make_pair(2, 2), std::make_pair(2, 3), std::make_pair(1, 2), std::make_pair(3, 3), std::make_pair(3, 4)});
-	auto path = astar(lev, {0, 1}, {4, 4});
-	for (auto& p : path) {
-		std::cout << "(" << p.first << ", " << p.second << "), ";
-	}
-	std::cout << std::endl;
-	std::cout << "Goodbye" << std::endl;
+	// Initialize world
+	gWorld = new World();
+
+	run_test();
 
 	return true;
 }
@@ -127,41 +223,10 @@ void close() {
 
 void update(float delta_time) {
 	Stat::update_tick();
-
-	if (!run_test)
+	if (!is_running)
 		return;
 
-	// Update position
-	ball->update(delta_time);
-	// Discount velocity
-	ball->set_v(ball->v()->mul(0.99f));
-	// Input changes velocity
-	const float dv = 0.01;
-	if (Input::is_key_pressed(SDLK_UP))
-		ball->v()->set(ball->v()->x(), ball->v()->y()-dv);
-	if (Input::is_key_pressed(SDLK_DOWN))
-		ball->v()->set(ball->v()->x(), ball->v()->y()+dv);
-	if (Input::is_key_pressed(SDLK_LEFT))
-		ball->v()->set(ball->v()->x()-dv, ball->v()->y());
-	if (Input::is_key_pressed(SDLK_RIGHT))
-		ball->v()->set(ball->v()->x()+dv, ball->v()->y());
-	// Bounce off walls
-	if (ball->p()->x() > SCREEN_WIDTH) {
-		ball->p()->set(SCREEN_WIDTH, ball->p()->y());
-		ball->v()->set(ball->v()->x() * -1, ball->v()->y());
-	}
-	if (ball->p()->y() > SCREEN_HEIGHT) {
-		ball->p()->set(ball->p()->x(), SCREEN_HEIGHT);
-		ball->v()->set(ball->v()->x(), ball->v()->y() * -1);
-	}
-	if (ball->p()->x() < 0) {
-		ball->p()->set(0, ball->p()->y());
-		ball->v()->set(ball->v()->x() * -1, ball->v()->y());
-	}
-	if (ball->p()->y() < 0) {
-		ball->p()->set(ball->p()->x(), 0);
-		ball->v()->set(ball->v()->x(), ball->v()->y() * -1);
-	}
+	gWorld->update(delta_time);
 }
 
 void render() {
@@ -171,8 +236,28 @@ void render() {
 	SDL_SetRenderDrawColor(gRenderer, 0x11, 0x11, 0x11, 0xFF);
 	SDL_RenderClear(gRenderer);
 
-	// Draw test ball
-	ball->render(gRenderer);
+	// Draw world
+	gWorld->render(gRenderer);
+
+	// Path
+	int tile_width = SCREEN_WIDTH / x_tiles;
+	int tile_height = SCREEN_HEIGHT / y_tiles;
+	int count = 0;
+	for (auto& p : path) {
+		if (++count == (int)path.size())
+			break;
+		SDL_Rect box = {tile_width*p.first, tile_height*p.second, tile_width, tile_height};
+		SDL_SetRenderDrawColor(gRenderer, 0x22, 0xFF, 0x22, 0x99);
+		SDL_RenderFillRect(gRenderer, &box);
+	}
+	// Origin
+	SDL_Rect origin_box = {tile_width*origin.first, tile_height*origin.second, tile_width, tile_height};
+	SDL_SetRenderDrawColor(gRenderer, 0x22, 0x22, 0x77, 0xFF);
+	SDL_RenderFillRect(gRenderer, &origin_box);
+	// Target
+	SDL_Rect target_box = {tile_width*target.first, tile_height*target.second, tile_width, tile_height};
+	SDL_SetRenderDrawColor(gRenderer, 0x77, 0x22, 0x22, 0xFF);
+	SDL_RenderFillRect(gRenderer, &target_box);
 
 	// Left mouse drag
 	if (Input::has_dragbox(SDL_BUTTON_LEFT)) {
@@ -235,7 +320,7 @@ int main(int argc, char* args[]) {
 			Input::is_key_pressed(SDLK_DOWN) ||
 			Input::is_key_pressed(SDLK_LEFT) ||
 			Input::is_key_pressed(SDLK_RIGHT))
-			run_test = true;
+			is_running = true;
 	}
 
 	// Free resources and close SDL
