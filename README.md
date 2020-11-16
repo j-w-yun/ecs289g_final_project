@@ -5,23 +5,9 @@ Build & run project in Linux
 $ ./build.sh
 ```
 
-Build & run project in Windows (TODO)
+Build & run project in Windows
 ```
 > build.bat
-```
-
----
-
-Linux Makefile configuration
-```
-SDL_LIB = ./lib/SDL2_linux/lib
-SDL_INCLUDE = ./lib/SDL2_linux/include
-```
-
-Windows Makefile configuration
-```
-SDL_LIB = ./lib/SDL2_windows/lib
-SDL_INCLUDE = ./lib/SDL2_windows/include
 ```
 
 ---
