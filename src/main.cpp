@@ -4,17 +4,20 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
-#include <utility> 
+#include <utility>
 
+#include "Stat.h"
+#include "Stat.cpp"
 #include "Input.h"
 #include "Input.cpp"
 #include "Vector2f.h"
 #include "Vector2f.cpp"
+#include "GameObject.h"
+#include "GameObject.cpp"
+
 #include "rts_unit.h"
 #include "level.h"
 #include "algorithms.h"
-// #include "GameObject.h"
-// #include "GameObject.cpp"
 
 // Screen dimension constants
 const unsigned int SCREEN_WIDTH = 800;
@@ -41,15 +44,13 @@ SDL_Renderer* gRenderer = NULL;
 // Globally used font
 TTF_Font* gFont = NULL;
 
-// Stat
-float fps;
-float ups;
-
 // Test ball
-Vector2f* ball_pos = new Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
-Vector2f* ball_vel = new Vector2f(0, 0);
-int ball_r = 10;
-bool test_start = false;
+bool run_test = false;
+GameObject* ball = new GameObject(
+	new Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2),
+	new Vector2f(0, 0),
+	10
+);
 
 bool init() {
 	// Initialize SDL
@@ -76,11 +77,11 @@ bool init() {
 		return false;
 	}
 
+	// Initialize fonts
 	if(TTF_Init() == -1) {
 		printf("SDL_ttf could not initialize: %s\n", TTF_GetError());
 		return false;
 	}
-
 	gFont = TTF_OpenFont(FONT, 64);
 	if (gFont == NULL) {
 		printf("Failed to load font: %s\n", TTF_GetError());
@@ -95,23 +96,13 @@ bool init() {
 	SDL_SetWindowGrab(gWindow, SDL_TRUE);
 
 	std::cout << "Hello" << std::endl;
-
 	level lev(5, 5, {std::make_pair(1, 2), std::make_pair(2, 2), std::make_pair(2, 3), std::make_pair(1, 2), std::make_pair(3, 3), std::make_pair(3, 4)});
 	auto path = astar(lev, {0, 1}, {4, 4});
-
-	for(auto& p : path){
+	for (auto& p : path) {
 		std::cout << "(" << p.first << ", " << p.second << "), ";
 	}
 	std::cout << std::endl;
-
 	std::cout << "Goodbye" << std::endl;
-
-	// Capture mouse
-	// int result = SDL_CaptureMouse(SDL_TRUE);
-	// if (result == -1)
-	// 	printf("Warning: Mouse could not be captured");
-
-	// SDL_SetWindowOpacity(gWindow, 0.9f);
 
 	return true;
 }
@@ -135,68 +126,63 @@ void close() {
 }
 
 void update(float delta_time) {
-	if (!test_start)
+	Stat::update_tick();
+
+	if (!run_test)
 		return;
 
-	// Update pos
-	Vector2f* delta_pos = ball_vel->mul(delta_time);
-	
-	// Discount vel
-	ball_vel = ball_vel->mul(0.99f);
-	
+	// Update position
+	ball->update(delta_time);
+	// Discount velocity
+	ball->set_v(ball->v()->mul(0.99f));
 	// Input changes velocity
 	const float dv = 0.01;
 	if (Input::is_key_pressed(SDLK_UP))
-		ball_vel->set(ball_vel->x(), ball_vel->y()-dv);
+		ball->v()->set(ball->v()->x(), ball->v()->y()-dv);
 	if (Input::is_key_pressed(SDLK_DOWN))
-		ball_vel->set(ball_vel->x(), ball_vel->y()+dv);
+		ball->v()->set(ball->v()->x(), ball->v()->y()+dv);
 	if (Input::is_key_pressed(SDLK_LEFT))
-		ball_vel->set(ball_vel->x()-dv, ball_vel->y());
+		ball->v()->set(ball->v()->x()-dv, ball->v()->y());
 	if (Input::is_key_pressed(SDLK_RIGHT))
-		ball_vel->set(ball_vel->x()+dv, ball_vel->y());
-
+		ball->v()->set(ball->v()->x()+dv, ball->v()->y());
 	// Bounce off walls
-	ball_pos = ball_pos->add(delta_pos);
-	if (ball_pos->x() > SCREEN_WIDTH) {
-		ball_pos->set(SCREEN_WIDTH, ball_pos->y());
-		ball_vel->set(ball_vel->x() * -1, ball_vel->y());
+	if (ball->p()->x() > SCREEN_WIDTH) {
+		ball->p()->set(SCREEN_WIDTH, ball->p()->y());
+		ball->v()->set(ball->v()->x() * -1, ball->v()->y());
 	}
-	if (ball_pos->y() > SCREEN_HEIGHT) {
-		ball_pos->set(ball_pos->x(), SCREEN_HEIGHT);
-		ball_vel->set(ball_vel->x(), ball_vel->y() * -1);
+	if (ball->p()->y() > SCREEN_HEIGHT) {
+		ball->p()->set(ball->p()->x(), SCREEN_HEIGHT);
+		ball->v()->set(ball->v()->x(), ball->v()->y() * -1);
 	}
-	if (ball_pos->x() < 0) {
-		ball_pos->set(0, ball_pos->y());
-		ball_vel->set(ball_vel->x() * -1, ball_vel->y());
+	if (ball->p()->x() < 0) {
+		ball->p()->set(0, ball->p()->y());
+		ball->v()->set(ball->v()->x() * -1, ball->v()->y());
 	}
-	if (ball_pos->y() < 0) {
-		ball_pos->set(ball_pos->x(), 0);
-		ball_vel->set(ball_vel->x(), ball_vel->y() * -1);
+	if (ball->p()->y() < 0) {
+		ball->p()->set(ball->p()->x(), 0);
+		ball->v()->set(ball->v()->x(), ball->v()->y() * -1);
 	}
 }
 
 void render() {
+	Stat::frame_tick();
+
 	// Clear screen
 	SDL_SetRenderDrawColor(gRenderer, 0x11, 0x11, 0x11, 0xFF);
 	SDL_RenderClear(gRenderer);
 
 	// Draw test ball
-	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-	int x = (int)ball_pos->x();
-	int y = (int)ball_pos->y();
-	SDL_Rect ballbox = {x-ball_r/2, y-ball_r/2, ball_r, ball_r};
-	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xAA, 0x77, 0xFF);		
-	SDL_RenderFillRect(gRenderer, &ballbox);
+	ball->render(gRenderer);
 
 	// Left mouse drag
 	if (Input::has_dragbox(SDL_BUTTON_LEFT)) {
 		DragBox box = Input::get_dragbox(SDL_BUTTON_LEFT);
 		SDL_Rect dragbox = {box.x1, box.y1, box.x2-box.x1, box.y2-box.y1};
 		// Render filled quad
-		SDL_SetRenderDrawColor(gRenderer, 0x99, 0xFF, 0x99, 0x11);		
+		SDL_SetRenderDrawColor(gRenderer, 0x99, 0xFF, 0x99, 0x11);
 		SDL_RenderFillRect(gRenderer, &dragbox);
 		// Render outline quad
-		SDL_SetRenderDrawColor(gRenderer, 0x99, 0xFF, 0x99, 0xFF);		
+		SDL_SetRenderDrawColor(gRenderer, 0x99, 0xFF, 0x99, 0xFF);
 		SDL_RenderDrawRect(gRenderer, &dragbox);
 	}
 
@@ -205,42 +191,21 @@ void render() {
 		DragBox box = Input::get_dragbox(SDL_BUTTON_RIGHT);
 		SDL_Rect dragbox = {box.x1, box.y1, box.x2-box.x1, box.y2-box.y1};
 		// Render filled quad
-		SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0x22);		
+		SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0x22);
 		SDL_RenderFillRect(gRenderer, &dragbox);
 		// Render outline quad
-		SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0xFF);		
+		SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0xFF);
 		SDL_RenderDrawRect(gRenderer, &dragbox);
 	}
 
 	// Render stats
-	SDL_Color color = {50, 255, 50};
-	SDL_Rect text_rect;
-	text_rect.h = 20;
-	text_rect.x = 8;
-	text_rect.y = 4;
-	char text_str[64];
-	// Display FPS
-	sprintf(text_str, "FPS: %.0f", fps);
-	SDL_Surface* fps_surface = TTF_RenderText_Solid(gFont, text_str, color);
-	SDL_Texture* fps_texture = SDL_CreateTextureFromSurface(gRenderer, fps_surface);
-	text_rect.w = strlen(text_str) * 10;
-	SDL_RenderCopy(gRenderer, fps_texture, NULL, &text_rect);
-	// Display UPS
-	sprintf(text_str, "UPS: %.0f", ups);
-	SDL_Surface* ups_surface = TTF_RenderText_Solid(gFont, text_str, color);
-	SDL_Texture* ups_texture = SDL_CreateTextureFromSurface(gRenderer, ups_surface);
-	text_rect.w = strlen(text_str) * 10;
-	text_rect.y += text_rect.h;
-	SDL_RenderCopy(gRenderer, ups_texture, NULL, &text_rect);
+	Stat::render(gRenderer, gFont);
 
 	// Update screen
 	SDL_RenderPresent(gRenderer);
 
 	// Free stat rendering resources
-	SDL_FreeSurface(fps_surface);
-	SDL_DestroyTexture(fps_texture);
-	SDL_FreeSurface(ups_surface);
-	SDL_DestroyTexture(ups_texture);
+	Stat::free();
 }
 
 int main(int argc, char* args[]) {
@@ -249,11 +214,6 @@ int main(int argc, char* args[]) {
 		printf("Failed to initialize!\n");
 		return 1;
 	}
-
-	// Performance stat
-	unsigned int record_time;
-	unsigned int updates;
-	unsigned int frames;
 
 	// Game loop
 	unsigned int last_time;
@@ -268,51 +228,14 @@ int main(int argc, char* args[]) {
 		while (unprocessed_time >= MS_PER_UPDATE) {
 			update(MS_PER_UPDATE);
 			unprocessed_time -= MS_PER_UPDATE;
-			updates++;
 		}
 		render();
-		frames++;
-
-		float elapsed_record_time = (current_time - record_time) / 1000;
-		if (elapsed_record_time >= 0.5f) {
-			// std::cout << "FPS: " << frames / elapsed_record_time << std::endl;
-			// std::cout << "UPS: " << updates / elapsed_record_time << std::endl;
-			// std::cout << "Frames: " << frames << std::endl;
-			// std::cout << "Updates: " << updates << std::endl;
-			// std::cout << "Time: " << current_time << std::endl;
-			// std::cout << std::endl;
-			record_time = current_time;
-			fps = frames / elapsed_record_time;
-			ups = updates / elapsed_record_time;
-			updates = 0;
-			frames = 0;
-		}
 
 		if (Input::is_key_pressed(SDLK_UP) ||
 			Input::is_key_pressed(SDLK_DOWN) ||
 			Input::is_key_pressed(SDLK_LEFT) ||
 			Input::is_key_pressed(SDLK_RIGHT))
-			test_start = true;
-
-		// if (Input::is_key_pressed(SDLK_UP))
-		// 	std::cout << "SDLK_UP" << std::endl;
-		// if (Input::is_key_pressed(SDLK_DOWN))
-		// 	std::cout << "SDLK_DOWN" << std::endl;
-		// if (Input::is_key_pressed(SDLK_LEFT))
-		// 	std::cout << "SDLK_LEFT" << std::endl;
-		// if (Input::is_key_pressed(SDLK_RIGHT))
-		// 	std::cout << "SDLK_RIGHT" << std::endl;
-
-		// if (Input::is_mouse_pressed(SDL_BUTTON_LEFT))
-		// 	std::cout << "SDL_BUTTON_LEFT" << std::endl;
-		// if (Input::is_mouse_pressed(SDL_BUTTON_RIGHT))
-		// 	std::cout << "SDL_BUTTON_RIGHT" << std::endl;
-		// if (Input::is_mouse_pressed(SDL_BUTTON_MIDDLE))
-		// 	std::cout << "SDL_BUTTON_MIDDLE" << std::endl;
-		// if (Input::is_mouse_pressed(SDL_BUTTON_X1))
-		// 	std::cout << "SDL_BUTTON_X1" << std::endl;
-		// if (Input::is_mouse_pressed(SDL_BUTTON_X2))
-		// 	std::cout << "SDL_BUTTON_X2" << std::endl;
+			run_test = true;
 	}
 
 	// Free resources and close SDL

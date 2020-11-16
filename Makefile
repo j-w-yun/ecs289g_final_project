@@ -6,6 +6,7 @@ ifeq ($(os),linux)
 	SDL_INCLUDE = ./lib/SDL2_linux/include
 	COMPILER_FLAGS = -Wall -c -std=c++11 -I$(SDL_INCLUDE)
 	LINKER_FLAGS = -L$(SDL_LIB) -lSDL2 -lSDL2_ttf -Wl,-rpath=$(SDL_LIB)
+	CLEAN = rm ./bin/*.o && rm ./bin/$(OUTPUT_FILE)
 else
 	SDL_LIB = ./lib/SDL2_windows/lib
 	SDL_INCLUDE = ./lib/SDL2_windows/include
@@ -13,7 +14,9 @@ else
 	SDL_TTF_INCLUDE = ./lib/SDL2_ttf/include
 	COMPILER_FLAGS = -Wall -c -std=c++11 -I$(SDL_INCLUDE) -I$(SDL_INCLUDE)/SDL2 $(SDL_TTF_INCLUDE)
 	LINKER_FLAGS = -lmingw32 -mwindows -mconsole $(SDL_LIB) -lSDL2main -lSDL2 $(SDL_TTF_LIB) -llibSDL2_ttf
+	CLEAN = del ./bin/*.o && del ./bin/$(OUTPUT_FILE)
 endif
+
 
 all: ./bin/$(OUTPUT_FILE)
 
@@ -24,7 +27,4 @@ all: ./bin/$(OUTPUT_FILE)
 	$(COMPILER) $(COMPILER_FLAGS) $< -o $@
 
 clean:
-	ifeq ($(os),linux)
-		rm ./bin/*.o && rm ./bin/$(OUTPUT_FILE)
-	else
-		del ./bin/*.o && del ./bin/$(OUTPUT_FILE)
+	$(CLEAN)

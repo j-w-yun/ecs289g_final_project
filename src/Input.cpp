@@ -1,3 +1,5 @@
+#pragma once
+
 #define DEBUG true
 
 #if DEBUG
@@ -34,8 +36,14 @@ std::map<Uint8, bool> Input::mousedown = {};
 std::map<Uint8, DragBox> Input::mousedrag = {};
 SDL_Event Input::e;
 
+/**
+Parses key event to update keydown states.
+List of SDLK symbols:
+	https://wiki.libsdl.org/SDL_Keycode
+*/
 void Input::set_key(SDL_Event* e) {
-	const bool is_pressed = e->type == SDL_KEYDOWN ? true : false;
+	const bool is_pressed = e->type == SDL_KEYDOWN;
+
 	// Initialize map pair if it does not exist
 	if (Input::keydown.find(e->key.keysym.sym) == Input::keydown.end())
 		Input::keydown.insert(std::make_pair(e->key.keysym.sym, is_pressed));
@@ -45,16 +53,28 @@ void Input::set_key(SDL_Event* e) {
 		std::cout << (is_pressed ? "pressed " : "released ") << e->key.keysym.sym << std::endl;
 }
 
+/**
+Parses mouse event to update mousedown and mousedrag states.
+
+Because SDL_MOUSEMOTION event does not tell us what buttons are currently down,
+	we encode button state in dragbox. x1 and y1 of dragbox will be -1 or the
+	dragbox will be undefined if the button is not down.
+
+More information about mouse button events:
+	https://wiki.libsdl.org/SDL_MouseButtonEvent
+*/
 void Input::set_mouse(SDL_Event* e) {
+	// Event type may be SDL_MOUSEMOTION
 	const bool is_pressed = e->type == SDL_MOUSEBUTTONDOWN;
 	const bool is_released = e->type == SDL_MOUSEBUTTONUP;
+
 	// Initialize map pair if it does not exist
 	if (is_pressed || is_released) {
 		if (Input::mousedown.find(e->button.button) == Input::mousedown.end())
 			Input::mousedown.insert(std::make_pair(e->button.button, is_pressed));
 		else
 			Input::mousedown[e->button.button] = is_pressed;
-		
+
 		if (Input::mousedrag.find(e->button.button) == Input::mousedrag.end()) {
 			struct DragBox box;
 			if (is_pressed)
@@ -64,7 +84,7 @@ void Input::set_mouse(SDL_Event* e) {
 			Input::mousedrag.insert(std::make_pair(e->button.button, box));
 		}
 	}
-	
+
 	// Mutate map pair
 	if (is_released) {
 		// Mouse up
@@ -99,9 +119,18 @@ void Input::set_mouse(SDL_Event* e) {
 
 /**
 Updates keyboard and mouse input states.
-Check if a keyboard key is down or up using is_pressed(char).
-List of SDLK symbols:
-	https://wiki.libsdl.org/SDL_Keycode
+
+Check if a keyboard key is down or up using is_key_pressed(SDL_Keycode key).
+Check if a mouse button is down or up using is_mouse_pressed(Uint8 button).
+Check if a mouse button is dragging using has_dragbox(Uint8 button).
+Get the mouse button dragbox using get_dragbox(Uint8 button).
+
+Examples of SDL_Keycode key: SDLK_UP, SDLK_DOWN, SDLK_LEFT, SDLK_RIGHT
+Examples of Uint8 button: SDL_BUTTON_LEFT, SDL_BUTTON_MIDDLE, SDL_BUTTON_RIGHT
+
+More information about SDL events:
+	https://wiki.libsdl.org/SDL_Event
+
 Returns false if user wants to quit.
 */
 bool Input::process_inputs() {
@@ -127,8 +156,9 @@ bool Input::process_inputs() {
 
 /**
 Checks if key was pressed until the last time input queue was processed.
+
 Returns true if key was down and unreleased.
-Returns false if key was released or never pressed. 
+Returns false if key was released or never pressed.
 */
 bool Input::is_key_pressed(SDL_Keycode key) {
 	if (Input::keydown.find(key) == Input::keydown.end())
@@ -138,8 +168,9 @@ bool Input::is_key_pressed(SDL_Keycode key) {
 
 /**
 Checks if mouse was pressed until the last time input queue was processed.
+
 Returns true if mouse was down and unreleased.
-Returns false if mouse was released or never pressed. 
+Returns false if mouse was released or never pressed.
 */
 bool Input::is_mouse_pressed(Uint8 button) {
 	if (Input::mousedown.find(button) == Input::mousedown.end())

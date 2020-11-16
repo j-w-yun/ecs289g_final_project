@@ -1,3 +1,5 @@
+#pragma once
+
 #include <map>
 
 struct DragBox;
@@ -11,7 +13,7 @@ class Input {
 		Input() {}
 		static void set_key(SDL_Event* e);
 		static void set_mouse(SDL_Event* e);
-	
+
 	public:
 		static bool process_inputs();
 		static bool is_key_pressed(SDL_Keycode key);
