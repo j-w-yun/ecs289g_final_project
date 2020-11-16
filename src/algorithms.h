@@ -141,15 +141,15 @@ std::vector<ip> astar(level& lev, ip src, ip dest){
     //minheap hp(std::vector<astar_node>({first}), [&](astar_node l, astar_node r) { return l.pos.first + l.pos.second*height < r.pos.first + r.pos.second*height; });
     minheap hp(std::vector<astar_node>({first}), [&](astar_node l, astar_node r) { return l.sdist + l.ddist > r.sdist + r.ddist; });
 
-    int iters = 0;
-    int maxit = 20;
+    //int iters = 0;
+    //int maxit = 20;
 
     while(hp.size()){
 
-        if(iters++ == maxit){
+        /*if(iters++ == maxit){
             std::cout << "A* max iters" << std::endl;
             return {};
-        }
+        }*/
 
         auto current = hp.pop();
 
