@@ -6,16 +6,17 @@ class Vector2f {
 		float _y;
 
 	public:
+		Vector2f() = default;
 		Vector2f(float x, float y);
 		void set(float x, float y);
-		float x();
-		float y();
-		Vector2f* add(Vector2f* v);
-		Vector2f* sub(Vector2f* v);
-		Vector2f* mul(Vector2f* v);
-		Vector2f* div(Vector2f* v);
-		Vector2f* scale(float v);
-		float dot(Vector2f* v);
-		float len2();
-		float len();
+		float x() const;
+		float y() const;
+		Vector2f add(const Vector2f& v) const;
+		Vector2f sub(const Vector2f& v) const;
+		Vector2f mul(const Vector2f& v) const;
+		Vector2f div(const Vector2f& v) const;
+		Vector2f scale(float v) const;
+		float dot(const Vector2f& v) const;
+		float len2() const;
+		float len() const;
 };

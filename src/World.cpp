@@ -12,15 +12,16 @@ World::World() {
 
 }
 
-void World::add(GameObject* o) {
-	if (o->is_a(MapLevel::static_class()))
-		levels.push_back(static_cast<MapLevel*>(o));
-	else
-		objects.push_back(o);
+void World::add(std::shared_ptr<GameObject> o) {
+	objects.push_back(o);
 }
 
-GameObject* World::get_object(int i) {
-	return objects.at(i);
+void World::add(std::shared_ptr<MapLevel> o) {
+	levels.push_back(o);
+}
+
+GameObject& World::get_object(int i) {
+	return *(objects.at(i));
 }
 
 void World::remove_object(int i) {
@@ -31,8 +32,8 @@ void World::clear_objects() {
 	objects.clear();
 }
 
-MapLevel* World::get_level(int i) {
-	return levels.at(i);
+MapLevel& World::get_level(int i) {
+	return *(levels.at(i));
 }
 
 void World::remove_level(int i) {
@@ -43,11 +44,11 @@ void World::clear_levels() {
 	levels.clear();
 }
 
-std::vector<GameObject*> World::get_objects() {
+std::vector<std::shared_ptr<GameObject>> World::get_objects() {
 	return objects;
 }
 
-std::vector<MapLevel*> World::get_levels() {
+std::vector<std::shared_ptr<MapLevel>> World::get_levels() {
 	return levels;
 }
 

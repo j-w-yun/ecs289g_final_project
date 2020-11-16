@@ -66,7 +66,8 @@ std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::
 
 		obs.clear();
 		std::cout << " n_octaves: " << n_octaves << " persistence: " << persistence << " prime_index: " << prime_index << std::endl;
-		float threshold = 0.01f;
+		//float threshold = 0.01f;
+		float threshold = 0.1f;
 		double noise[tiles_x*tiles_y-1];
 		for (int j = 0; j < tiles_x; j++)
 			for (int k = 0; k < tiles_y; k++)

@@ -9,7 +9,7 @@ GameObject::GameObject() {
 	set_defaults();
 }
 
-GameObject::GameObject(Vector2f* p, Vector2f* v, float r) {
+GameObject::GameObject(const Vector2f& p, const Vector2f& v, float r) {
 	set_defaults();
 	position = p;
 	velocity = v;
@@ -20,28 +20,28 @@ void GameObject::set_defaults() {
 	class_string = GameObject::static_class();
 	_is_visible = true;
 	_is_movable = true;
-	position = new Vector2f(0, 0);
-	velocity = new Vector2f(0, 0);
+	position = Vector2f(0, 0);
+	velocity = Vector2f(0, 0);
 	radius = 0;
 }
 
-Vector2f* GameObject::p() {
+Vector2f GameObject::p() const {
 	return position;
 }
 
-Vector2f* GameObject::v() {
+Vector2f GameObject::v() const {
 	return velocity;
 }
 
-float GameObject::r() {
+float GameObject::r() const {
 	return radius;
 }
 
-void GameObject::set_p(Vector2f* p) {
+void GameObject::set_p(Vector2f& p) {
 	position = p;
 }
 
-void GameObject::set_v(Vector2f* v) {
+void GameObject::set_v(Vector2f& v) {
 	velocity = v;
 }
 
@@ -65,10 +65,10 @@ bool GameObject::is_movable() {
 	return _is_movable;
 }
 
-bool GameObject::overlaps(GameObject* other) {
-	float len = radius + other->r();
+bool GameObject::overlaps(GameObject& other) {
+	float len = radius + other.r();
 	float len2 = len * len;
-	float dist2 = position->sub(other->p())->len2();
+	float dist2 = position.sub(other.p()).len2();
 	return dist2 < len2;
 }
 
@@ -92,7 +92,7 @@ void GameObject::update(float t) {
 	if (!_is_movable)
 		return;
 
-	position = position->add(velocity->scale(t));
+	position = position.add(velocity.scale(t));
 
 	if (_update_callback)
 		_update_callback(t);

@@ -3,6 +3,7 @@
 #include <vector>
 #include <set>
 #include <functional>
+#include <memory>
 
 #include "GameObject.h"
 #include "GameObject.cpp"

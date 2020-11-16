@@ -44,39 +44,40 @@ bool init();
 void close();
 
 // The window we'll be rendering to
-SDL_Window* gWindow = NULL;
+SDL_Window* gWindow;
 
 // The window renderer
-SDL_Renderer* gRenderer = NULL;
+SDL_Renderer* gRenderer;
 
 // Globally used font
-TTF_Font* gFont = NULL;
+TTF_Font* gFont;
 
 // World game objects
-World* gWorld = NULL;
+World gWorld;
 
 // Update if true
 bool is_running = false;
 
 // Pathfinding test variables
-int x_tiles = 100;
-int y_tiles = 100;
+int x_tiles = 20;
+int y_tiles = 20;
 auto origin = std::make_pair(0, 0);
 auto target = std::make_pair(x_tiles-1, y_tiles-1);
 // std::vector<ip> path;
 std::vector<AStar::Vec2i> path;
 void run_test() {
 	// Test ball
-	GameObject* ball = new GameObject(
-		new Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2),
-		new Vector2f(0, 0),
-		10
-	);
+
+	std::shared_ptr<GameObject> ball_ptr = std::make_shared<GameObject>(Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2), Vector2f(0, 0), 10);
+
+	GameObject& ball = *ball_ptr;
+
 	// Draw circle
-	auto render_callback = [ball](SDL_Renderer* renderer) {
-		float x = ball->p()->x();
-		float y = ball->p()->y();
-		int r = (int)ball->r();
+	auto render_callback = [ball_ptr](SDL_Renderer* renderer) {
+		GameObject& ball = *ball_ptr;
+		float x = ball.p().x();
+		float y = ball.p().y();
+		int r = (int)ball.r();
 		// SDL_SetRenderDrawColor(renderer, 0xFF, 0x77, 0x55, 0xFF);
 		for (int w = 0; w < r * 2; w++) {
 			for (int h = 0; h < r * 2; h++) {
@@ -95,63 +96,67 @@ void run_test() {
 		}
 	};
 	// Enable user control and bouncing
-	auto update_callback = [ball](float t) {
-		Vector2f* v = ball->v();
-		Vector2f* p = ball->p();
-		int r = (int)ball->r();
+	auto update_callback = [ball_ptr](float t) {
+		GameObject& ball = *ball_ptr;
+		Vector2f v = ball.v();
+		Vector2f p = ball.p();
+		int r = (int)ball.r();
 		// Input changes velocity
 		const float dv = 0.01;
 		if (Input::is_key_pressed(SDLK_UP))
-			v->set(v->x(), v->y()-dv);
+			v.set(v.x(), v.y()-dv);
 		if (Input::is_key_pressed(SDLK_DOWN))
-			v->set(v->x(), v->y()+dv);
+			v.set(v.x(), v.y()+dv);
 		if (Input::is_key_pressed(SDLK_LEFT))
-			v->set(v->x()-dv, v->y());
+			v.set(v.x()-dv, v.y());
 		if (Input::is_key_pressed(SDLK_RIGHT))
-			v->set(v->x()+dv, v->y());
+			v.set(v.x()+dv, v.y());
 		// Bounce off walls
-		if (p->x() > SCREEN_WIDTH-r) {
-			p->set(SCREEN_WIDTH-r, p->y());
-			v->set(v->x() * -1, v->y());
+		if (p.x() > SCREEN_WIDTH-r) {
+			p.set(SCREEN_WIDTH-r, p.y());
+			v.set(v.x() * -1, v.y());
 		}
-		if (p->y() > SCREEN_HEIGHT-r) {
-			p->set(p->x(), SCREEN_HEIGHT-r);
-			v->set(v->x(), v->y() * -1);
+		if (p.y() > SCREEN_HEIGHT-r) {
+			p.set(p.x(), SCREEN_HEIGHT-r);
+			v.set(v.x(), v.y() * -1);
 		}
-		if (p->x() < r) {
-			p->set(r, p->y());
-			v->set(v->x() * -1, v->y());
+		if (p.x() < r) {
+			p.set(r, p.y());
+			v.set(v.x() * -1, v.y());
 		}
-		if (p->y() < r) {
-			p->set(p->x(), r);
-			v->set(v->x(), v->y() * -1);
+		if (p.y() < r) {
+			p.set(p.x(), r);
+			v.set(v.x(), v.y() * -1);
 		}
 		// Discount velocity
-		v = v->scale(0.99f);
-		ball->set_p(p);
-		ball->set_v(v);
+		v = v.scale(0.99f);
+		ball.set_p(p);
+		ball.set_v(v);
 	};
 	// Set callbacks
-	ball->set_render_callback(render_callback);
-	ball->set_update_callback(update_callback);
-	// Add to world
-	gWorld->add(ball);
+	ball.set_render_callback(render_callback);
+	ball.set_update_callback(update_callback);
 
-	MapLevel* map_level = new MapLevel();
-	map_level->set_size(x_tiles, y_tiles, SCREEN_WIDTH/x_tiles, SCREEN_HEIGHT/y_tiles);
+	// Add to world
+	gWorld.add(ball_ptr);
+
+	std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>();
+	MapLevel& map_level = *map_level_ptr;
+
+	map_level.set_size(x_tiles, y_tiles, SCREEN_WIDTH/x_tiles, SCREEN_HEIGHT/y_tiles);
 	std::vector<std::pair<int, int>> bases = {
 		origin,
 		target,
 	};
-	auto obstructions = map_level->generate_obstructions(bases);
-	map_level->set_obstructions(obstructions);
-	gWorld->add(map_level);
+	auto obstructions = map_level.generate_obstructions(bases);
+	map_level.set_obstructions(obstructions);
+	gWorld.add(map_level_ptr);
 
 	// Test pathfinding
 	// level lev(x_tiles, y_tiles, obstructions);
 	// path = astar(lev, origin, target);
 	// path = astar(*map_level, origin, target);
-	path = find_path(*map_level, origin, target);
+	path = find_path(map_level, origin, target);
 	// for (auto& p : path)
 	// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
 }
@@ -205,7 +210,7 @@ bool init() {
 	SDL_SetWindowGrab(gWindow, SDL_TRUE);
 
 	// Initialize world
-	gWorld = new World();
+	gWorld = World();
 
 	run_test();
 
@@ -235,7 +240,7 @@ void update(float delta_time) {
 	if (!is_running)
 		return;
 
-	gWorld->update(delta_time);
+	gWorld.update(delta_time);
 }
 
 void render() {
@@ -246,7 +251,7 @@ void render() {
 	SDL_RenderClear(gRenderer);
 
 	// Draw world
-	gWorld->render(gRenderer);
+	gWorld.render(gRenderer);
 
 	// Path
 	int tile_width = SCREEN_WIDTH / x_tiles;

@@ -12,42 +12,42 @@ void Vector2f::set(float x, float y) {
 	_y = y;
 }
 
-float Vector2f::x() {
+float Vector2f::x() const {
 	return _x;
 }
 
-float Vector2f::y() {
+float Vector2f::y() const {
 	return _y;
 }
 
-Vector2f* Vector2f::add(Vector2f* v) {
-	return new Vector2f(_x + v->x(), _y + v->y());
+Vector2f Vector2f::add(const Vector2f& v) const {
+	return Vector2f(_x + v.x(), _y + v.y());
 }
 
-Vector2f* Vector2f::sub(Vector2f* v) {
-	return new Vector2f(_x - v->x(), _y - v->y());
+Vector2f Vector2f::sub(const Vector2f& v) const {
+	return Vector2f(_x - v.x(), _y - v.y());
 }
 
-Vector2f* Vector2f::mul(Vector2f* v) {
-	return new Vector2f(_x * v->x(), _y * v->y());
+Vector2f Vector2f::mul(const Vector2f& v) const {
+	return Vector2f(_x * v.x(), _y * v.y());
 }
 
-Vector2f* Vector2f::div(Vector2f* v) {
-	return new Vector2f(_x / v->x(), _y / v->y());
+Vector2f Vector2f::div(const Vector2f& v) const {
+	return Vector2f(_x / v.x(), _y / v.y());
 }
 
-Vector2f* Vector2f::scale(float v) {
-	return new Vector2f(_x * v, _y * v);
+Vector2f Vector2f::scale(float v) const {
+	return Vector2f(_x * v, _y * v);
 }
 
-float Vector2f::dot(Vector2f* v) {
-	return _x * v->x() + _y * v->y();
+float Vector2f::dot(const Vector2f& v) const {
+	return _x * v.x() + _y * v.y();
 }
 
-float Vector2f::len2() {
-	return dot(this);
+float Vector2f::len2() const {
+	return dot(*this);
 }
 
-float Vector2f::len() {
+float Vector2f::len() const {
 	return sqrt(len2());
 }
