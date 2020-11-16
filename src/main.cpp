@@ -4,11 +4,15 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
+#include <utility> 
 
 #include "Input.h"
 #include "Input.cpp"
 #include "Vector2f.h"
 #include "Vector2f.cpp"
+#include "rts_unit.h"
+#include "level.h"
+#include "algorithms.h"
 // #include "GameObject.h"
 // #include "GameObject.cpp"
 
@@ -89,6 +93,18 @@ bool init() {
 
 	// Grab mouse
 	SDL_SetWindowGrab(gWindow, SDL_TRUE);
+
+	std::cout << "Hello" << std::endl;
+
+	level lev(5, 5, {std::make_pair(1, 2), std::make_pair(2, 2), std::make_pair(2, 3), std::make_pair(1, 2)});
+	auto path = astar(lev, {0, 1}, {4, 4});
+
+	for(auto& p : path){
+		std::cout << "(" << p.first << ", " << p.second << "), ";
+	}
+	std::cout << std::endl;
+
+	std::cout << "Goodbye" << std::endl;
 
 	// Capture mouse
 	// int result = SDL_CaptureMouse(SDL_TRUE);
