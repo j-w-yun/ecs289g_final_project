@@ -1,3 +1,3 @@
-make clean os=linux
-make all os=linux
+make clean
+make all
 exec ./bin/run
