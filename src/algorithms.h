@@ -133,10 +133,10 @@ std::vector<ip> astar(MapLevel& lev, ip src, ip dest) {
 
 	// for (auto& obs : lev.obstructions) {
 	for (auto& obs : lev.get_obstructions()) {
-		std::cout << "Input obs is " << obs << std::endl;
+		// std::cout << "Input obs is " << obs << std::endl;
 		auto n = astar_node(obs, obs, 0, 0, true);
 		visited[obs] = n;
-		std::cout << "Adding obstacle " << n << std::endl;
+		// std::cout << "Adding obstacle " << n << std::endl;
 	}
 
 	astar_node first(src, src, 0, dist(src, dest));
@@ -156,14 +156,14 @@ std::vector<ip> astar(MapLevel& lev, ip src, ip dest) {
 
 	while (hp.size()) {
 
-		/*if (iters++ == maxit) {
-			std::cout << "A* max iters" << std::endl;
-			return {};
-		}*/
+		// if (iters++ == maxit) {
+		// 	std::cout << "A* max iters" << std::endl;
+		// 	return {};
+		// }
 
 		auto current = hp.pop();
 
-		std::cout << "Processing " << current << std::endl;
+		// std::cout << "Processing " << current << std::endl;
 
 		// construct path and return
 		if (current.pos == dest)
@@ -178,15 +178,15 @@ std::vector<ip> astar(MapLevel& lev, ip src, ip dest) {
 				auto nnode = astar_node(npos, current.pos, current.sdist + 1, dist(npos, dest));
 				visited[npos] = nnode;
 				hp.insert(nnode);
-				std::cout << "\tAdding " << nnode << std::endl;
+				// std::cout << "\tAdding " << nnode << std::endl;
 			}
 
 			// skip obstructions
 			if (visited[npos].obs){
-				std::cout << "\t" << npos << " is obs" << std::endl;
+				// std::cout << "\t" << npos << " is obs" << std::endl;
 				continue;
 			}
-		
+
 
 			// neighbor node
 			auto& nnode = visited[npos];
@@ -204,11 +204,11 @@ std::vector<ip> astar(MapLevel& lev, ip src, ip dest) {
 				auto it = std::find(hp.vec.begin(), hp.vec.end(), nnode);
 				if (it == hp.vec.end()) {
 					hp.insert(nnode);
-					std::cout << "\tInserting " << nnode << std::endl;
+					// std::cout << "\tInserting " << nnode << std::endl;
 				}
 				else {
 					*it = nnode;
-					std::cout << "\tUpdating " << nnode << std::endl;
+					// std::cout << "\tUpdating " << nnode << std::endl;
 				}
 			}
 		}

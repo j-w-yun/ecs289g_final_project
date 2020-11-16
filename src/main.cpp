@@ -20,6 +20,8 @@
 #include "World.h"
 #include "World.cpp"
 #include "Noise.cpp"
+#include "AStar.hpp"
+#include "AStar.cpp"
 
 #include "rts_unit.h"
 #include "level.h"
@@ -57,11 +59,12 @@ World* gWorld = NULL;
 bool is_running = false;
 
 // Pathfinding test variables
-int x_tiles = 6;
-int y_tiles = 5;
+int x_tiles = 100;
+int y_tiles = 100;
 auto origin = std::make_pair(0, 0);
 auto target = std::make_pair(x_tiles-1, y_tiles-1);
-std::vector<ip> path;
+// std::vector<ip> path;
+std::vector<AStar::Vec2i> path;
 void run_test() {
 	// Test ball
 	GameObject* ball = new GameObject(
@@ -147,7 +150,8 @@ void run_test() {
 	// Test pathfinding
 	// level lev(x_tiles, y_tiles, obstructions);
 	// path = astar(lev, origin, target);
-	path = astar(*map_level, origin, target);
+	// path = astar(*map_level, origin, target);
+	path = find_path(*map_level, origin, target);
 	// for (auto& p : path)
 	// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
 }
@@ -247,11 +251,9 @@ void render() {
 	// Path
 	int tile_width = SCREEN_WIDTH / x_tiles;
 	int tile_height = SCREEN_HEIGHT / y_tiles;
-	int count = 0;
 	for (auto& p : path) {
-		if (++count == (int)path.size())
-			break;
-		SDL_Rect box = {tile_width*p.first, tile_height*p.second, tile_width, tile_height};
+		// SDL_Rect box = {tile_width*p.first, tile_height*p.second, tile_width, tile_height};
+		SDL_Rect box = {tile_width*p.x, tile_height*p.y, tile_width, tile_height};
 		SDL_SetRenderDrawColor(gRenderer, 0x22, 0xFF, 0x22, 0x99);
 		SDL_RenderFillRect(gRenderer, &box);
 	}
