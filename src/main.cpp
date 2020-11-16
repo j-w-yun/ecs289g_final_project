@@ -96,7 +96,7 @@ bool init() {
 
 	std::cout << "Hello" << std::endl;
 
-	level lev(5, 5, {std::make_pair(1, 2), std::make_pair(2, 2), std::make_pair(2, 3), std::make_pair(1, 2)});
+	level lev(5, 5, {std::make_pair(1, 2), std::make_pair(2, 2), std::make_pair(2, 3), std::make_pair(1, 2), std::make_pair(3, 3), std::make_pair(3, 4)});
 	auto path = astar(lev, {0, 1}, {4, 4});
 
 	for(auto& p : path){

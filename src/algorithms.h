@@ -98,7 +98,7 @@ std::vector<ip> neighbors(ip src, int width, int height){
 
 template<class mp>
 std::vector<ip> reconstruct_path(mp& map, ip src, ip dest){
-    auto curr = src;
+    auto curr = dest;
 
     std::vector<ip> path;
 
@@ -128,7 +128,9 @@ std::vector<ip> astar(level& lev, ip src, ip dest){
     };
 
     for(auto& obs : lev.obstructions){
-        visited[obs] = astar_node(obs, obs, 0, 0, true);
+        auto n = astar_node(obs, obs, 0, 0, true);
+        visited[obs] = n;
+        std::cout << "Adding obstacle " << n << std::endl;
     }
 
     astar_node first(src, src, 0, dist(src, dest));
@@ -136,9 +138,19 @@ std::vector<ip> astar(level& lev, ip src, ip dest){
     std::cout << "First is " << first << std::endl;
 
     //minheap(std::vector<astar_node>({first}), heapcomp);
-    minheap hp(std::vector<astar_node>({first}), [&](astar_node l, astar_node r) { return l.pos.first + l.pos.second*height < r.pos.first + r.pos.second*height; });
+    //minheap hp(std::vector<astar_node>({first}), [&](astar_node l, astar_node r) { return l.pos.first + l.pos.second*height < r.pos.first + r.pos.second*height; });
+    minheap hp(std::vector<astar_node>({first}), [&](astar_node l, astar_node r) { return l.sdist + l.ddist > r.sdist + r.ddist; });
+
+    int iters = 0;
+    int maxit = 20;
 
     while(hp.size()){
+
+        if(iters++ == maxit){
+            std::cout << "A* max iters" << std::endl;
+            return {};
+        }
+
         auto current = hp.pop();
 
         std::cout << "Processing " << current << std::endl;
@@ -151,9 +163,12 @@ std::vector<ip> astar(level& lev, ip src, ip dest){
         auto neigh = neighbors(current.pos, width, height);
 
         for(auto& npos : neigh){
+
             // initialize if needed
             if(!visited.count(npos)){
-                visited[npos] = astar_node(npos, current.pos, current.sdist + 1, dist(npos, dest));
+                auto nnode = astar_node(npos, current.pos, current.sdist + 1, dist(npos, dest));
+                visited[npos] = nnode;
+                hp.insert(nnode);
             }
 
             // skip obstructions
@@ -166,10 +181,16 @@ std::vector<ip> astar(level& lev, ip src, ip dest){
             if(current.sdist + 1 < nnode.sdist){
                 nnode.sdist = current.sdist + 1;
                 nnode.prev = current.pos;
-            }
 
-            if(!in(nnode, hp.vec)){
-                hp.insert(nnode);
+                auto it = std::find(hp.vec.begin(), hp.vec.end(), nnode);
+                if(it == hp.vec.end()){
+                    hp.insert(nnode);
+                    std::cout << "Inserting " << nnode << std::endl;
+                }
+                else{
+                    *it = nnode;
+                    std::cout << "Updating " << nnode << std::endl;
+                }
             }
         }
     }
