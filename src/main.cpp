@@ -44,6 +44,7 @@ float ups;
 // Test ball
 Vector2f* ball_pos = new Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
 Vector2f* ball_vel = new Vector2f(0, 0);
+int ball_r = 10;
 bool test_start = false;
 
 bool init() {
@@ -72,16 +73,15 @@ bool init() {
 	}
 
 	if(TTF_Init() == -1) {
-        printf("SDL_ttf could not initialize: %s\n", TTF_GetError());
-        return false;
-    }
+		printf("SDL_ttf could not initialize: %s\n", TTF_GetError());
+		return false;
+	}
 
-	// gFont = TTF_OpenFont("Sans.ttf", 28);
 	gFont = TTF_OpenFont(FONT, 64);
-    if (gFont == NULL) {
-        printf("Failed to load font: %s\n", TTF_GetError());
-        return false;
-    }
+	if (gFont == NULL) {
+		printf("Failed to load font: %s\n", TTF_GetError());
+		return false;
+	}
 
 	// Initialize renderer color
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
@@ -168,11 +168,6 @@ void render() {
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 	int x = (int)ball_pos->x();
 	int y = (int)ball_pos->y();
-	int ball_r = 10;
-	// SDL_RenderDrawPoint(gRenderer, x-1, y-1);
-	// SDL_RenderDrawPoint(gRenderer, x-1, y+1);
-	// SDL_RenderDrawPoint(gRenderer, x+1, y-1);
-	// SDL_RenderDrawPoint(gRenderer, x+1, y+1);
 	SDL_Rect ballbox = {x-ball_r/2, y-ball_r/2, ball_r, ball_r};
 	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xAA, 0x77, 0xFF);		
 	SDL_RenderFillRect(gRenderer, &ballbox);
@@ -278,9 +273,9 @@ int main(int argc, char* args[]) {
 		}
 
 		if (Input::is_key_pressed(SDLK_UP) ||
-		Input::is_key_pressed(SDLK_DOWN) ||
-		Input::is_key_pressed(SDLK_LEFT) ||
-		Input::is_key_pressed(SDLK_RIGHT))
+			Input::is_key_pressed(SDLK_DOWN) ||
+			Input::is_key_pressed(SDLK_LEFT) ||
+			Input::is_key_pressed(SDLK_RIGHT))
 			test_start = true;
 
 		// if (Input::is_key_pressed(SDLK_UP))
