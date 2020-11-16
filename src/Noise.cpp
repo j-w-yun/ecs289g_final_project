@@ -61,7 +61,8 @@ double ValueNoise_2D(double x, double y, int n_octaves, float persistence, int p
 	double frequency = pow(2, n_octaves);
 	double amplitude = 1;
 	for (int i = 0; i < n_octaves; ++i) {
-		frequency /= 2;
+		//frequency /= 2;
+		frequency /= 6;
 		amplitude *= persistence;
 		total += InterpolatedNoise((prime_index + i) % maxprime_index, x / frequency, y / frequency) * amplitude;
 	}

@@ -57,8 +57,8 @@ World* gWorld = NULL;
 bool is_running = false;
 
 // Pathfinding test variables
-int x_tiles = 10;
-int y_tiles = 10;
+int x_tiles = 6;
+int y_tiles = 5;
 auto origin = std::make_pair(0, 0);
 auto target = std::make_pair(x_tiles-1, y_tiles-1);
 std::vector<ip> path;
@@ -147,7 +147,7 @@ void run_test() {
 	// Test pathfinding
 	// level lev(x_tiles, y_tiles, obstructions);
 	// path = astar(lev, origin, target);
-	path = astar(map_level, origin, target);
+	path = astar(*map_level, origin, target);
 	// for (auto& p : path)
 	// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
 }
