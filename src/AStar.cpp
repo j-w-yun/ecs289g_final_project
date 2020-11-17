@@ -17,11 +17,11 @@ std::vector<AStar::Vec2i> find_path(MapLevel& level, std::pair<int, int> origin,
 		{origin.first, origin.second},
 		{target.first, target.second}
 	);
-	if (path.size() > 0) {
-		auto last = path.at(0);
-		if (last.x != target.first || last.y != target.second)
-			path.clear();
-	}
+	// if (path.size() > 0) {
+	// 	auto last = path.at(0);
+	// 	if (last.x != target.first || last.y != target.second)
+	// 		path.clear();
+	// }
 	return path;
 }
 

@@ -119,7 +119,16 @@ std::vector<std::pair<int, int>> MapLevel::generate_obstructions(std::vector<std
 				path.clear();
 				// path = astar(*level, a, b);
 				path = find_path(*level, a, b);
+				
+				// No path found
 				if (path.size() == 0) {
+					found = false;
+					break;
+				}
+
+				// Last position is not target
+				auto last = path.at(0);
+				if (last.x != b.first || last.y != b.second) {
 					found = false;
 					break;
 				}
