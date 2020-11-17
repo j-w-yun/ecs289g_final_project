@@ -1,11 +1,18 @@
+# Package manager: apt
+# apt-get install libsdl2-2.0
+# apt-get install libsdl2-dev
+# apt-get install libsdl2-ttf-2.0-0
+# apt-get install libghc-sdl2-ttf-dev
+
+# Package manager: pacman
+# pacman -S sdl2
+
 COMPILER = g++
 OUTPUT_FILE = run
 
 ifeq ($(os),linux)
-	SDL_LIB = ./lib/SDL2_linux/lib
-	SDL_INCLUDE = ./lib/SDL2_linux/include
-	COMPILER_FLAGS = -Wall -c -std=c++11 -I$(SDL_INCLUDE)
-	LINKER_FLAGS = -L$(SDL_LIB) -lSDL2 -lSDL2_ttf -Wl,-rpath=$(SDL_LIB)
+	COMPILER_FLAGS = -Wall -c -g -std=c++11
+	LINKER_FLAGS = -lSDL2 -lSDL2_ttf -Wl,-rpath=$(SDL_LIB)
 	CLEAN = rm ./bin/*.o && rm ./bin/$(OUTPUT_FILE)
 else
 	SDL_LIB = ./lib/SDL2_windows/lib

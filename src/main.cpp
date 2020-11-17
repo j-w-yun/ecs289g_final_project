@@ -330,10 +330,11 @@ int main(int argc, char* args[]) {
 		}
 		render();
 
-		if (Input::is_key_pressed(SDLK_UP) ||
-			Input::is_key_pressed(SDLK_DOWN) ||
-			Input::is_key_pressed(SDLK_LEFT) ||
-			Input::is_key_pressed(SDLK_RIGHT))
+		// if (Input::is_key_pressed(SDLK_UP) ||
+		// 	Input::is_key_pressed(SDLK_DOWN) ||
+		// 	Input::is_key_pressed(SDLK_LEFT) ||
+		// 	Input::is_key_pressed(SDLK_RIGHT))
+		if (Input::has_input())
 			is_running = true;
 	}
 
