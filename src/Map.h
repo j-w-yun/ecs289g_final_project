@@ -9,6 +9,7 @@
 #include "GameObject.cpp"
 #include "Vector2f.h"
 #include "Vector2f.cpp"
+#include "AStar.hpp"
 
 typedef std::pair<int, int> ip;
 
