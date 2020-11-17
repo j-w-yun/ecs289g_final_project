@@ -6,10 +6,10 @@
 #include "Map.h"
 #include "Map.cpp"
 
-std::vector<AStar::Vec2i> find_path(MapLevel& level, std::pair<int, int> origin, std::pair<int, int> target) {
+std::vector<AStar::Vec2i> find_path(MapLevel& level, std::pair<int, int> origin, std::pair<int, int> target, bool mh = true) {
 	AStar::Generator generator;
 	generator.setWorldSize({level.get_width(), level.get_height()});
-	generator.setHeuristic(AStar::Heuristic::euclidean);
+	generator.setHeuristic(mh?AStar::Heuristic::manhattan : AStar::Heuristic::euclidean);
 	for (auto& o : level.get_obstructions())
 		generator.addCollision({o.first, o.second});
 	generator.setDiagonalMovement(true);
