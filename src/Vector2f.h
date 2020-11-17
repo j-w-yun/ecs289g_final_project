@@ -20,7 +20,7 @@ class Vector2f {
 		float len2() const;
 		float len() const;
 		
-		Vector2f operator+(Vector2f r){
+		Vector2f operator+(Vector2f r) const {
 			return add(r);
 		}
 
@@ -31,7 +31,7 @@ class Vector2f {
 			return temp;
 		}
 
-		Vector2f operator-(Vector2f r){
+		Vector2f operator-(Vector2f r) const {
 			return sub(r);
 		}
 
@@ -42,7 +42,7 @@ class Vector2f {
 			return temp;
 		}
 
-		Vector2f operator*(float r){
+		Vector2f operator*(float r) const {
 			return scale(r);
 		}
 
@@ -53,7 +53,7 @@ class Vector2f {
 			return temp;
 		}
 
-		Vector2f operator/(float r){
+		Vector2f operator/(float r) const {
 			return scale(1/r);
 		}
 
@@ -64,4 +64,15 @@ class Vector2f {
 			return temp;
 		}
 
+		Vector2f unit() const {
+			auto temp = len();
+			if(temp > .000001)
+				return (*this)/temp;
+			return *this;
+		}
+
 };
+
+Vector2f operator*(float l, Vector2f r){
+	return r*l;
+}

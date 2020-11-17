@@ -29,6 +29,12 @@ void MapLevel::set_size(int x, int y, int w, int h) {
 
 void MapLevel::set_obstructions(std::vector<std::pair<int, int>> o) {
 	obstructions = o;
+
+	obgrid = std::vector<std::vector<bool>>(tiles_x, std::vector<bool>(tiles_y, 0));
+
+	for(auto& ob : obstructions){
+		obgrid[ob.first][ob.second] = 1;
+	}
 }
 
 void MapLevel::set(int x, int y, int w, int h, std::vector<std::pair<int, int>> o) {

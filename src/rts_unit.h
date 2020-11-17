@@ -66,6 +66,81 @@ struct rts_unit : GameObject {
 		}
 	}
 
+	// returns unit
+	virtual Vector2f traverse_path(){
+		if(!path.size()){
+			set_v(v() * .95);
+			return Vector2f(0, 0);
+		}
+
+		auto wpoint = to_world_space(path.back());
+
+		auto d = wpoint - p();
+		auto dist = d.len();
+
+		bool recomp = false;
+
+		if(dist > std::max((float)xtwidth/2, (float)xtwidth/2)){
+			update_path();
+			recomp = true;
+		}
+		if(dist < (float)xtwidth/5){
+			path.pop_back();
+			recomp = true;
+		}
+		if(recomp){
+			wpoint = to_world_space(path.back());
+			d = wpoint - p();
+		}
+
+		return d.unit();
+	}
+
+	std::vector<ip> neighbors() {
+		auto inbounds = [&](int x, int y) {
+			return x >= 0 && x < wwidth && y >= 0 && y < wheight;
+		};
+
+		auto src = to_tile_space(p());
+
+		std::vector<ip> retval;
+
+		for (int i = -1; i <= 1; i++) {
+			for (int j = -1; j <= 1; j++) {
+				if (!i && !j)
+					continue;
+
+				ip p = {src.first + i, src.second + j};
+
+				if (inbounds(p.first, p.second))
+					retval.push_back(p);
+			}
+		}
+
+		return retval;
+	}
+
+	// returns unit
+	virtual Vector2f avoid_obstacles(){
+		std::vector<Vector2f> local_obs;
+
+		for(auto n : neighbors()){
+			if(map.get_obgrid()[n.first][n.second]){
+				local_obs.push_back(to_world_space(n));
+			}
+		}
+
+		Vector2f retval(0, 0);
+
+		for(auto ob : local_obs){
+			auto d = p() - ob;
+			auto l = d.len();
+			retval += 10.0f*d.unit()/(l*l*l);
+		}
+
+		return retval;
+	}
+
 	virtual void update(float elapsed_time){
 		set_p(p() + v());
 
@@ -76,35 +151,15 @@ struct rts_unit : GameObject {
 			update_path();
 		}
 
+		auto forces = traverse_path() + avoid_obstacles();
+		forces = forces.unit();
+		auto dv = forces*acc;
 
-		if(!path.size()){
-			set_v(v() * .95);
-			return;
+		auto nv = v() + dv;
+		if(nv.len() > topspeed){
+			nv = (nv/nv.len())*topspeed;
 		}
 
-		auto wpoint = to_world_space(path.back());
-
-		auto d = wpoint - p();
-		auto dist = d.len();
-
-		if(dist > std::max((float)xtwidth/2, (float)xtwidth/2)){
-			update_path();
-			wpoint = to_world_space(path.back());
-			d = wpoint - p();
-			dist = d.len();
-		}
-
-		if(dist > (float)xtwidth/5){
-			auto dv = (d/d.len())*acc;
-			auto nv = v() + dv;
-			if(nv.len() > topspeed){
-				nv = (nv/nv.len())*topspeed;
-			}
-
-			set_v(nv);
-		}
-		else{
-			path.pop_back();
-		}
+		set_v(nv);
 	}
 };

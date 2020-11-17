@@ -20,6 +20,7 @@ class MapLevel: public GameObject {
 		int tile_width;
 		int tile_height;
 		std::vector<ip> obstructions;
+		std::vector<std::vector<bool>> obgrid;
 		bool climb(std::vector<std::pair<int, int>>* obs, double noise[], float threshold, std::vector<std::pair<int, int>> bases);
 
 	public:
@@ -32,6 +33,7 @@ class MapLevel: public GameObject {
 		int get_width() {return tiles_x;};
 		int get_height() {return tiles_y;};
 		std::vector<ip> get_obstructions() {return obstructions;};
+		std::vector<std::vector<bool>> get_obgrid() {return obgrid;};
 		void render(SDL_Renderer* renderer);
 		static std::string static_class() {return "MapLevel";};
 };
