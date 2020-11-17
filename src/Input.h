@@ -21,6 +21,7 @@ class Input {
 		static bool is_mouse_pressed(Uint8 button);
 		static bool has_dragbox(Uint8 button);
 		static DragBox get_dragbox(Uint8 button);
+		static bool has_input();
 
 		static std::pair<int, int> get_mouse_pos(){
 			return std::make_pair(e.button.x, e.button.y);

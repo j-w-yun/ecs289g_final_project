@@ -189,3 +189,7 @@ DragBox Input::get_dragbox(Uint8 button) {
 		return {-1, -1, -1, -1};
 	return Input::mousedrag[button];
 }
+
+bool Input::has_input() {
+	return Input::keydown.size() + Input::mousedown.size() > 0;
+}
