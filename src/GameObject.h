@@ -26,8 +26,8 @@ class GameObject {
 		Vector2f p() const;
 		Vector2f v() const;
 		float r() const;
-		void set_p(Vector2f& p);
-		void set_v(Vector2f& v);
+		void set_p(const Vector2f& p);
+		void set_v(const Vector2f& v);
 		void set_r(float r);
 		void set_visible(bool b);
 		void set_movable(bool b);

@@ -160,7 +160,7 @@ void run_test() {
 	// for (auto& p : path)
 	// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
 
-	gWorld.add(std::make_shared<rts_unit>(Vector2f(237, 150), Vector2f(0, 0), 10));
+	gWorld.add(std::make_shared<rts_unit>(Vector2f(237, 150), Vector2f(0, 0), 11, .01, 2));
 }
 
 bool init() {

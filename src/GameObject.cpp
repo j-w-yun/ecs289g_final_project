@@ -37,11 +37,11 @@ float GameObject::r() const {
 	return radius;
 }
 
-void GameObject::set_p(Vector2f& p) {
+void GameObject::set_p(const Vector2f& p) {
 	position = p;
 }
 
-void GameObject::set_v(Vector2f& v) {
+void GameObject::set_v(const Vector2f& v) {
 	velocity = v;
 }
 

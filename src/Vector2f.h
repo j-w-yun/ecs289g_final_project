@@ -19,4 +19,49 @@ class Vector2f {
 		float dot(const Vector2f& v) const;
 		float len2() const;
 		float len() const;
+		
+		Vector2f operator+(Vector2f r){
+			return add(r);
+		}
+
+		Vector2f operator+=(Vector2f r){
+			auto temp = add(r);
+			_x = temp._x;
+			_y = temp._y;
+			return temp;
+		}
+
+		Vector2f operator-(Vector2f r){
+			return sub(r);
+		}
+
+		Vector2f operator-=(Vector2f r){
+			auto temp = sub(r);
+			_x = temp._x;
+			_y = temp._y;
+			return temp;
+		}
+
+		Vector2f operator*(float r){
+			return scale(r);
+		}
+
+		Vector2f operator*=(float r){
+			auto temp = scale(r);
+			_x = temp._x;
+			_y = temp._y;
+			return temp;
+		}
+
+		Vector2f operator/(float r){
+			return scale(1/r);
+		}
+
+		Vector2f operator/=(float r){
+			auto temp = scale(1/r);
+			_x = temp._x;
+			_y = temp._y;
+			return temp;
+		}
+
 };
