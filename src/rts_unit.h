@@ -98,7 +98,7 @@ struct rts_unit : GameObject {
 
 	std::vector<ip> neighbors() {
 		auto inbounds = [&](int x, int y) {
-			return x >= 0 && x < wwidth && y >= 0 && y < wheight;
+			return x >= 0 && x < x_tiles && y >= 0 && y < y_tiles;
 		};
 
 		auto src = to_tile_space(p());
@@ -143,6 +143,30 @@ struct rts_unit : GameObject {
 
 	virtual void update(float elapsed_time){
 		set_p(p() + v());
+
+		auto x = p().x(), y = p().y();
+
+		float o = .0001;
+
+		// bounce
+		if(x - r() < 0){
+			set_p(Vector2f(r() + o, p().y()));
+			set_v(Vector2f(-v().x(), v().y()));
+		}
+		if(y - r() < 0){
+			set_p(Vector2f(p().x(), r() + 0));
+			set_v(Vector2f(v().x(), -v().y()));
+		}
+		if(x + r() > wwidth){
+			set_p(Vector2f(wwidth - r() - o, p().y()));
+			set_v(Vector2f(-v().x(), v().y()));
+		}
+		if(y + r() > wheight){
+			set_p(Vector2f(p().x(), wheight - r() - o));
+			set_v(Vector2f(v().x(), -v().y()));
+		}
+		
+
 
 		if(Input::is_mouse_pressed(SDL_BUTTON_RIGHT)){
 			auto temp = Input::get_mouse_pos();
