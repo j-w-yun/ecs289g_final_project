@@ -159,6 +159,8 @@ void run_test() {
 	path = find_path(map_level, origin, target);
 	// for (auto& p : path)
 	// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
+
+	gWorld.add(std::make_shared<rts_unit>(Vector2f(237, 150), Vector2f(0, 0), 10));
 }
 
 bool init() {

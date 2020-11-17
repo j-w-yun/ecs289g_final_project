@@ -36,8 +36,8 @@ class GameObject {
 		bool overlaps(GameObject& other);
 		void set_render_callback(std::function<void(SDL_Renderer*)> callback);
 		void set_update_callback(std::function<void(float)> callback);
-		void render(SDL_Renderer* renderer);
-		void update(float elapsed_time);
+		virtual void render(SDL_Renderer* renderer);
+		virtual void update(float elapsed_time);
 		std::string get_class() {return class_string;};
 		bool is_a(std::string str) {return class_string == str;};
 
