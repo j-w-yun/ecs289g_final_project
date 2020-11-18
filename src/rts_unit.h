@@ -119,7 +119,8 @@ struct rts_unit : GameObject {
 		for(auto ob : local_obs){
 			auto d = p() - ob;
 			auto l = d.len();
-			retval += 20.0f*d.unit()/(l*l);
+			retval += 40.0f*d.unit()/(l*l);
+			//retval += 10.0f*d.unit()/(l);
 		}
 
 		return retval;

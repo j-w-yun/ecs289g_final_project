@@ -37,6 +37,9 @@ MapLevel::MapLevel(int tx, int ty, int tw, int th, size_t uc): tiles_x(tx), tile
 
 	// init unitgrid
 	unitgrid = std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y));
+
+	// init obgrid 
+	obgrid = std::vector<std::vector<bool>>(tx, std::vector<bool>(ty, 0));
 }
 
 bool MapLevel::add(std::shared_ptr<GameObject> o) {
@@ -76,6 +79,9 @@ void MapLevel::set_size(int x, int y, int w, int h) {
 
 	// init unitgrid
 	unitgrid = std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y));
+
+	// init obgrid 
+	obgrid = std::vector<std::vector<bool>>(tiles_x, std::vector<bool>(tiles_y, 0));
 }
 
 void MapLevel::set_obstructions(std::vector<std::pair<int, int>> o) {
