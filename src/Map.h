@@ -21,10 +21,15 @@ class MapLevel: public GameObject {
 		int tile_height;
 		std::vector<ip> obstructions;
 		std::vector<std::vector<bool>> obgrid;
+		std::vector<std::shared_ptr<GameObject>> objects;
+		std::vector<size_t> idstack;
+		std::vector<std::vector<std::vector<size_t>>> unitgrid;
+		size_t unitcap;
 		bool climb(std::vector<std::pair<int, int>>* obs, double noise[], float threshold, std::vector<std::pair<int, int>> bases);
 
 	public:
-		MapLevel();
+		MapLevel(size_t uc = 200);
+		bool add(std::shared_ptr<GameObject> o);
 		void set_size(int x, int y, int w, int h);
 		void set_obstructions(std::vector<std::pair<int, int>> o);
 		void set(int x, int y, int w, int h, std::vector<std::pair<int, int>> o);
@@ -34,6 +39,9 @@ class MapLevel: public GameObject {
 		int get_height() {return tiles_y;};
 		std::vector<ip> get_obstructions() {return obstructions;};
 		std::vector<std::vector<bool>> get_obgrid() {return obgrid;};
+		std::vector<std::shared_ptr<GameObject>>& get_objects();
+		size_t get_unitcap() {return unitcap;}
 		void render(SDL_Renderer* renderer);
+		void update(float elapsed_time);
 		static std::string static_class() {return "MapLevel";};
 };

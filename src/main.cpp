@@ -138,7 +138,7 @@ void run_test() {
 	ball.set_update_callback(update_callback);
 
 	// Add to world
-	gWorld.add(ball_ptr);
+	//gWorld.add(ball_ptr);
 
 	std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>();
 	MapLevel& map_level = *map_level_ptr;
@@ -160,7 +160,10 @@ void run_test() {
 	// for (auto& p : path)
 	// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
 
-	gWorld.add(std::make_shared<rts_unit>(Vector2f(5, 5), Vector2f(0, 0), 11, .1, 2, SCREEN_WIDTH, SCREEN_HEIGHT, x_tiles, y_tiles, map_level));
+	// FIXME enable
+	//gWorld.add(std::make_shared<rts_unit>(Vector2f(5, 5), Vector2f(0, 0), 11, .1, 2, SCREEN_WIDTH, SCREEN_HEIGHT, x_tiles, y_tiles, map_level));
+	map_level.add(ball_ptr);
+	map_level.add(std::make_shared<rts_unit>(Vector2f(5, 5), Vector2f(0, 0), 11, .1, 2, SCREEN_WIDTH, SCREEN_HEIGHT, x_tiles, y_tiles, map_level));
 }
 
 bool init() {

@@ -80,10 +80,10 @@ struct rts_unit : GameObject {
 
 		bool recomp = false;
 
-		if(dist > std::max((float)xtwidth/2, (float)xtwidth/2)){
-			update_path();
-			recomp = true;
-		}
+		//if(dist > std::max((float)xtwidth/2, (float)xtwidth/2)){
+		//	update_path();
+		//	recomp = true;
+		//}
 		if(dist < (float)xtwidth/5){
 			path.pop_back();
 			recomp = true;
@@ -141,7 +141,7 @@ struct rts_unit : GameObject {
 		return retval;
 	}
 
-	virtual void update(float elapsed_time){
+	virtual void update(float elapsed_time, bool calc){
 		set_p(p() + v());
 
 		auto x = p().x(), y = p().y();
@@ -166,12 +166,13 @@ struct rts_unit : GameObject {
 			set_v(Vector2f(v().x(), -v().y()));
 		}
 		
-
-
 		if(Input::is_mouse_pressed(SDL_BUTTON_RIGHT)){
 			auto temp = Input::get_mouse_pos();
 			goal.set(temp.first, temp.second);
 			dest = to_tile_space(goal);
+		}
+
+		if(calc){
 			update_path();
 		}
 

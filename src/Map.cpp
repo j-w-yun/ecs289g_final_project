@@ -16,8 +16,29 @@ const int MIN_OCTAVE = 1;
 const int MAX_OCTAVE = 12;
 const float DENSITY = 0.5;
 
-MapLevel::MapLevel() {
+MapLevel::MapLevel(size_t uc): unitcap(uc) {
 	class_string = MapLevel::static_class();
+
+	// init stack
+	for(size_t i = 0; i < uc; i++){
+		idstack.push_back(i);
+	}
+
+	// init objects
+	objects = std::vector<std::shared_ptr<GameObject>>(unitcap);
+
+	// init unitgrid
+	unitgrid = std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y));
+}
+
+bool MapLevel::add(std::shared_ptr<GameObject> o) {
+	if(!idstack.size()) return false;
+	
+	auto id = idstack.back();
+	idstack.pop_back();
+
+	objects[id] = o;
+	return true;
 }
 
 void MapLevel::set_size(int x, int y, int w, int h) {
@@ -164,5 +185,19 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		// SDL_SetRenderDrawColor(renderer, 0x99, 0x99, 0x99, (int)(200*opacity)+55);
 		SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
 		SDL_RenderFillRect(renderer, &box);
+	}
+
+	for (auto unit : objects){
+		if(unit.get()){
+			unit->render(renderer);
+		}
+	}
+}
+
+void MapLevel::update(float elapsed_time) {
+	for (auto unit : objects){
+		if(unit.get()){
+			unit->update(elapsed_time);
+		}
 	}
 }

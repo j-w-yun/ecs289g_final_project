@@ -88,7 +88,7 @@ void GameObject::render(SDL_Renderer* renderer) {
 		_render_callback(renderer);
 }
 
-void GameObject::update(float t) {
+void GameObject::update(float t, bool calc) {
 	if (!_is_movable)
 		return;
 
