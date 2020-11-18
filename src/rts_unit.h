@@ -119,7 +119,7 @@ struct rts_unit : GameObject {
 		for(auto ob : local_obs){
 			auto d = p() - ob;
 			auto l = d.len();
-			retval += 100.0f*d.unit()/(l*l*l);
+			retval += 20.0f*d.unit()/(l*l);
 		}
 
 		return retval;
@@ -160,9 +160,9 @@ struct rts_unit : GameObject {
 			update_path();
 		}
 
-		auto forces = traverse_path() + avoid_obstacles();
-		forces = forces.unit();
-		auto dv = forces*acc;
+		auto deliberate = traverse_path()*acc;
+		auto avoidance = avoid_obstacles();
+		auto dv = deliberate+avoidance;
 
 		auto nv = v() + dv;
 		if(nv.len() > topspeed){

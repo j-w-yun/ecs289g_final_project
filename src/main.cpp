@@ -186,7 +186,7 @@ void run_test() {
 		SCREEN_HEIGHT,
 		X_TILES,
 		Y_TILES,
-		.1,
+		.05,
 		2,
 		map_level
 	);
