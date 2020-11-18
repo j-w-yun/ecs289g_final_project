@@ -1,5 +1,10 @@
+#ifdef _MSC_VER
+#include <SDL.h>
+#include <SDL_ttf.h>
+#else
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#endif
 
 #include <stdio.h>
 #include <string>
@@ -312,6 +317,10 @@ void render() {
 	Stat::free();
 }
 
+#ifdef _MSC_VER
+#undef main
+#endif
+
 int main(int argc, char* args[]) {
 	// Start up SDL and create window
 	if (!init()) {
@@ -320,10 +329,10 @@ int main(int argc, char* args[]) {
 	}
 
 	// Game loop
-	unsigned int last_time;
+	unsigned int last_time = SDL_GetTicks();
 	unsigned int current_time;
 	unsigned int elapsed_time;
-	unsigned int unprocessed_time;
+	unsigned int unprocessed_time = 0;
 	while (Input::process_inputs()) {
 		current_time = SDL_GetTicks();
 		elapsed_time = current_time - last_time;

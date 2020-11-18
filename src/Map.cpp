@@ -117,7 +117,8 @@ std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::
 		std::cout << " n_octaves: " << n_octaves << " persistence: " << persistence << " prime_index: " << prime_index << std::endl;
 		//float threshold = 0.01f;
 		float threshold = 0.1f;
-		double noise[tiles_x*tiles_y-1];
+		std::vector<double> noise;
+		noise.resize(tiles_x * tiles_y);
 		for (int j = 0; j < tiles_x; j++)
 			for (int k = 0; k < tiles_y; k++)
 				noise[(j*tiles_y)+k] = ValueNoise_2D(j+offset_x, k+offset_y, n_octaves, persistence, prime_index);
@@ -125,7 +126,7 @@ std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::
 		while ((int)obs.size() < min && threshold < 0.9f) {
 			obs.clear();
 			std::cout << "threshold: " << threshold << std::endl;
-			if (!climb(&obs, noise, threshold, bases))
+			if (!climb(&obs, &noise[0], threshold, bases))
 				break;
 			threshold += 0.01f;
 		}
