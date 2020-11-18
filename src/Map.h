@@ -21,14 +21,15 @@ class MapLevel: public GameObject {
 		int tile_height;
 		std::vector<ip> obstructions;
 		std::vector<std::vector<bool>> obgrid;
-		std::vector<std::shared_ptr<GameObject>> objects;
+		std::vector<std::shared_ptr<GameObject>> units;
 		std::vector<size_t> idstack;
 		std::vector<std::vector<std::vector<size_t>>> unitgrid;
 		size_t unitcap;
 		bool climb(std::vector<std::pair<int, int>>* obs, double noise[], float threshold, std::vector<std::pair<int, int>> bases);
 
 	public:
-		MapLevel(size_t uc = 200);
+		MapLevel() = default;
+		MapLevel(int tx, int ty, int tw, int th, size_t uc = 200);
 		bool add(std::shared_ptr<GameObject> o);
 		void set_size(int x, int y, int w, int h);
 		void set_obstructions(std::vector<std::pair<int, int>> o);

@@ -21,9 +21,15 @@ class GameObject {
 		void set_defaults();
 
 	public:
+		int wwidth;
+		int wheight;
+		int x_tiles;
+		int y_tiles;
+		int xtwidth;
+		int ytwidth;
 		size_t id;
 		GameObject();
-		GameObject(const Vector2f& p, const Vector2f& v, float r);
+		GameObject(const Vector2f& p, const Vector2f& v, float r, int w, int h, int xt, int yt);
 		Vector2f p() const;
 		Vector2f v() const;
 		float r() const;
@@ -45,4 +51,27 @@ class GameObject {
 		// Inheriting classes must override this static function
 		// Is there a better way to check class types?
 		static std::string static_class() {return "GameObject";};
+
+		std::pair<int, int> to_tile_space(std::pair<float, float> p){
+			int x = (int)p.first;
+			int y = (int)p.second;
+			
+			return std::make_pair(x/xtwidth, y/ytwidth);
+		}
+
+		std::pair<int, int> to_tile_space(Vector2f p){
+			return to_tile_space(std::make_pair(p.x(), p.y()));
+		}
+
+		Vector2f to_world_space(std::pair<int, int> p){
+			float x = (float)p.first;
+			float y = (float)p.second;
+			
+			return Vector2f(xtwidth*x + (float)xtwidth/2, ytwidth*y + (float)ytwidth/2);
+		}
+
+		std::pair<int, int> get_tile(){
+			return to_tile_space(p());
+		}
+
 };

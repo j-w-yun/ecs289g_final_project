@@ -9,11 +9,18 @@ GameObject::GameObject() {
 	set_defaults();
 }
 
-GameObject::GameObject(const Vector2f& p, const Vector2f& v, float r) {
+GameObject::GameObject(const Vector2f& p, const Vector2f& v, float r, int w, int h, int xt, int yt) {
 	set_defaults();
 	position = p;
 	velocity = v;
 	radius = r;
+	wwidth = w;
+	wheight = h;
+	x_tiles = xt;
+	y_tiles = yt;
+
+	xtwidth = wwidth/x_tiles;
+	ytwidth = wheight/y_tiles;
 }
 
 void GameObject::set_defaults() {

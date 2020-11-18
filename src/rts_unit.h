@@ -2,6 +2,8 @@
 
 #include "v2f.h"
 #include "AStar.hpp"
+#include "AStar.cpp"
+#include "algorithms.h"
 #include<vector>
 #include<utility>
 
@@ -15,38 +17,20 @@ struct rts_unit : GameObject {
 	ip dest = {0, 0};
 	std::vector<ip> path;
 	Vector2f goal;
-	int wwidth;
-	int wheight;
-	int x_tiles;
-	int y_tiles;
-	int xtwidth;
-	int ytwidth;
+	int selected = 0;
 	MapLevel& map;
 
-	std::pair<int, int> to_tile_space(std::pair<float, float> p){
-		int x = (int)p.first;
-		int y = (int)p.second;
-		
-		return std::make_pair(x/xtwidth, y/ytwidth);
-	}
-
-	std::pair<int, int> to_tile_space(Vector2f p){
-		return to_tile_space(std::make_pair(p.x(), p.y()));
-	}
-
-	Vector2f to_world_space(std::pair<int, int> p){
-		float x = (float)p.first;
-		float y = (float)p.second;
-		
-		return Vector2f(xtwidth*x + (float)xtwidth/2, ytwidth*y + (float)ytwidth/2);
-	}
-
-	rts_unit(Vector2f p, Vector2f v, float r, float a, float ts, int w, int h, int xt, int yt, MapLevel& mp): GameObject(p, v, r), acc(a), topspeed(ts), wwidth(w), wheight(h), x_tiles(xt), y_tiles(yt), map(mp) {
-		xtwidth = wwidth/x_tiles;
-		ytwidth = wheight/y_tiles;
-	}
+	rts_unit(Vector2f p, Vector2f v, float r, int w, int h, int xt, int yt, float a, float ts, MapLevel& mp): GameObject(p, v, r, w, h, xt, yt), acc(a), topspeed(ts), map(mp) {}
 
 	virtual void render(SDL_Renderer* renderer){
+		int padding = 4;
+
+		if(selected == 1){
+			SDL_SetRenderDrawColor(renderer, 0, 0xFF, 0, 255);
+			SDL_Rect dragbox = {(int)(p().x() - r()) - padding, (int)(p().y() - r()) - padding, (int)(2 * r()) + 2*padding, (int)(2 * r()) + 2*padding};
+			SDL_RenderFillRect(renderer, &dragbox);
+		}
+
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0xFF, 255);
 		//SDL_RenderDrawPoint(renderer, (int)p().x(), (int)p().y());
 		SDL_Rect dragbox = {(int)(p().x() - r()), (int)(p().y() - r()), (int)(2 * r()), (int)(2 * r())};
@@ -135,7 +119,7 @@ struct rts_unit : GameObject {
 		for(auto ob : local_obs){
 			auto d = p() - ob;
 			auto l = d.len();
-			retval += 10.0f*d.unit()/(l*l*l);
+			retval += 100.0f*d.unit()/(l*l*l);
 		}
 
 		return retval;

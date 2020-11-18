@@ -68,7 +68,7 @@ std::vector<AStar::Vec2i> path;
 void run_test() {
 	// Test ball
 
-	std::shared_ptr<GameObject> ball_ptr = std::make_shared<GameObject>(Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2), Vector2f(0, 0), 10);
+	std::shared_ptr<GameObject> ball_ptr = std::make_shared<GameObject>(Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2), Vector2f(0, 0), 10, SCREEN_WIDTH, SCREEN_HEIGHT, x_tiles, y_tiles);
 
 	GameObject& ball = *ball_ptr;
 
@@ -140,10 +140,10 @@ void run_test() {
 	// Add to world
 	//gWorld.add(ball_ptr);
 
-	std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>();
+	std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>(x_tiles, y_tiles, SCREEN_WIDTH/x_tiles, SCREEN_HEIGHT/y_tiles);
 	MapLevel& map_level = *map_level_ptr;
 
-	map_level.set_size(x_tiles, y_tiles, SCREEN_WIDTH/x_tiles, SCREEN_HEIGHT/y_tiles);
+	//map_level.set_size(x_tiles, y_tiles, SCREEN_WIDTH/x_tiles, SCREEN_HEIGHT/y_tiles);
 	std::vector<std::pair<int, int>> bases = {
 		origin,
 		target,
@@ -163,7 +163,9 @@ void run_test() {
 	// FIXME enable
 	//gWorld.add(std::make_shared<rts_unit>(Vector2f(5, 5), Vector2f(0, 0), 11, .1, 2, SCREEN_WIDTH, SCREEN_HEIGHT, x_tiles, y_tiles, map_level));
 	map_level.add(ball_ptr);
-	map_level.add(std::make_shared<rts_unit>(Vector2f(5, 5), Vector2f(0, 0), 11, .1, 2, SCREEN_WIDTH, SCREEN_HEIGHT, x_tiles, y_tiles, map_level));
+	auto rts_ptr = std::make_shared<rts_unit>(Vector2f(5, 5), Vector2f(0, 0), 11, SCREEN_WIDTH, SCREEN_HEIGHT, x_tiles, y_tiles, .1, 2, map_level);
+	rts_ptr->selected = 1;
+	map_level.add(rts_ptr);
 }
 
 bool init() {

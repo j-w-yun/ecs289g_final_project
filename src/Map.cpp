@@ -16,7 +16,7 @@ const int MIN_OCTAVE = 1;
 const int MAX_OCTAVE = 12;
 const float DENSITY = 0.5;
 
-MapLevel::MapLevel(size_t uc): unitcap(uc) {
+MapLevel::MapLevel(int tx, int ty, int tw, int th, size_t uc): tiles_x(tx), tiles_y(ty), tile_width(tw), tile_height(th), unitcap(uc) {
 	class_string = MapLevel::static_class();
 
 	// init stack
@@ -25,19 +25,30 @@ MapLevel::MapLevel(size_t uc): unitcap(uc) {
 	}
 
 	// init objects
-	objects = std::vector<std::shared_ptr<GameObject>>(unitcap);
+	units = std::vector<std::shared_ptr<GameObject>>(unitcap);
 
 	// init unitgrid
 	unitgrid = std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y));
 }
 
 bool MapLevel::add(std::shared_ptr<GameObject> o) {
+	std::cout << "E ctor" << std::endl;
+
 	if(!idstack.size()) return false;
 	
 	auto id = idstack.back();
 	idstack.pop_back();
 
-	objects[id] = o;
+	units[id] = o;
+	auto tile = o->get_tile();
+
+	std::cout << "Hello" << std::endl;
+	std::cout << unitgrid.size() << std::endl;
+	std::cout << unitgrid[0].size() << std::endl;
+
+	unitgrid[tile.first][tile.second].push_back(id);
+	o->id = id;
+	std::cout << "Ex ctor" << std::endl;
 	return true;
 }
 
@@ -46,6 +57,17 @@ void MapLevel::set_size(int x, int y, int w, int h) {
 	tiles_y = y;
 	tile_width = w;
 	tile_height = h;
+
+	idstack = {};
+	for(size_t i = 0; i < unitcap; i++){
+		idstack.push_back(i);
+	}
+
+	// init objects
+	units = std::vector<std::shared_ptr<GameObject>>(unitcap);
+
+	// init unitgrid
+	unitgrid = std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y));
 }
 
 void MapLevel::set_obstructions(std::vector<std::pair<int, int>> o) {
@@ -187,17 +209,35 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		SDL_RenderFillRect(renderer, &box);
 	}
 
-	for (auto unit : objects){
+	for (auto unit : units){
 		if(unit.get()){
 			unit->render(renderer);
 		}
 	}
 }
 
+template<class T>
+void remove(std::vector<T>& vec, T val){
+	for(size_t i = 0; i < vec.size(); i++){
+		if(vec[i] == val){
+			vec.erase(vec.begin() + i);
+			return;
+		}
+	}
+}
+
 void MapLevel::update(float elapsed_time) {
-	for (auto unit : objects){
+	for (auto unit : units){
 		if(unit.get()){
+			// FIXME CANNOT BE PARALLELIZED
+			auto tile = unit->get_tile();
 			unit->update(elapsed_time);
+			auto ntile = unit->get_tile();
+			if(ntile != tile){
+				auto& vec = unitgrid[tile.first][tile.second];
+				remove(vec, unit->id);
+				unitgrid[ntile.first][ntile.second].push_back(unit->id);
+			}
 		}
 	}
 }
