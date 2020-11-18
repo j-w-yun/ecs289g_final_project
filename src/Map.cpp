@@ -165,14 +165,16 @@ std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::
 		obs.clear();
 		// std::cout << " n_octaves: " << n_octaves << " persistence: " << persistence << " prime_index: " << prime_index << std::endl;
 		threshold = 0.0005f;
-		double noise[tiles_x*tiles_y-1];
+		// Use std::vector here since variable length arrays are not supported in MSVC, as it is not standard.
+		std::vector<double> noise;
+		noise.resize(tiles_x*tiles_y);
 		for (int j = 0; j < tiles_x; j++)
 			for (int k = 0; k < tiles_y; k++)
 				noise[(j*tiles_y)+k] = ValueNoise_2D(j+offset_x, k+offset_y, n_octaves, persistence, prime_index);
 
 		while ((int)obs.size() < min && threshold < persistence) {
 			obs.clear();
-			if (!climb(&obs, noise, threshold, bases, padding)) {
+			if (!climb(&obs, &noise[0], threshold, bases, padding)) {
 				std::cout << "failed at threshold: " << threshold << std::endl;
 				break;
 			}
