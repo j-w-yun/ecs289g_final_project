@@ -311,11 +311,24 @@ void remove(std::vector<T>& vec, T val) {
 }
 
 void MapLevel::update(float elapsed_time) {
+	//static int ctr = 0;
+
+	/*if(Input::is_mouse_pressed(SDL_BUTTON_RIGHT)){
+		auto temp = Input::get_mouse_pos();
+		auto path = find_rect_path(Vector2f(10, 10), Vector2f(temp.first, temp.second));
+
+		std::cout << "path from 10, 10 to " << temp.first << ", " << temp.second << ": " << std::endl;
+		for(auto& a : path){
+			std::cout << "\t" << a << std::endl;
+		}
+	}*/
+	
+
 	for (auto unit : units) {
 		if (unit.get()) {
 			// FIXME CANNOT BE PARALLELIZED
 			auto tile = unit->get_tile();
-			unit->update(elapsed_time);
+			unit->update(elapsed_time, 1);
 			auto ntile = unit->get_tile();
 			if (ntile != tile) {
 				auto& vec = unitgrid[tile.first][tile.second];
@@ -323,5 +336,166 @@ void MapLevel::update(float elapsed_time) {
 				unitgrid[ntile.first][ntile.second].push_back(unit->id);
 			}
 		}
+
+		/*if(!ctr){
+			for(int i = 0; i < (int)unitgrid.size(); i++){
+				for(int j = 0; j < (int)unitgrid[0].size(); j++){
+					if(unitgrid[i][j].size()){
+						std::cout << i << ", " << j << ": ";
+						for(auto& a : unitgrid[i][j]){
+							std::cout << a << " ";
+						}
+						std::cout << std::endl;
+					}
+				}
+			}
+		}
+		ctr = (ctr + 1)%100;*/
 	}
+}
+
+// takes operator >
+struct minheap {
+	std::vector<int> vec;
+	std::function<bool(int, int)> comp;
+
+	minheap(std::vector<int> v, std::function<bool(int, int)> comp): comp(comp) {
+		vec = v;
+		std::make_heap(v.begin(), v.end(), comp);
+	}
+
+	int pop() {
+		std::pop_heap(vec.begin(), vec.end(), comp);
+		auto an = vec.back();
+		vec.pop_back();
+		return an;
+	}
+
+	void insert(int an) {
+		vec.push_back(an);
+		std::make_heap(vec.begin(), vec.end(), comp);
+	}
+
+	size_t size() {
+		return vec.size();
+	}
+
+	void reheap(){
+		std::make_heap(vec.begin(), vec.end(), comp);
+	}
+};
+
+std::vector<Vector2f> MapLevel::reconstruct_path(std::vector<int>& from, std::vector<Vector2f>& points, int src, int dest, Vector2f v2fdest) {
+	auto curr = dest;
+
+	std::vector<Vector2f> path;
+	path.push_back(v2fdest);
+
+	//std::cout << "Constructing path: " << std::endl;
+
+	// TODO possibly include current node in path?
+	while (curr != src && curr != -1) {
+		//std::cout << "Rectangle: " << curr << std::endl;
+		//std::cout << "Point: " << points[curr] << std::endl;
+		//auto t = to_tile_space(points[curr]);
+		//std::cout << "Tile: " << t.first << ", " << t.second << std::endl;
+		path.push_back(points[curr]);
+		curr = from[curr];
+	}
+
+	//std::reverse(path.begin(), path.end());
+	//path.push_back(v2fdest);
+
+	return path;
+}
+
+std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
+	//std::cout << "In find_rect_path" << std::endl;
+
+	std::vector<int> from(rectcover.size(), -1);
+	std::vector<float> gscore(rectcover.size(), std::numeric_limits<float>::infinity());
+	std::vector<float> fscore(rectcover.size(), std::numeric_limits<float>::infinity());
+	std::vector<Vector2f> point_in_r(rectcover.size());
+
+	auto dv = [&](int li, int ri){
+		rect& r = rectcover[ri]; 
+
+		return closest_point(point_in_r[li], r);
+	};
+
+	auto h = [&](int i){
+		return (point_in_r[i] - d).len();
+	};
+
+	auto s_tile = to_tile_space(s);
+	int s_ind = grid_to_rectcover[s_tile.first][s_tile.second];
+	auto d_tile = to_tile_space(d);
+	int d_ind = grid_to_rectcover[d_tile.first][d_tile.second];
+
+	//std::cout << "d_tile " << d_tile.first << ", " << d_tile.second << std::endl;
+	//std::cout << "sind/dind: " << s_ind << ", " << d_ind << std::endl;
+
+	if(s_ind == -1 || d_ind == -1){
+		return {};
+	}
+
+	point_in_r[s_ind] = s;
+	gscore[s_ind] = 0;
+	fscore[s_ind] = h(s_ind);
+	from[s_ind] = s_ind;
+
+	minheap hp(std::vector<int>({s_ind}),
+		[&](int l, int r) {
+			return fscore[l] > fscore[r];
+		}
+	);
+
+	while (hp.size()) {
+
+		auto current = hp.pop();
+
+		//std::cout << "Processing " << current << std::endl;
+
+		if (current == d_ind){
+			//std::cout << "done" << std::endl;
+			return reconstruct_path(from, point_in_r, s_ind, d_ind, d);
+		}
+
+		// rectangle neighbors
+		for (auto& nind : rectgraph[current]) {
+			//std::cout << "neighbor " << nind << std::endl;
+
+			Vector2f tentative_npoint = dv(current, nind);
+			float tentative_gscore = gscore[current] + (tentative_npoint - point_in_r[current]).len();
+
+			//std::cout << "tentative gscore vs current: " << tentative_gscore << " vs " << gscore[nind] << std::endl;
+
+			// update if closer
+			if (tentative_gscore < gscore[nind]) {
+				// update point
+				point_in_r[nind] = tentative_npoint;
+
+				// update gscore
+				gscore[nind] = tentative_gscore;
+
+				// update fscore
+				fscore[nind] = h(nind);
+
+				// update from
+				from[nind] = current;
+
+				auto it = std::find(hp.vec.begin(), hp.vec.end(), nind);
+				if (it == hp.vec.end()) {
+					//std::cout << nind << " not in heap" << std::endl;
+					hp.insert(nind);
+				}
+				else {
+					//std::cout << nind << " in heap" << std::endl;
+					hp.reheap();
+				}
+			}
+		}
+	}
+
+	return {};
 }

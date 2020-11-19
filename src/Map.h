@@ -6,18 +6,30 @@
 #include <memory>
 #include <time.h>
 #include <stdlib.h>
+#include <limits>
 
 #include "GameObject.h"
 #include "GameObject.cpp"
 #include "Vector2f.h"
 #include "Vector2f.cpp"
 #include "AStar.hpp"
+#include "algorithms.h"
 
 struct rect{
 	int xl, yl, xh, yh;
 
 	rect() = default;
 	rect(int xl, int yl, int xh, int yh): xl(xl), yl(yl), xh(xh), yh(yh) {}
+	rect(Vector2f v){
+		xl = xh = (int)v.x();
+		yl = yh = (int)v.y();
+	}
+
+	rect center(){
+		int x = (xh - xl)/2;
+		int y = (yh - yl)/2;
+		return rect(x, y, x, y);
+	}
 };
 
 std::ostream& operator<<(std::ostream& os, rect r){
@@ -43,7 +55,8 @@ class MapLevel: public GameObject {
 		std::vector<std::vector<std::vector<size_t>>> unitgrid;
 		size_t unitcap;
 		std::vector<rect> rectcover;
-		std::vector<std::vector<size_t>> grid_to_rectcover;
+		std::vector<std::vector<int>> grid_to_rectcover;
+		std::vector<std::vector<size_t>> rectgraph;
 		bool climb(std::vector<std::pair<int, int>>* obs, double noise[], float threshold, std::vector<std::pair<int, int>> bases, int padding);
 
 	public:
@@ -64,6 +77,26 @@ class MapLevel: public GameObject {
 		void render(SDL_Renderer* renderer);
 		void update(float elapsed_time);
 		static std::string static_class() {return "MapLevel";};
+		std::vector<Vector2f> find_rect_path(Vector2f s, Vector2f d);
+		std::vector<Vector2f> reconstruct_path(std::vector<int>& from, std::vector<Vector2f>& points, int src, int dest, Vector2f v2fdest);
+
+		std::pair<int, int> to_tile_space(std::pair<float, float> p){
+			int x = (int)p.first;
+			int y = (int)p.second;
+			
+			return std::make_pair(x/tile_width, y/tile_height);
+		}
+
+		std::pair<int, int> to_tile_space(Vector2f p){
+			return to_tile_space(std::make_pair(p.x(), p.y()));
+		}
+
+		Vector2f to_world_space(std::pair<int, int> p){
+			float x = (float)p.first;
+			float y = (float)p.second;
+			
+			return Vector2f(tile_width*x + (float)tile_width/2, tile_height*y + (float)tile_height/2);
+		}
 
 		template<class T>
 		bool inbounds(std::vector<std::vector<T>>& grid, int x, int y){
@@ -209,6 +242,28 @@ class MapLevel: public GameObject {
 				}
 			}
 			return retval;
+		}
+
+		// orient 0 x 1 y 2 both
+		bool intersects(const rect& l, const rect& r, int orient = 2){
+			bool ix = l.xh > r.xl && l.xl < r.xh;
+			bool iy = l.yh > r.yl && l.yl < r.yh;
+			
+			switch(orient){
+				case 0: return ix;
+				case 1: return iy;
+				case 2: return ix&&iy;
+			}
+
+			return 0;
+		}
+
+		// orient 0 x 1 y 2 both
+		bool abuts(const rect& l, const rect& r){
+			bool ax = (l.xh == r.xl || l.xl == r.xh) && intersects(l, r, 1);
+			bool ay = (l.yh == r.yl || l.yl == r.yh) && intersects(l, r, 0);
+
+			return ax || ay;
 		}
 		
 		void compute_rectcover(){
@@ -382,6 +437,24 @@ class MapLevel: public GameObject {
 
 			std::cout << "Rectangle cover: " << std::endl;
 			printgrid(to_cover);
+
+			rectcover = cover;
+			grid_to_rectcover = to_cover;
+
+			rectgraph = std::vector<std::vector<size_t>>(cover.size());
+
+			for(int i = 0; i < (int)cover.size() - 1; i++){
+				for(int j = i + 1; j < (int)cover.size(); j++){
+					if(i == j) continue;
+
+					if(abuts(cover[i], cover[j])){
+						std::cout << i << " abuts " << j << std::endl;
+						rectgraph[i].push_back(j);
+						rectgraph[j].push_back(i);
+					}
+				}
+			}
+
 		}
 
 		void generate_worms(int x_tiles, int y_tiles, int tile_width, int tile_height, int nshapes, int basepad, int wormspacing, int minarea, int maxarea, int minwormpad, int maxwormpad){
@@ -464,5 +537,98 @@ class MapLevel: public GameObject {
 			}
 
 			compute_rectcover();
+
+			// show path for debugging
+			auto path = find_rect_path(Vector2f(10, 10), Vector2f(1178, 787));
+
+			std::cout << "Path: " << std::endl;
+			for(auto& v2f : path){
+				std::cout << v2f << std::endl;
+			}
+		}
+
+		float dist(Vector2f l, Vector2f r){
+			return (l - r).len();
+		}
+
+		float dist(int x1, int y1, int x2, int y2){
+			return dist(Vector2f((float)x1, (float)y1), Vector2f((float)x2, (float)y2));
+		}
+
+		float rdist(const rect& a, const rect& b){
+			if(intersects(a, b)) return 0;
+
+			bool r = b.xl > a.xh;
+			bool u = b.yl > a.yh;
+			bool l = b.xh < a.xl;
+			bool d = b.yh < a.yl;
+
+			if(r && u) return dist(a.xh, a.yh, b.xl, b.yl);
+			if(l && u) return dist(a.xl, a.yh, b.xh, b.yl);
+			if(l && d) return dist(a.xl, a.yl, b.xh, b.yh);
+			if(r && d) return dist(a.xh, a.yl, b.xl, b.yh);
+			if(r) return b.xl - a.xh;
+			if(u) return b.yl - a.yh;
+			if(l) return a.xl - b.xh;
+			if(d) return a.yl - b.yh;
+
+			return 0;
+		}
+
+		// as opposed to tile_rect
+		struct world_rect{
+			float xl, yl, xh, yh;
+
+			world_rect() = default;
+			world_rect(float xl, float yl, float xh, float yh): xl(xl), yl(yl), xh(xh), yh(yh) {}
+			//world_rect(const rect& r){
+			//	auto lows = to_world_space(std::make_pair(r.xl, r.yl));
+			//	auto highs = to_world_space(std::make_pair(r.xh, r.yh));
+
+			//	xl = lows.x();
+			//	yl = lows.y();
+			//	xh = highs.x();
+			//	yh = highs.y();
+			//}
+			world_rect(Vector2f v){
+				xl = xh = v.x();
+				yl = yh = v.y();
+			}
+
+			world_rect center(){
+				float x = (xh - xl)/2;
+				float y = (yh - yl)/2;
+				return world_rect(x, y, x, y);
+			}
+		};
+
+		// p is in world space, a is in tile space
+		// transforms 
+		Vector2f closest_point(Vector2f p, const rect& _a){
+			auto lows = to_world_space(std::make_pair(_a.xl, _a.yl));
+			auto highs = to_world_space(std::make_pair(_a.xh, _a.yh));
+
+			world_rect a(lows.x(), lows.y(), highs.x(), highs.y());
+
+
+
+			world_rect b(p.x(), p.y(), p.x(), p.y());
+
+			bool r = b.xl > a.xh;
+			bool u = b.yl > a.yh;
+			bool l = b.xh < a.xl;
+			bool d = b.yh < a.yl;
+
+			if(r && u) return Vector2f(a.xh, a.yh);
+			if(l && u) return Vector2f(a.xl, a.yh);
+			if(l && d) return Vector2f(a.xl, a.yl);
+			if(r && d) return Vector2f(a.xh, a.yl);
+			if(r) return Vector2f(a.xh, p.y());
+			if(u) return Vector2f(p.x(), a.yh);
+			if(l) return Vector2f(a.xl, p.y());
+			if(d) return Vector2f(p.x(), a.yl);
+
+			return p;
+
 		}
 };

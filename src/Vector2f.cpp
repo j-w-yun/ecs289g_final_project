@@ -7,6 +7,11 @@ Vector2f::Vector2f(float x, float y) {
 	_y = y;
 }
 
+/*Vector2f::Vector2f(int x, int y) {
+	_x = (float)x;
+	_y = (float)y;
+}*/
+
 void Vector2f::set(float x, float y) {
 	_x = x;
 	_y = y;

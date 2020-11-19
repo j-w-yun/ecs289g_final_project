@@ -14,9 +14,8 @@ struct rts_unit : GameObject {
 
 	float acc;
 	float topspeed;
-	ip dest = {0, 0};
-	std::vector<ip> path;
-	Vector2f goal;
+	Vector2f dest = Vector2f(0, 0);
+	std::vector<Vector2f> path;
 	int selected = 0;
 	MapLevel& map;
 
@@ -39,15 +38,10 @@ struct rts_unit : GameObject {
 	}
 
 	virtual void update_path(){
-		auto tpath = find_path(map, to_tile_space(p()), dest);
-		if(tpath.size())
-			tpath.pop_back();
+		std::vector<Vector2f> find_rect_path(Vector2f s, Vector2f d);
+		auto tpath = map.find_rect_path(p(), dest);
 
-		path = {};
-
-		for(auto& vi : tpath){
-			path.push_back(std::make_pair(vi.x, vi.y));
-		}
+		path = tpath;
 	}
 
 	// returns unit
@@ -57,7 +51,7 @@ struct rts_unit : GameObject {
 			return Vector2f(0, 0);
 		}
 
-		auto wpoint = to_world_space(path.back());
+		auto wpoint = path.back();
 
 		auto d = wpoint - p();
 		auto dist = d.len();
@@ -73,7 +67,7 @@ struct rts_unit : GameObject {
 			recomp = true;
 		}
 		if(recomp){
-			wpoint = to_world_space(path.back());
+			wpoint = path.back();
 			d = wpoint - p();
 		}
 
@@ -153,8 +147,7 @@ struct rts_unit : GameObject {
 		
 		if(Input::is_mouse_pressed(SDL_BUTTON_RIGHT)){
 			auto temp = Input::get_mouse_pos();
-			goal.set(temp.first, temp.second);
-			dest = to_tile_space(goal);
+			dest.set(temp.first, temp.second);
 		}
 
 		if(calc){

@@ -1,5 +1,7 @@
 #pragma once
 
+#include<iostream>
+
 class Vector2f {
 	private:
 		float _x;
@@ -8,6 +10,7 @@ class Vector2f {
 	public:
 		Vector2f() = default;
 		Vector2f(float x, float y);
+		//Vector2f(int x, int y);
 		void set(float x, float y);
 		float x() const;
 		float y() const;
@@ -75,4 +78,9 @@ class Vector2f {
 
 Vector2f operator*(float l, Vector2f r){
 	return r*l;
+}
+
+std::ostream& operator<<(std::ostream& os, Vector2f v){
+	os << "v2f(" << v.x() << ", " << v.y() << ")";
+	return os;
 }

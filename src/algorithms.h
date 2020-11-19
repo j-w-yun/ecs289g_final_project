@@ -39,6 +39,7 @@ bool operator==(const astar_node& l, const astar_node& r) {
 	return l.pos == r.pos;
 }
 
+/*
 // takes operator >
 struct minheap {
 	std::vector<astar_node> vec;
@@ -216,3 +217,4 @@ std::vector<ip> astar(MapLevel& lev, ip src, ip dest) {
 
 	return {};
 }
+*/
