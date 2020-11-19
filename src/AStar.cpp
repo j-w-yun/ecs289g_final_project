@@ -206,3 +206,5 @@ AStar::uint AStar::Heuristic::octagonal(Vec2i source_, Vec2i target_)
 	auto delta = std::move(getDelta(source_, target_));
 	return 10 * (delta.x + delta.y) + (-6) * std::min(delta.x, delta.y);
 }
+
+//maybe chevyshev distance heuristic?
