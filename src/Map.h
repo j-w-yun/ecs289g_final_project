@@ -13,6 +13,18 @@
 #include "Vector2f.cpp"
 #include "AStar.hpp"
 
+struct rect{
+	int xl, yl, xh, yh;
+
+	rect() = default;
+	rect(int xl, int yl, int xh, int yh): xl(xl), yl(yl), xh(xh), yh(yh) {}
+};
+
+std::ostream& operator<<(std::ostream& os, rect r){
+	os << "r(" << r.xl << ", " << r.yl << ", " << r.xh << ", " << r.yh << ")";
+	return os;
+}
+
 typedef std::pair<int, int> ip;
 
 class MapLevel: public GameObject {
@@ -30,6 +42,8 @@ class MapLevel: public GameObject {
 		std::vector<size_t> idstack;
 		std::vector<std::vector<std::vector<size_t>>> unitgrid;
 		size_t unitcap;
+		std::vector<rect> rectcover;
+		std::vector<std::vector<size_t>> grid_to_rectcover;
 		bool climb(std::vector<std::pair<int, int>>* obs, double noise[], float threshold, std::vector<std::pair<int, int>> bases, int padding);
 
 	public:
@@ -51,7 +65,8 @@ class MapLevel: public GameObject {
 		void update(float elapsed_time);
 		static std::string static_class() {return "MapLevel";};
 
-		bool inbounds(std::vector<std::vector<int>>& grid, int x, int y){
+		template<class T>
+		bool inbounds(std::vector<std::vector<T>>& grid, int x, int y){
 			return x >= 0 && x < (int)grid.size() && y >= 0 && y < (int)grid[0].size();
 		}
 
@@ -123,10 +138,15 @@ class MapLevel: public GameObject {
 
 		template<class T>
 		void printgrid(std::vector<std::vector<T>>& grid){
-			for(auto& a : grid){
-				for(auto& b : a){
+			if(!grid.size() || !grid[0].size()){
+				std::cout << "Bad grid" << std::endl;
+				return;
+			}
+
+			for(size_t j = 0; j < grid[0].size(); j++){
+				for(size_t i = 0; i < grid.size(); i++){
 					std::cout.width(3);
-					std::cout << b << " ";
+					std::cout << grid[i][j] << " ";
 				}
 				std::cout << std::endl;
 			}
@@ -191,6 +211,179 @@ class MapLevel: public GameObject {
 			return retval;
 		}
 		
+		void compute_rectcover(){
+			int x_tiles = tiles_x;
+			int y_tiles = tiles_y;
+
+			//std::cout << "Enter crc" << std::endl;
+
+			// 1 uncovered 0 covered -1 obstruction
+			std::vector<std::vector<int>> uncovered(x_tiles, std::vector<int>(y_tiles));
+			int n_uncovered = 0;
+			std::vector<rect> cover;
+			std::vector<std::vector<int>> to_cover(x_tiles, std::vector<int>(y_tiles, -1));
+
+			//std::cout << x_tiles << std::endl;
+			//std::cout << "to_cover xs: " << to_cover.size() << std::endl;
+			//std::cout << "to_cover ys: " << to_cover[0].size() << std::endl;
+
+			int rectind = -1;
+
+			// initialize uncovered to all
+			for(int i = 0; i < x_tiles; i++){
+				for(int j = 0; j < y_tiles; j++){
+					if(!obgrid[i][j]){
+						uncovered[i][j] = 1;
+						n_uncovered++;
+					}
+					else{
+						uncovered[i][j] = -1;
+					}
+				}
+			}
+
+			//std::cout << "Uncovered: " << std::endl;
+			//printgrid(uncovered);
+			//std::cout << "n_uncovered: " << n_uncovered << std::endl;
+
+			// each rectangle
+			while(n_uncovered > 0){
+				rectind++;
+				std::vector<ip> curr;
+				rect r;
+
+				//std::cout << "n_uncovered: " << n_uncovered << std::endl;
+				//std::cout << "Rect " << rectind;
+
+				// search for uncovered
+				for(int i = 0; i < x_tiles; i++){
+					for(int j = 0; j < y_tiles; j++){
+						if(uncovered[i][j] == 1){
+							// found seed of rectangle
+							to_cover[i][j] = rectind;
+							uncovered[i][j] = 0;
+							n_uncovered--;
+							r = rect(i, j, i+1, j+1);
+							goto break2;	
+						}
+					}
+				}
+
+				break2:
+
+				bool changed = true;
+				while(changed){
+					changed = false;
+
+					//std::cout << "R" << rectind << ": " << r << std::endl;
+
+					// try to expand left
+					std::vector<ip> temp;
+					bool allin = true;
+					for(int i = r.yl; i < r.yh; i++){
+						int k = r.xl - 1;
+						if(inbounds(obgrid, k, i) && uncovered[k][i] == 1){
+							temp.push_back(std::make_pair(k, i));
+						}
+						else{
+							allin = false;
+						}
+					}
+					if(allin){
+						//std::cout << "\tl" << std::endl;
+						r.xl--;
+						for(auto& p : temp){
+							uncovered[p.first][p.second] = 0;
+							n_uncovered--;
+							to_cover[p.first][p.second] = rectind;
+						}
+					}
+					changed |= allin;
+
+					// try to expand right
+					temp = {};
+					allin = true;
+					for(int i = r.yl; i < r.yh; i++){
+						int k = r.xh;
+						if(inbounds(obgrid, k, i) && uncovered[k][i] == 1){
+							temp.push_back(std::make_pair(k, i));
+						}
+						else{
+							allin = false;
+						}
+					}
+					if(allin){
+						//std::cout << "\tr" << std::endl;
+						r.xh++;
+						for(auto& p : temp){
+							uncovered[p.first][p.second] = 0;
+							n_uncovered--;
+							to_cover[p.first][p.second] = rectind;
+						}
+					}
+					changed |= allin;
+
+					// try to expand up
+					temp = {};
+					allin = true;
+					for(int i = r.xl; i < r.xh; i++){
+						int k = r.yh;
+						if(inbounds(obgrid, i, k) && uncovered[i][k] == 1){
+							temp.push_back(std::make_pair(i, k));
+						}
+						else{
+							allin = false;
+						}
+					}
+					if(allin){
+						//std::cout << "\tu" << std::endl;
+						r.yh++;
+						for(auto& p : temp){
+							uncovered[p.first][p.second] = 0;
+							n_uncovered--;
+							to_cover[p.first][p.second] = rectind;
+						}
+					}
+					changed |= allin;
+
+					// try to expand down
+					temp = {};
+					allin = true;
+					for(int i = r.xl; i < r.xh; i++){
+						int k = r.yl - 1;
+						if(inbounds(obgrid, i, k) && uncovered[i][k] == 1){
+							temp.push_back(std::make_pair(i, k));
+						}
+						else{
+							allin = false;
+						}
+					}
+					if(allin){
+						//std::cout << "\td" << std::endl;
+						r.yl--;
+						for(auto& p : temp){
+							uncovered[p.first][p.second] = 0;
+							n_uncovered--;
+							to_cover[p.first][p.second] = rectind;
+						}
+					}
+					changed |= allin;
+
+					//std::cout << "n_uncovered after iteration: " << n_uncovered << std::endl;
+
+
+					//printgrid(uncovered);
+					//std::cout << "Press Enter to Continue";
+					//std::cin.ignore();
+				}
+
+				cover.push_back(r);
+			}
+
+			std::cout << "Rectangle cover: " << std::endl;
+			printgrid(to_cover);
+		}
+
 		void generate_worms(int x_tiles, int y_tiles, int tile_width, int tile_height, int nshapes, int basepad, int wormspacing, int minarea, int maxarea, int minwormpad, int maxwormpad){
 			srand(time(NULL));
 
@@ -269,5 +462,7 @@ class MapLevel: public GameObject {
 					}
 				}
 			}
+
+			compute_rectcover();
 		}
 };
