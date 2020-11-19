@@ -81,7 +81,7 @@ class MapLevel: public GameObject {
 
 		// dx xor dy must b zero
 		ip crawl(std::vector<std::vector<int>>& grid, int value, int x, int y, int dx, int dy, int len, bool turn){
-			std::cout << "crawl at with len " << x << ", " << y << ", " << len << std::endl;
+			//std::cout << "crawl at with len " << x << ", " << y << ", " << len << std::endl;
 
 			if(!len || !((bool)dx ^ (bool)dy)) return std::make_pair(x, y);
 
@@ -121,7 +121,22 @@ class MapLevel: public GameObject {
 			return crawl(grid, value, x, y, dx, dy, --len, turn);
 		}
 
+		template<class T>
+		void printgrid(std::vector<std::vector<T>>& grid){
+			for(auto& a : grid){
+				for(auto& b : a){
+					std::cout.width(3);
+					std::cout << b << " ";
+				}
+				std::cout << std::endl;
+			}
+		}
+
 		void dilate(std::vector<std::vector<int>>& grid, int times, int value, int newval){
+			//std::cout << "Dilate " << value << " -> " << newval << std::endl;
+			//printgrid(grid);
+			//std::cout << "After" << std::endl;
+
 			auto newgrid = grid;
 
 			for(int t = 0; t < times; t++){
@@ -138,6 +153,8 @@ class MapLevel: public GameObject {
 					}
 				}
 				grid = newgrid;
+				//std::cout << "After" << std::endl;
+				//printgrid(grid);
 			}
 		}
 
@@ -174,7 +191,7 @@ class MapLevel: public GameObject {
 			return retval;
 		}
 		
-		void generate_worms(int x_tiles, int y_tiles, int tile_width, int tile_height, int nshapes, int basepad, int wormpad, int minarea, int maxarea, int maxwormwidth){
+		void generate_worms(int x_tiles, int y_tiles, int tile_width, int tile_height, int nshapes, int basepad, int wormspacing, int minarea, int maxarea, int minwormpad, int maxwormpad){
 			srand(time(NULL));
 
 			set_size(x_tiles, y_tiles, tile_width, tile_height);
@@ -228,10 +245,10 @@ class MapLevel: public GameObject {
 				auto tile = ftiles[rand()%ftiles.size()];
 
 				int area = rand()%(maxarea - minarea + 1) + minarea;
-				int w = rand()%maxwormwidth + 1;
-				int l = area/w;
+				int wp = rand()%(maxwormpad-minwormpad + 1) + minwormpad;
+				int l = area/(1 + 2*wp);
 				
-				worm(grid, i + 1, tile.first, tile.second, 4, l, w/2, wormpad);
+				worm(grid, i + 2, tile.first, tile.second, 4, l, wp, wormspacing);
 			}
 
 			// mirror/flip to entire map

@@ -96,7 +96,7 @@ void run_test() {
 	MapLevel& map_level = *map_level_ptr;
 	//auto obstructions = map_level.generate_obstructions(bases, BASE_PADDING);
 	//map_level.set_obstructions(obstructions);
-	map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 4, 5, 4, 10, 30, 4);
+	map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 6, 5, 4, 10, 30, 1, 2);
 	gWorld.add(map_level_ptr);
 
 	// // Test ball
