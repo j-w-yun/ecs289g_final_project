@@ -27,7 +27,8 @@
 #include "Noise.cpp"
 #include "AStar.hpp"
 #include "AStar.cpp"
-#include "utils.h"
+#include "Util.h"
+#include "RenderingEngine.h"
 
 #include "rts_unit.h"
 #include "level.h"
@@ -49,15 +50,6 @@ bool init();
 // Frees media and shuts down SDL
 void close();
 
-// The window we'll be rendering to
-SDL_Window* gWindow;
-
-// The window renderer
-SDL_Renderer* gRenderer;
-
-// Globally used font
-TTF_Font* gFont;
-
 // World game objects
 World gWorld;
 
@@ -65,11 +57,9 @@ World gWorld;
 bool is_running = false;
 
 // Pathfinding test variables
-// auto origin = std::make_pair(0, 0);
-// auto target = std::make_pair(X_TILES-1, Y_TILES-1);
 const int X_TILES = 60;
 const int Y_TILES = 50;
-const int BASE_PADDING = 5;
+const int BASE_PADDING = 4;
 std::vector<std::pair<int, int>> bases;
 std::vector<std::vector<AStar::Vec2i>> paths;
 void run_test() {
@@ -103,6 +93,16 @@ void run_test() {
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 2, 1, 1, 5, 10, 0, 1);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 1, 1, 5, 10, 0, 1);
 	gWorld.add(map_level_ptr);
+
+	// Test pathfinding
+	for (int j = 0; j < (int)bases.size(); j++) {
+		for (int k = j+1; k < (int)bases.size(); k++) {
+			auto path = find_path(map_level, bases.at(j), bases.at(k));
+			paths.push_back(path);
+			// for (auto& p : path)
+			// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
+		}
+	}
 
 	for(int i = 0; i < 4000; i++){
 		auto rts_ptr = std::make_shared<rts_unit>(
@@ -190,65 +190,11 @@ void run_test() {
 	// ball.set_render_callback(render_callback);
 	// ball.set_update_callback(update_callback);
 	// map_level.add(ball_ptr);
-
-	// Test pathfinding
-	//for (int j = 0; j < (int)bases.size(); j++) {
-	//	for (int k = j+1; k < (int)bases.size(); k++) {
-	//		auto path = find_path(map_level, bases.at(j), bases.at(k));
-	//		paths.push_back(path);
-	//		// for (auto& p : path)
-	//		// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
-	//	}
-	//}
 }
 
 bool init() {
-	// Initialize SDL
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		printf("SDL could not initialize: %s\n", SDL_GetError());
+	if (!RenderingEngine::initialize())
 		return false;
-	}
-
-	// Set texture filtering to linear
-	if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"))
-		printf("Warning: Linear texture filtering not enabled");
-
-	// Create window
-	gWindow = SDL_CreateWindow("Title", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-	if (gWindow == NULL) {
-		printf("Window could not be created: %s\n", SDL_GetError());
-		return false;
-	}
-
-	// Create renderer for window
-	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
-	if (gRenderer == NULL) {
-		printf("Renderer could not be created: %s\n", SDL_GetError());
-		return false;
-	}
-
-	// Initialize fonts
-	if(TTF_Init() == -1) {
-		printf("SDL_ttf could not initialize: %s\n", TTF_GetError());
-		return false;
-	}
-	gFont = TTF_OpenFont(FONT, 64);
-	if (gFont == NULL) {
-		printf("Failed to load font: %s\n", TTF_GetError());
-		return false;
-	}
-
-	// Initialize renderer color
-	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-	SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
-
-	// Clear screen
-	SDL_SetRenderDrawColor(gRenderer, 0x11, 0x11, 0x11, 0xFF);
-	SDL_RenderClear(gRenderer);
-	SDL_RenderPresent(gRenderer);
-
-	// Grab mouse
-	// SDL_SetWindowGrab(gWindow, SDL_TRUE);
 
 	// Initialize world
 	gWorld = World();
@@ -259,21 +205,7 @@ bool init() {
 }
 
 void close() {
-	// Free global font
-	TTF_CloseFont(gFont);
-	gFont = NULL;
-
-	// Destroy renderer
-	SDL_DestroyRenderer(gRenderer);
-	gRenderer = NULL;
-
-	// Destroy window
-	SDL_DestroyWindow(gWindow);
-	gWindow = NULL;
-
-	// Quit SDL subsystems
-	TTF_Quit();
-	SDL_Quit();
+	RenderingEngine::destroy();
 }
 
 void update(float delta_time) {
@@ -288,21 +220,21 @@ void render() {
 	Stat::frame_tick();
 
 	// Clear screen
-	SDL_SetRenderDrawColor(gRenderer, 0x11, 0x11, 0x11, 0xFF);
-	SDL_RenderClear(gRenderer);
+	RenderingEngine::clear();
 
 	// Draw world
-	gWorld.render(gRenderer);
+	// gWorld.render(gRenderer);
+	RenderingEngine::render(gWorld);
 
 	// Path
-	int tile_width = SCREEN_WIDTH / X_TILES;
-	int tile_height = SCREEN_HEIGHT / Y_TILES;
+	int tile_width = RenderingEngine::width / X_TILES;
+	int tile_height = RenderingEngine::height / Y_TILES;
 	for (auto& path : paths) {
 		for (auto& p : path) {
 			// SDL_Rect box = {tile_width*p.first, tile_height*p.second, tile_width, tile_height};
 			SDL_Rect box = {tile_width*p.x, tile_height*p.y, tile_width, tile_height};
-			SDL_SetRenderDrawColor(gRenderer, 0x22, 0xFF, 0x22, 0x55);
-			SDL_RenderFillRect(gRenderer, &box);
+			SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 0x22, 0xFF, 0x22, 0x55);
+			SDL_RenderFillRect(RenderingEngine::gRenderer, &box);
 		}
 	}
 
@@ -310,42 +242,12 @@ void render() {
 	for (int i = 0; i < (int)bases.size(); i++) {
 		auto base = bases.at(i);
 		SDL_Rect base_tile = {tile_width*base.first, tile_height*base.second, tile_width, tile_height};
-		SDL_SetRenderDrawColor(gRenderer, 0x77, 0x22, 0x22, 0xFF);
-		SDL_RenderFillRect(gRenderer, &base_tile);
+		SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 0x77, 0x22, 0x22, 0xFF);
+		SDL_RenderFillRect(RenderingEngine::gRenderer, &base_tile);
 	}
-
-	// Left mouse drag
-	if (Input::has_dragbox(SDL_BUTTON_LEFT)) {
-		DragBox box = Input::get_dragbox(SDL_BUTTON_LEFT);
-		SDL_Rect dragbox = {box.x1, box.y1, box.x2-box.x1, box.y2-box.y1};
-		// Render filled quad
-		SDL_SetRenderDrawColor(gRenderer, 0x99, 0xFF, 0x99, 0x11);
-		SDL_RenderFillRect(gRenderer, &dragbox);
-		// Render outline quad
-		SDL_SetRenderDrawColor(gRenderer, 0x99, 0xFF, 0x99, 0xFF);
-		SDL_RenderDrawRect(gRenderer, &dragbox);
-	}
-
-	// Right mouse drag
-	if (Input::has_dragbox(SDL_BUTTON_RIGHT)) {
-		DragBox box = Input::get_dragbox(SDL_BUTTON_RIGHT);
-		SDL_Rect dragbox = {box.x1, box.y1, box.x2-box.x1, box.y2-box.y1};
-		// Render filled quad
-		SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0x22);
-		SDL_RenderFillRect(gRenderer, &dragbox);
-		// Render outline quad
-		SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0xFF);
-		SDL_RenderDrawRect(gRenderer, &dragbox);
-	}
-
-	// Render stats
-	Stat::render(gRenderer, gFont);
 
 	// Update screen
-	SDL_RenderPresent(gRenderer);
-
-	// Free stat rendering resources
-	Stat::free();
+	RenderingEngine::show();
 }
 
 #ifdef _MSC_VER
@@ -360,7 +262,7 @@ int main(int argc, char* args[]) {
 	}
 
 	// Game loop
-	utils::Timer timer;
+	Util::Timer timer;
 	Uint64 unprocessed_time;
 	while (Input::process_inputs()) {
 		if (Input::has_input())

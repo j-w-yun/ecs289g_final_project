@@ -190,6 +190,36 @@ DragBox Input::get_dragbox(Uint8 button) {
 	return Input::mousedrag[button];
 }
 
+std::pair<int, int> Input::get_mouse_pos() {
+	return std::make_pair(e.button.x, e.button.y);
+}
+
 bool Input::has_input() {
 	return Input::keydown.size() + Input::mousedown.size() > 0;
+}
+
+void Input::render(SDL_Renderer* renderer) {
+	// Left mouse drag
+	if (Input::has_dragbox(SDL_BUTTON_LEFT)) {
+		DragBox box = Input::get_dragbox(SDL_BUTTON_LEFT);
+		SDL_Rect dragbox = {box.x1, box.y1, box.x2-box.x1, box.y2-box.y1};
+		// Render filled quad
+		SDL_SetRenderDrawColor(renderer, 0x99, 0xFF, 0x99, 0x33);
+		SDL_RenderFillRect(renderer, &dragbox);
+		// Render outline quad
+		SDL_SetRenderDrawColor(renderer, 0x99, 0xFF, 0x99, 0xFF);
+		SDL_RenderDrawRect(renderer, &dragbox);
+	}
+
+	// Right mouse drag
+	if (Input::has_dragbox(SDL_BUTTON_RIGHT)) {
+		DragBox box = Input::get_dragbox(SDL_BUTTON_RIGHT);
+		SDL_Rect dragbox = {box.x1, box.y1, box.x2-box.x1, box.y2-box.y1};
+		// Render filled quad
+		SDL_SetRenderDrawColor(renderer, 0x77, 0xAA, 0xFF, 0x44);
+		SDL_RenderFillRect(renderer, &dragbox);
+		// Render outline quad
+		SDL_SetRenderDrawColor(renderer, 0x77, 0xAA, 0xFF, 0xFF);
+		SDL_RenderDrawRect(renderer, &dragbox);
+	}
 }

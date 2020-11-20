@@ -1,8 +1,14 @@
 #pragma once
 
+#include <iostream>
 #include <time.h>
+#include <random>
 
-namespace utils {
+namespace Util {
+
+	/*
+	Time utilities
+	*/
 
 	const Uint64 INIT_COUNT = SDL_GetPerformanceCounter();
 	const Uint64 COUNT_PER_S = SDL_GetPerformanceFrequency();
@@ -43,15 +49,35 @@ namespace utils {
 			}
 	};
 
+	/*
+	Random utilities
+	*/
+
+	void seed_random() {
+		srand(get_counts(false));
+	}
+
+	float uniform_random(float min, float max) {
+		seed_random();
+		return ((float)rand()) / (RAND_MAX/(max-min)) + min;
+	}
+
+	float normal_random(float mean, float std) {
+		seed_random();
+		std::default_random_engine generator;
+		std::normal_distribution<double> distribution(mean, std);
+		return (float)distribution(generator);
+	}
+
 	void test() {
 		std::cout << std::endl;
 		std::cout << "SDL_GetPerformanceCounter(): " << SDL_GetPerformanceCounter() << std::endl;
 		std::cout << "SDL_GetTicks(): " << SDL_GetTicks() << std::endl;
-		std::cout << "utils::get_counts(): " << utils::get_counts() << std::endl;
-		std::cout << "utils::get_nanoseconds(): " << utils::get_nanoseconds() << std::endl;
-		std::cout << "utils::get_microseconds(): " << utils::get_microseconds() << std::endl;
-		std::cout << "utils::get_milliseconds(): " << utils::get_milliseconds() << std::endl;
-		std::cout << "utils::get_seconds(): " << utils::get_seconds() << std::endl;
+		std::cout << "Util::get_counts(): " << Util::get_counts() << std::endl;
+		std::cout << "Util::get_nanoseconds(): " << Util::get_nanoseconds() << std::endl;
+		std::cout << "Util::get_microseconds(): " << Util::get_microseconds() << std::endl;
+		std::cout << "Util::get_milliseconds(): " << Util::get_milliseconds() << std::endl;
+		std::cout << "Util::get_seconds(): " << Util::get_seconds() << std::endl;
 		std::cout << std::endl;
 	}
 };
