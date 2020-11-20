@@ -18,7 +18,7 @@
 namespace RenderingEngine {
 
 	// Font file
-	const char* TTF_FILE = "./res/fonts/Roboto-Medium.ttf";
+	const char* TTF_FILE = "./res/fonts/Roboto-Light.ttf";
 
 	// Default window dimensions
 	int width = 1200;
@@ -93,6 +93,7 @@ namespace RenderingEngine {
 			cam.position.set(world_width/2, world_height/2);
 
 		if (Input::has_input()) {
+			// Set stats
 			std::pair<int, int> mp = Input::get_mouse_pos();
 			Vector2f mouse_screen = Vector2f(mp.first, mp.second);
 			Vector2f mouse_world = screen_to_world(mouse_screen);

@@ -19,7 +19,7 @@ std::vector<SDL_Surface*> Stat::surfaces;
 std::vector<SDL_Texture*> Stat::textures;
 
 SDL_Color Stat::color = {0, 255, 0};
-SDL_Rect Stat::text_rect = {x: 8, y: 8};
+SDL_Rect Stat::text_rect = {x: 8};
 char Stat::text_str[64];
 int Stat::w;
 int Stat::h;
@@ -29,11 +29,11 @@ void Stat::render_text(SDL_Renderer* renderer, TTF_Font* font) {
 	Stat::surfaces.push_back(TTF_RenderText_Solid(font, Stat::text_str, Stat::color));
 	Stat::textures.push_back(SDL_CreateTextureFromSurface(renderer, Stat::surfaces.back()));
 	TTF_SizeText(font, Stat::text_str, &Stat::w, &Stat::h);
-	Stat::text_rect.w = w;
-	Stat::text_rect.h = h;
-	Stat::text_rect.y = offset_y;
+	Stat::text_rect.w = Stat::w;
+	Stat::text_rect.h = Stat::h;
+	Stat::text_rect.y = Stat::offset_y;
 	SDL_RenderCopy(renderer, Stat::textures.back(), NULL, &Stat::text_rect);
-	offset_y += h;
+	Stat::offset_y += Stat::h;
 }
 
 void Stat::calculate() {
@@ -62,7 +62,7 @@ void Stat::render(SDL_Renderer* renderer, TTF_Font* font) {
 	Stat::calculate();
 
 	// Reset offset
-	offset_y = 0;
+	Stat::offset_y = 4;
 
 	// Display time
 	sprintf(text_str, "Time: %ims", (unsigned int)Util::get_milliseconds());
