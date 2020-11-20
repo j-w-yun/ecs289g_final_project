@@ -41,9 +41,6 @@ const unsigned int SCREEN_HEIGHT = 800;
 // Update time slice
 const unsigned int MS_PER_UPDATE = 10;
 
-// Font file
-const char* FONT = "./res/fonts/Roboto-Medium.ttf";
-
 // Starts up SDL and creates window
 bool init();
 
@@ -63,9 +60,8 @@ const int BASE_PADDING = 4;
 std::vector<std::pair<int, int>> bases;
 std::vector<std::vector<AStar::Vec2i>> paths;
 void run_test() {
-	// Generate bases
-	srand(time(NULL));
-	
+	// // Generate bases
+	// srand(time(NULL));
 	// int xh = X_TILES / 2;
 	// int yh = Y_TILES / 2;
 	// bases = {
@@ -75,6 +71,7 @@ void run_test() {
 	// 	{(float)rand()/RAND_MAX * (X_TILES+1)+xh, (float)rand()/RAND_MAX * (Y_TILES+1)+yh},
 	// };
 	
+	// Bases
 	bases = {
 		{BASE_PADDING, BASE_PADDING},
 		{BASE_PADDING, Y_TILES-(BASE_PADDING+1)},
@@ -231,8 +228,15 @@ void render() {
 	int tile_height = RenderingEngine::height / Y_TILES;
 	for (auto& path : paths) {
 		for (auto& p : path) {
-			// SDL_Rect box = {tile_width*p.first, tile_height*p.second, tile_width, tile_height};
-			SDL_Rect box = {tile_width*p.x, tile_height*p.y, tile_width, tile_height};
+			// SDL_Rect box = {tile_width*p.x, tile_height*p.y, tile_width, tile_height};
+			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(p.x, p.y));
+			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(p.x+1, p.y+1));
+			SDL_Rect box = {
+				(int)(sp1.x()+0.5),
+				(int)(sp1.y()+0.5),
+				(int)(sp2.x()-sp1.x()),
+				(int)(sp2.y()-sp1.y())
+			};
 			SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 0x22, 0xFF, 0x22, 0x55);
 			SDL_RenderFillRect(RenderingEngine::gRenderer, &box);
 		}

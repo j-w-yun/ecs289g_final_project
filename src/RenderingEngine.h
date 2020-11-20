@@ -1,5 +1,14 @@
 #pragma once
 
+#include "Stat.h"
+#include "Stat.cpp"
+#include "Input.h"
+#include "Input.cpp"
+#include "Vector2f.h"
+#include "Vector2f.cpp"
+#include "World.h"
+#include "World.cpp"
+
 namespace RenderingEngine {
 
 	// Font file
@@ -14,16 +23,57 @@ namespace RenderingEngine {
 	SDL_Renderer* gRenderer;
 	TTF_Font* gFont;
 
-	void clear() {
-		// Get current window size
-		SDL_GetWindowSize(gWindow, &width, &height);
+	class Camera {
+		public:
+			Vector2f position;
+			float zoom;
+	};
 
+	Camera cam;
+
+	Vector2f world_to_screen(Vector2f world_vec) {
+		// TODO
+		Vector2f screen_vec = world_vec * (cam.zoom, cam.zoom*width/height);
+		screen_vec = screen_vec - cam.position;
+		return screen_vec;
+	}
+
+	Vector2f screen_to_world(Vector2f screen_vec) {
+		// TODO
+		return screen_vec;
+	}
+
+	void clear() {
 		// Clear screen
 		SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
 		SDL_RenderClear(gRenderer);
 	}
 
 	void render(World& gWorld) {
+		// Get current window size
+		SDL_GetWindowSize(gWindow, &width, &height);
+		
+		// Zoom map
+		cam.zoom += (float)Input::get_scrolly() / 10.0f;
+		if (cam.zoom < 0)
+			cam.zoom = 0;
+
+		// Pan map
+		std::pair<int, int> mp = Input::get_mouse_pos();
+		// Pan left
+		int dx, dy;
+		if (mp.first < 10)
+			dx = -1;
+		if (mp.first >= width-10)
+			dx = 1;
+		if (mp.second < 10)
+			dy = -1;
+		if (mp.second >= height-10)
+			dy = 1;
+		cam.position += Vector2f(dx, dy);
+
+		std::cout << "cam position: (" << cam.position.x() << ", " << cam.position.y() << ") cam zoom: " << cam.zoom << std::endl;
+		
 		gWorld.render(gRenderer);
 	}
 

@@ -31,10 +31,38 @@ struct DragBox {
 	int y2;
 };
 
+struct Scroll {
+	int up;
+	int down;
+	int left;
+	int right;
+};
+
 std::map<SDL_Keycode, bool> Input::keydown = {};
 std::map<Uint8, bool> Input::mousedown = {};
 std::map<Uint8, DragBox> Input::mousedrag = {};
+Scroll Input::mousescroll;
+std::pair<int, int> Input::mousepos;
 SDL_Event Input::e;
+
+void Input::set_wheel(SDL_Event* e) {
+	if (e->wheel.y > 0) {
+		// std::cout << "scroll up" << std::endl;
+		Input::mousescroll.up++;
+	}
+	else if (e->wheel.y < 0) {
+		// std::cout << "scroll down" << std::endl;
+		Input::mousescroll.down++;
+	}
+	else if (e->wheel.x > 0) {
+		// std::cout << "scroll right" << std::endl;
+		Input::mousescroll.right++;
+	}
+	else if (e->wheel.x < 0) {
+		// std::cout << "scroll left" << std::endl;
+		Input::mousescroll.left++;
+	}
+}
 
 /**
 Parses key event to update keydown states.
@@ -105,6 +133,7 @@ void Input::set_mouse(SDL_Event* e) {
 			std::cout << "pressed " << _mouse_button_str(e->button.button) << " : " << e->button.x << ", " << e->button.y << std::endl;
 	}
 	else {
+		Input::mousepos = std::make_pair(e->button.x, e->button.y);
 		// Mouse motion. Update drag box of all down buttons.
 		for (auto &x : Input::mousedrag) {
 			if (x.second.x1 >= 0 && x.second.y1 >= 0) {
@@ -134,10 +163,19 @@ More information about SDL events:
 Returns false if user wants to quit.
 */
 bool Input::process_inputs() {
+	// Clear scroll counts
+	Input::mousescroll.up = 0;
+	Input::mousescroll.down = 0;
+	Input::mousescroll.left = 0;
+	Input::mousescroll.right = 0;
+
 	// Handle events on queue
 	while (SDL_PollEvent(&Input::e) != 0) {
 		if (Input::e.type == SDL_QUIT) {
 			return false;
+		}
+		else if (Input::e.type == SDL_MOUSEWHEEL) {
+			Input::set_wheel(&Input::e);
 		}
 		else if (Input::e.type == SDL_MOUSEMOTION || Input::e.type == SDL_MOUSEBUTTONDOWN || Input::e.type == SDL_MOUSEBUTTONUP) {
 			// Set mouse input state
@@ -191,7 +229,16 @@ DragBox Input::get_dragbox(Uint8 button) {
 }
 
 std::pair<int, int> Input::get_mouse_pos() {
-	return std::make_pair(e.button.x, e.button.y);
+	// return std::make_pair(e.button.x, e.button.y);
+	return Input::mousepos;
+}
+
+int Input::get_scrolly() {
+	return Input::mousescroll.up - Input::mousescroll.down;
+}
+
+int Input::get_scrollx() {
+	return Input::mousescroll.right - Input::mousescroll.left;
 }
 
 bool Input::has_input() {
