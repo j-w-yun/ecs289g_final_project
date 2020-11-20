@@ -1,3 +1,3 @@
-mingw32-make clean os=windows
-mingw32-make all os=windows
+make clean os=linux
+make all os=linux
 exec ./bin/run

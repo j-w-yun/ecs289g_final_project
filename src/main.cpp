@@ -84,13 +84,12 @@ void run_test() {
 	// Create level
 	std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 10000);
 	MapLevel& map_level = *map_level_ptr;
-	auto obstructions = map_level.generate_obstructions(bases, BASE_PADDING);
-	map_level.set_obstructions(obstructions);
-	// std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 10000);
-	// MapLevel& map_level = *map_level_ptr;
-	// map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, BASE_PADDING, 5, 4, 10, 30, 1, 2);
-	// map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, BASE_PADDING, 1, 1, 1, 2, 1, 2);
-	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 20, 5, 4, 30, 70, 1, 2);
+	// Perlin
+	map_level.set_obstructions(map_level.generate_obstructions(bases, BASE_PADDING));
+	// Worms
+	map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 4, BASE_PADDING, 4, 10, 30, 1, 2);
+	// map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 4, BASE_PADDING, 4, 1, 9, 0, 1);
+	// map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 20, 5, 4, 30, 70, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 5, 4, 30, 70, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 2, 1, 1, 5, 10, 0, 1);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 1, 1, 5, 10, 0, 1);
@@ -106,24 +105,24 @@ void run_test() {
 		}
 	}
 
-	// // Test RTS units
-	// for(int i = 0; i < 4000; i++){
-	// 	auto rts_ptr = std::make_shared<rts_unit>(
-	// 		//Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, bases.at(0).second * SCREEN_HEIGHT/Y_TILES),
-	// 		Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, rand()%SCREEN_HEIGHT),
-	// 		Vector2f(0, 0),
-	// 		11,
-	// 		SCREEN_WIDTH,
-	// 		SCREEN_HEIGHT,
-	// 		X_TILES,
-	// 		Y_TILES,
-	// 		.05,
-	// 		2,
-	// 		map_level
-	// 	);
-	// 	rts_ptr->selected = 1;
-	// 	map_level.add(rts_ptr);
-	// }
+	// Test RTS units
+	for(int i = 0; i < 4000; i++){
+		auto rts_ptr = std::make_shared<rts_unit>(
+			//Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, bases.at(0).second * SCREEN_HEIGHT/Y_TILES),
+			Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, rand()%SCREEN_HEIGHT),
+			Vector2f(0, 0),
+			11,
+			SCREEN_WIDTH,
+			SCREEN_HEIGHT,
+			X_TILES,
+			Y_TILES,
+			.05,
+			2,
+			map_level
+		);
+		rts_ptr->selected = 1;
+		map_level.add(rts_ptr);
+	}
 
 	// // Test ball
 	// std::shared_ptr<GameObject> ball_ptr = std::make_shared<GameObject>(Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2), Vector2f(0, 0), 10, SCREEN_WIDTH, SCREEN_HEIGHT, X_TILES, Y_TILES);

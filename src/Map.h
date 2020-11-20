@@ -66,7 +66,7 @@ class MapLevel: public GameObject {
 		void set_size(int x, int y, int w, int h);
 		void set_obstructions(std::vector<std::pair<int, int>> o);
 		void set(int x, int y, int w, int h, std::vector<std::pair<int, int>> o);
-		std::vector<std::pair<int, int>> random_obstructions(std::vector<std::pair<int, int>> bases, int min, int padding);
+		std::vector<std::pair<int, int>> random_obstructions(std::vector<std::pair<int, int>> bases, int min, int max, int padding);
 		std::vector<std::pair<int, int>> generate_obstructions(std::vector<std::pair<int, int>> bases, int padding);
 		int get_width() {return tiles_x;};
 		int get_height() {return tiles_y;};

@@ -15,7 +15,8 @@
 #include "RenderingEngine.h"
 #include "Util.h"
 
-const float DENSITY = 0.3;
+const float MIN_DENSITY = 0.1;
+const float MAX_DENSITY = 0.3;
 const int update_groups = 100;
 
 MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), tiles_y(ty), tile_width(tw), tile_height(th), unitcap(uc) {
@@ -26,8 +27,9 @@ MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), 
 	// min_octave = MAX_L - MIN_L;
 	// max_octave = sqrt(tx*ty)/4;
 	min_octave = 1;
-	max_octave = sqrt((tx*ty)/(tx+ty));
-	max_octave = max_octave < 3 ? 3 : max_octave;
+	max_octave = sqrt((tx*ty)/(tx+ty))+1;
+	if (max_octave < 3)
+		max_octave = 3;
 	// std::cout << "min_octave: " << min_octave << " max_octave: " << max_octave << std::endl;
 
 	// init stack
@@ -144,7 +146,7 @@ bool MapLevel::climb(std::vector<std::pair<int, int>>* obs, double noise[], floa
 	return true;
 }
 
-std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::pair<int, int>> bases, int min, int padding) {
+std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::pair<int, int>> bases, int min, int max, int padding) {
 	std::vector<std::pair<int, int>> obs;
 	float threshold;
 	float persistence;
@@ -152,10 +154,10 @@ std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::
 	int prime_index;
 	int offset_x;
 	int offset_y;
-	while ((int)obs.size() < min) {
+	while ((int)obs.size() < min || (int)obs.size() > max) {
 		// Seed random
-		// seed += Util::get_counts();
-		srand(Util::get_counts());
+		seed += Util::get_counts();
+		srand(seed);
 
 		// Random noise params
 		persistence = ((float)rand()/RAND_MAX * 0.6f) + 0.5f;
@@ -166,7 +168,7 @@ std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::
 
 		obs.clear();
 		// std::cout << " n_octaves: " << n_octaves << " persistence: " << persistence << " prime_index: " << prime_index << std::endl;
-		threshold = 0.0005f;
+		threshold = 0.00005f;
 		// Use std::vector here since variable length arrays are not supported in MSVC, as it is not standard.
 		std::vector<double> noise;
 		noise.resize(tiles_x*tiles_y);
@@ -176,11 +178,11 @@ std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::
 
 		while ((int)obs.size() < min && threshold < persistence) {
 			obs.clear();
-			if (!climb(&obs, &noise[0], threshold, bases, padding)) {
+			if (!climb(&obs, &noise[0], threshold, bases, padding) || (int)obs.size() > max) {
 				std::cout << "failed at threshold: " << threshold << std::endl;
 				break;
 			}
-			threshold += 0.0005f;
+			threshold += 0.00005f;
 		}
 	}
 	std::cout << std::endl;
@@ -206,7 +208,7 @@ std::vector<std::pair<int, int>> MapLevel::generate_obstructions(std::vector<std
 		obs.clear();
 
 		// Create random
-		obs = random_obstructions(bases, tiles_x * tiles_y * DENSITY, padding);
+		obs = random_obstructions(bases, tiles_x*tiles_y*MIN_DENSITY, tiles_x*tiles_y*MAX_DENSITY, padding);
 
 		// Check if path exists among all bases
 		found = true;
