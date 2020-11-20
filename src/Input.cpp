@@ -241,6 +241,6 @@ int Input::get_scrollx() {
 }
 
 bool Input::has_input() {
-	int scroll = Input::mousescroll.up + Input::mousescroll.down + Input::mousescroll.left + Input::mousescroll.right;
-	return scroll + Input::keydown.size() + Input::mousedown.size() > 0;
+	// int scroll = Input::mousescroll.up + Input::mousescroll.down + Input::mousescroll.left + Input::mousescroll.right;
+	return (Input::keydown.size() + Input::mousedown.size()) > 0;
 }

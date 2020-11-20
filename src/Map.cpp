@@ -15,8 +15,8 @@
 #include "RenderingEngine.h"
 #include "Util.h"
 
-const float MIN_DENSITY = 0.1;
-const float MAX_DENSITY = 0.3;
+const float MIN_DENSITY = 0.05;
+const float MAX_DENSITY = 0.25;
 const int update_groups = 100;
 
 MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), tiles_y(ty), tile_width(tw), tile_height(th), unitcap(uc) {
