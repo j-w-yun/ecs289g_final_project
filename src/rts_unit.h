@@ -67,6 +67,11 @@ struct rts_unit : GameObject {
 			recomp = true;
 		}
 		if(recomp){
+			if(!path.size()){
+				set_v(v() * .95);
+				return Vector2f(0, 0);
+			}
+			
 			wpoint = path.back();
 			d = wpoint - p();
 		}

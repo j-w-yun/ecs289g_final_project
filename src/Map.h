@@ -436,7 +436,7 @@ class MapLevel: public GameObject {
 			}
 
 			std::cout << "Rectangle cover: " << std::endl;
-			printgrid(to_cover);
+			//printgrid(to_cover);
 
 			rectcover = cover;
 			grid_to_rectcover = to_cover;
