@@ -41,8 +41,10 @@ namespace RenderingEngine {
 	}
 
 	Vector2f screen_to_world(Vector2f screen_vec) {
-		// TODO
-		return screen_vec;
+		Vector2f world_vec = screen_vec.sub(Vector2f(width/2, height/2));
+		world_vec = world_vec.div(Vector2f(cam.zoom, cam.zoom*width/height));
+		world_vec = world_vec.add(cam.position);
+		return world_vec;
 	}
 
 	void clear() {
@@ -60,34 +62,56 @@ namespace RenderingEngine {
 			cam.zoom += (float)Input::get_scrolly() / 2.0f;
 			if (cam.zoom < 0)
 				cam.zoom = 0;
+			else if (cam.zoom > 100)
+				cam.zoom = 100;
 
 			// Pan map
 			std::pair<int, int> mp = Input::get_mouse_pos();
-			std::cout << cam.position.x() << ", " << cam.position.y() << std::endl;
 			// Pan left
 			int dx, dy;
 			if (mp.first < 4)
 				dx = -1;
-			if (mp.first >= width-4)
+			else if (mp.first >= width-4)
 				dx = 1;
 			if (mp.second < 4)
 				dy = -1;
-			if (mp.second >= height-4)
+			else if (mp.second >= height-4)
 				dy = 1;
 			cam.position = cam.position.add(Vector2f(dx, dy));
 
 			// std::cout << "cam position: (" << cam.position.x() << ", " << cam.position.y() << ") cam zoom: " << cam.zoom << std::endl;
+			std::cout << cam.position.x() << ", " << cam.position.y() << std::endl;
 			// Vector2f world = screen_to_world(Vector2f(mp.first, mp.second));
 			// std::cout << "mouse world position: (" << world.x() << ", " << world.y() << ")" << std::endl;
 		}
 
-		
 		gWorld.render(gRenderer);
 	}
 
 	void show() {
-		// Render mouse dragging
-		Input::render(gRenderer);
+		// Render left mouse drag
+		if (Input::has_dragbox(SDL_BUTTON_LEFT)) {
+			DragBox box = Input::get_dragbox(SDL_BUTTON_LEFT);
+			SDL_Rect dragbox = {box.x1, box.y1, box.x2-box.x1, box.y2-box.y1};
+			// Render filled quad
+			SDL_SetRenderDrawColor(gRenderer, 0x99, 0xFF, 0x99, 0x33);
+			SDL_RenderFillRect(gRenderer, &dragbox);
+			// Render outline quad
+			SDL_SetRenderDrawColor(gRenderer, 0x99, 0xFF, 0x99, 0xFF);
+			SDL_RenderDrawRect(gRenderer, &dragbox);
+		}
+
+		// Render right mouse drag
+		if (Input::has_dragbox(SDL_BUTTON_RIGHT)) {
+			DragBox box = Input::get_dragbox(SDL_BUTTON_RIGHT);
+			SDL_Rect dragbox = {box.x1, box.y1, box.x2-box.x1, box.y2-box.y1};
+			// Render filled quad
+			SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0x44);
+			SDL_RenderFillRect(gRenderer, &dragbox);
+			// Render outline quad
+			SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0xFF);
+			SDL_RenderDrawRect(gRenderer, &dragbox);
+		}
 
 		// Render stats
 		Stat::render(gRenderer, gFont);

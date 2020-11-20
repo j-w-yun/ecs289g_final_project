@@ -29,5 +29,4 @@ class Input {
 		static int get_scrolly();
 		static int get_scrollx();
 		static bool has_input();
-		static void render(SDL_Renderer* renderer);
 };
