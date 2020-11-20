@@ -27,6 +27,7 @@
 #include "Noise.cpp"
 #include "AStar.hpp"
 #include "AStar.cpp"
+#include "utils.h"
 
 #include "rts_unit.h"
 #include "level.h"
@@ -304,14 +305,6 @@ void render() {
 			SDL_RenderFillRect(gRenderer, &box);
 		}
 	}
-	// // Origin
-	// SDL_Rect origin_box = {tile_width*origin.first, tile_height*origin.second, tile_width, tile_height};
-	// SDL_SetRenderDrawColor(gRenderer, 0x22, 0x22, 0x77, 0xFF);
-	// SDL_RenderFillRect(gRenderer, &origin_box);
-	// // Target
-	// SDL_Rect target_box = {tile_width*target.first, tile_height*target.second, tile_width, tile_height};
-	// SDL_SetRenderDrawColor(gRenderer, 0x77, 0x22, 0x22, 0xFF);
-	// SDL_RenderFillRect(gRenderer, &target_box);
 
 	// Draw bases
 	for (int i = 0; i < (int)bases.size(); i++) {
@@ -367,23 +360,19 @@ int main(int argc, char* args[]) {
 	}
 
 	// Game loop
-	unsigned int last_time = SDL_GetTicks();
-	unsigned int current_time;
-	unsigned int elapsed_time;
-	unsigned int unprocessed_time = 0;
+	utils::Timer timer;
+	Uint64 unprocessed_time;
 	while (Input::process_inputs()) {
-		current_time = SDL_GetTicks();
-		elapsed_time = current_time - last_time;
-		last_time = current_time;
-		unprocessed_time += elapsed_time;
+		if (Input::has_input())
+			is_running = true;
+
+		// Milliseconds
+		unprocessed_time += timer.reset() / 1e6;
 		while (unprocessed_time >= MS_PER_UPDATE) {
 			update(MS_PER_UPDATE);
 			unprocessed_time -= MS_PER_UPDATE;
 		}
 		render();
-
-		if (Input::has_input())
-			is_running = true;
 	}
 
 	// Free resources and close SDL
