@@ -12,6 +12,7 @@
 #include "GameObject.h"
 #include "GameObject.cpp"
 #include "Noise.cpp"
+#include "RenderingEngine.h"
 
 const float DENSITY = 0.3;
 const int update_groups = 100;
@@ -262,27 +263,56 @@ std::vector<std::pair<int, int>> MapLevel::generate_obstructions(std::vector<std
 }
 
 void MapLevel::render(SDL_Renderer* renderer) {
+	// // Tiles
+	// for (int j = 0; j < tiles_x; j++) {
+	// 	for (int k = 0; k < tiles_y; k++) {
+	// 		// Fill
+	// 		SDL_Rect box = {tile_width*j, tile_height*k, tile_width, tile_height};
+	// 		SDL_SetRenderDrawColor(renderer, 0x77, 0x77, 0x77, 0xFF);
+	// 		SDL_RenderFillRect(renderer, &box);
+	// 		// Outline
+	// 		SDL_SetRenderDrawColor(renderer, 0x33, 0x33, 0x33, 0xFF);
+	// 		SDL_RenderDrawRect(renderer, &box);
+	// 	}
+	// }
+	// // Obstacles
+	// for (auto& o : obstructions) {
+	// 	SDL_Rect box = {tile_width*o.first, tile_height*o.second, tile_width, tile_height};
+	// 	SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+	// 	SDL_RenderFillRect(renderer, &box);
+	// }
+
 	// Tiles
 	for (int j = 0; j < tiles_x; j++) {
 		for (int k = 0; k < tiles_y; k++) {
 			// Fill
-			SDL_Rect box = {tile_width*j, tile_height*k, tile_width, tile_height};
-			// opacity = sin(j+k+SDL_GetTicks()/2000.0f)/2.0f+0.5f;
-			// SDL_SetRenderDrawColor(renderer, 0x77, 0x77, 0x77, (int)(55*opacity)+200);
+			// SDL_Rect box = {tile_width*j, tile_height*k, tile_width, tile_height};
+			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(j, k));
+			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(j+1, k+1)); // +1 should be world tile width or height
+			SDL_Rect box = {
+				(int)(sp1.x()),
+				(int)(sp1.y()),
+				(int)(sp2.x()-sp1.x()),
+				(int)(sp2.y()-sp1.y())
+			};
 			SDL_SetRenderDrawColor(renderer, 0x77, 0x77, 0x77, 0xFF);
 			SDL_RenderFillRect(renderer, &box);
 			// Outline
-			// float opacity = sin(j+2*k+SDL_GetTicks()/2000.0f)/2.0f+0.5f;
-			// SDL_SetRenderDrawColor(renderer, 0x33, 0x33, 0x33, (int)(255*opacity));
 			SDL_SetRenderDrawColor(renderer, 0x33, 0x33, 0x33, 0xFF);
 			SDL_RenderDrawRect(renderer, &box);
 		}
 	}
 	// Obstacles
 	for (auto& o : obstructions) {
-		SDL_Rect box = {tile_width*o.first, tile_height*o.second, tile_width, tile_height};
-		// float opacity = sin(o.first+o.second+SDL_GetTicks()/2000.0f)/2.0f+0.5f;
-		// SDL_SetRenderDrawColor(renderer, 0x99, 0x99, 0x99, (int)(200*opacity)+55);
+		// SDL_Rect box = {tile_width*o.first, tile_height*o.second, tile_width, tile_height};
+		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(o.first, o.second));
+		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(o.first+1, o.second+1)); // +1 should be world tile width or height
+		SDL_Rect box = {
+			(int)(sp1.x()),
+			(int)(sp1.y()),
+			(int)(sp2.x()-sp1.x()),
+			(int)(sp2.y()-sp1.y())
+		};
 		SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
 		SDL_RenderFillRect(renderer, &box);
 	}

@@ -28,21 +28,23 @@ namespace RenderingEngine {
 	class Camera {
 		public:
 			Vector2f position = Vector2f(0, 0);
-			float zoom = 10;
+			float izoom = 10;
 	};
 
 	Camera cam;
 
 	Vector2f world_to_screen(Vector2f world_vec) {
+		float zoom = cam.izoom;
 		Vector2f screen_vec = world_vec.sub(cam.position);
-		screen_vec = screen_vec.mul(Vector2f(cam.zoom, cam.zoom*width/height));
+		screen_vec = screen_vec.mul(Vector2f(zoom, zoom*width/height));
 		screen_vec = screen_vec.add(Vector2f(width/2, height/2));
 		return screen_vec;
 	}
 
 	Vector2f screen_to_world(Vector2f screen_vec) {
+		float zoom = cam.izoom;
 		Vector2f world_vec = screen_vec.sub(Vector2f(width/2, height/2));
-		world_vec = world_vec.div(Vector2f(cam.zoom, cam.zoom*width/height));
+		world_vec = world_vec.div(Vector2f(zoom, zoom*width/height));
 		world_vec = world_vec.add(cam.position);
 		return world_vec;
 	}
@@ -53,34 +55,38 @@ namespace RenderingEngine {
 		SDL_RenderClear(gRenderer);
 	}
 
-	void render(World& gWorld) {
+	const int PANNING_PAD = 10;
+	const float PAN_SPEED = 0.04f;
+
+	void render(float delta_time, World& gWorld) {
 		// Get current window size
 		SDL_GetWindowSize(gWindow, &width, &height);
 		
 		// Zoom map
 		if (Input::has_input()) {
-			cam.zoom += (float)Input::get_scrolly() / 2.0f;
-			if (cam.zoom < 0)
-				cam.zoom = 0;
-			else if (cam.zoom > 100)
-				cam.zoom = 100;
+			float sy = (float)Input::get_scrolly();
+			cam.izoom += sy;
+			if (cam.izoom < 1.0f)
+				cam.izoom = 1.0f;
+			else if (cam.izoom > 100.0f)
+				cam.izoom = 100.0f;
 
 			// Pan map
 			std::pair<int, int> mp = Input::get_mouse_pos();
 			// Pan left
-			int dx, dy;
-			if (mp.first < 4)
-				dx = -1;
-			else if (mp.first >= width-4)
-				dx = 1;
-			if (mp.second < 4)
-				dy = -1;
-			else if (mp.second >= height-4)
-				dy = 1;
+			float dx, dy;
+			if (mp.first < PANNING_PAD)
+				dx = -PAN_SPEED * delta_time;
+			else if (mp.first >= width - PANNING_PAD)
+				dx = PAN_SPEED * delta_time;
+			if (mp.second < PANNING_PAD)
+				dy = -PAN_SPEED * delta_time;
+			else if (mp.second >= height - PANNING_PAD)
+				dy = PAN_SPEED * delta_time;
 			cam.position = cam.position.add(Vector2f(dx, dy));
 
-			// std::cout << "cam position: (" << cam.position.x() << ", " << cam.position.y() << ") cam zoom: " << cam.zoom << std::endl;
-			std::cout << cam.position.x() << ", " << cam.position.y() << std::endl;
+			std::cout << "cam position: (" << cam.position.x() << ", " << cam.position.y() << ") cam zoom: " << cam.izoom << std::endl;
+			// std::cout << cam.position.x() << ", " << cam.position.y() << std::endl;
 			// Vector2f world = screen_to_world(Vector2f(mp.first, mp.second));
 			// std::cout << "mouse world position: (" << world.x() << ", " << world.y() << ")" << std::endl;
 		}
@@ -175,7 +181,7 @@ namespace RenderingEngine {
 		}
 
 		// Grab mouse
-		// SDL_SetWindowGrab(gWindow, SDL_TRUE);
+		SDL_SetWindowGrab(gWindow, SDL_TRUE);
 		
 		// Set blending
 		SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);

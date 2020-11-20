@@ -28,16 +28,15 @@ struct rts_unit : GameObject {
 		int padding = 4;
 
 		if(selected == 1){
+			SDL_Rect box = {(int)(p().x() - r()) - padding, (int)(p().y() - r()) - padding, (int)(2 * r()) + 2*padding, (int)(2 * r()) + 2*padding};
 			SDL_SetRenderDrawColor(renderer, 0, 0xFF, 0, 255);
-			SDL_Rect dragbox = {(int)(p().x() - r()) - padding, (int)(p().y() - r()) - padding, (int)(2 * r()) + 2*padding, (int)(2 * r()) + 2*padding};
-			SDL_RenderFillRect(renderer, &dragbox);
+			SDL_RenderFillRect(renderer, &box);
 		}
 
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0xFF, 255);
 		//SDL_RenderDrawPoint(renderer, (int)p().x(), (int)p().y());
-		SDL_Rect dragbox = {(int)(p().x() - r()), (int)(p().y() - r()), (int)(2 * r()), (int)(2 * r())};
-		//SDL_Rect dragbox = {50, 50, 60, 60};
-		SDL_RenderFillRect(renderer, &dragbox);
+		SDL_Rect box = {(int)(p().x() - r()), (int)(p().y() - r()), (int)(2 * r()), (int)(2 * r())};
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0xFF, 255);
+		SDL_RenderFillRect(renderer, &box);
 	}
 
 	virtual void update_path(){

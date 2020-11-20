@@ -56,6 +56,8 @@ bool is_running = false;
 // Pathfinding test variables
 const int X_TILES = 60;
 const int Y_TILES = 50;
+const int TILE_WIDTH = SCREEN_WIDTH/X_TILES;
+const int TILE_HEIGHT = SCREEN_HEIGHT/Y_TILES;
 const int BASE_PADDING = 4;
 std::vector<std::pair<int, int>> bases;
 std::vector<std::vector<AStar::Vec2i>> paths;
@@ -84,7 +86,7 @@ void run_test() {
 	MapLevel& map_level = *map_level_ptr;
 	//auto obstructions = map_level.generate_obstructions(bases, BASE_PADDING);
 	//map_level.set_obstructions(obstructions);
-	map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 6, 5, 4, 10, 30, 1, 2);
+	map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 6, 5, 4, 10, 30, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 20, 5, 4, 30, 70, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 5, 4, 30, 70, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 2, 1, 1, 5, 10, 0, 1);
@@ -101,6 +103,7 @@ void run_test() {
 		}
 	}
 
+	// Test RTS units
 	for(int i = 0; i < 4000; i++){
 		auto rts_ptr = std::make_shared<rts_unit>(
 			//Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, bases.at(0).second * SCREEN_HEIGHT/Y_TILES),
@@ -213,7 +216,7 @@ void update(float delta_time) {
 	gWorld.update(delta_time);
 }
 
-void render() {
+void render(float delta_time) {
 	Stat::frame_tick();
 
 	// Clear screen
@@ -221,7 +224,7 @@ void render() {
 
 	// Draw world
 	// gWorld.render(gRenderer);
-	RenderingEngine::render(gWorld);
+	RenderingEngine::render(delta_time, gWorld);
 
 	// Path
 	// int tile_width = RenderingEngine::width / X_TILES;
@@ -229,11 +232,15 @@ void render() {
 	for (auto& path : paths) {
 		for (auto& p : path) {
 			// SDL_Rect box = {tile_width*p.x, tile_height*p.y, tile_width, tile_height};
+			// Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(p.x*TILE_WIDTH, p.y*TILE_HEIGHT));
+			// Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((p.x+1)*TILE_WIDTH, (p.y+1)*TILE_HEIGHT));
 			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(p.x, p.y));
 			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(p.x+1, p.y+1));
 			SDL_Rect box = {
 				(int)(sp1.x()),
 				(int)(sp1.y()),
+				// TILE_WIDTH,
+				// TILE_HEIGHT
 				(int)(sp2.x()-sp1.x()),
 				(int)(sp2.y()-sp1.y())
 			};
@@ -282,11 +289,11 @@ int main(int argc, char* args[]) {
 
 		// Milliseconds
 		unprocessed_time += timer.reset() / 1e6;
+		render(unprocessed_time);
 		while (unprocessed_time >= MS_PER_UPDATE) {
 			update(MS_PER_UPDATE);
 			unprocessed_time -= MS_PER_UPDATE;
 		}
-		render();
 	}
 
 	// Free resources and close SDL
