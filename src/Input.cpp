@@ -92,6 +92,8 @@ More information about mouse button events:
 	https://wiki.libsdl.org/SDL_MouseButtonEvent
 */
 void Input::set_mouse(SDL_Event* e) {
+	Input::mousepos = std::make_pair(e->button.x, e->button.y);
+	
 	// Event type may be SDL_MOUSEMOTION
 	const bool is_pressed = e->type == SDL_MOUSEBUTTONDOWN;
 	const bool is_released = e->type == SDL_MOUSEBUTTONUP;
@@ -133,7 +135,6 @@ void Input::set_mouse(SDL_Event* e) {
 			std::cout << "pressed " << _mouse_button_str(e->button.button) << " : " << e->button.x << ", " << e->button.y << std::endl;
 	}
 	else {
-		Input::mousepos = std::make_pair(e->button.x, e->button.y);
 		// Mouse motion. Update drag box of all down buttons.
 		for (auto &x : Input::mousedrag) {
 			if (x.second.x1 >= 0 && x.second.y1 >= 0) {

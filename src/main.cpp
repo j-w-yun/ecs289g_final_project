@@ -224,16 +224,16 @@ void render() {
 	RenderingEngine::render(gWorld);
 
 	// Path
-	int tile_width = RenderingEngine::width / X_TILES;
-	int tile_height = RenderingEngine::height / Y_TILES;
+	// int tile_width = RenderingEngine::width / X_TILES;
+	// int tile_height = RenderingEngine::height / Y_TILES;
 	for (auto& path : paths) {
 		for (auto& p : path) {
 			// SDL_Rect box = {tile_width*p.x, tile_height*p.y, tile_width, tile_height};
 			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(p.x, p.y));
 			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(p.x+1, p.y+1));
 			SDL_Rect box = {
-				(int)(sp1.x()+0.5),
-				(int)(sp1.y()+0.5),
+				(int)(sp1.x()),
+				(int)(sp1.y()),
 				(int)(sp2.x()-sp1.x()),
 				(int)(sp2.y()-sp1.y())
 			};
@@ -245,9 +245,17 @@ void render() {
 	// Draw bases
 	for (int i = 0; i < (int)bases.size(); i++) {
 		auto base = bases.at(i);
-		SDL_Rect base_tile = {tile_width*base.first, tile_height*base.second, tile_width, tile_height};
+		// SDL_Rect base_tile = {tile_width*base.first, tile_height*base.second, tile_width, tile_height};
+		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(base.first, base.second));
+		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(base.first+1, base.second+1));
+		SDL_Rect box = {
+			(int)(sp1.x()),
+			(int)(sp1.y()),
+			(int)(sp2.x()-sp1.x()),
+			(int)(sp2.y()-sp1.y())
+		};
 		SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 0x77, 0x22, 0x22, 0xFF);
-		SDL_RenderFillRect(RenderingEngine::gRenderer, &base_tile);
+		SDL_RenderFillRect(RenderingEngine::gRenderer, &box);
 	}
 
 	// Update screen

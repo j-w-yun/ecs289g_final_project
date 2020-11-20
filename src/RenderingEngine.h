@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "Stat.h"
 #include "Stat.cpp"
 #include "Input.h"
@@ -25,24 +27,21 @@ namespace RenderingEngine {
 
 	class Camera {
 		public:
-			Vector2f position;
+			Vector2f position = Vector2f(0, 0);
 			float zoom = 10;
 	};
 
 	Camera cam;
 
 	Vector2f world_to_screen(Vector2f world_vec) {
-		// Vector2f screen_vec = (world_vec - cam.position)*(cam.zoom, cam.zoom*width/height);
-		Vector2f screen_vec = world_vec - cam.position;
-		screen_vec.set(screen_vec.x()*cam.zoom, screen_vec.y()*cam.zoom*width/height);
-		screen_vec += Vector2f(width/2, height/2);
+		Vector2f screen_vec = world_vec.sub(cam.position);
+		screen_vec = screen_vec.mul(Vector2f(cam.zoom, cam.zoom*width/height));
+		screen_vec = screen_vec.add(Vector2f(width/2, height/2));
 		return screen_vec;
 	}
 
 	Vector2f screen_to_world(Vector2f screen_vec) {
-		// Vector2f screen_vec = world_vec - cam.position;
-		// screen_vec *= Vector2f(cam.zoom, cam.zoom*width/height);
-		// screen_vec += Vector2f(width/2, height/2);
+		// TODO
 		return screen_vec;
 	}
 
@@ -58,26 +57,30 @@ namespace RenderingEngine {
 		
 		// Zoom map
 		if (Input::has_input()) {
-			cam.zoom += (float)Input::get_scrolly() / 10.0f;
+			cam.zoom += (float)Input::get_scrolly() / 2.0f;
 			if (cam.zoom < 0)
 				cam.zoom = 0;
 
 			// Pan map
 			std::pair<int, int> mp = Input::get_mouse_pos();
+			std::cout << cam.position.x() << ", " << cam.position.y() << std::endl;
 			// Pan left
 			int dx, dy;
-			if (mp.first < 10)
+			if (mp.first < 4)
 				dx = -1;
-			if (mp.first >= width-10)
+			if (mp.first >= width-4)
 				dx = 1;
-			if (mp.second < 10)
+			if (mp.second < 4)
 				dy = -1;
-			if (mp.second >= height-10)
+			if (mp.second >= height-4)
 				dy = 1;
-			cam.position += Vector2f(dx, dy);
+			cam.position = cam.position.add(Vector2f(dx, dy));
+
+			// std::cout << "cam position: (" << cam.position.x() << ", " << cam.position.y() << ") cam zoom: " << cam.zoom << std::endl;
+			// Vector2f world = screen_to_world(Vector2f(mp.first, mp.second));
+			// std::cout << "mouse world position: (" << world.x() << ", " << world.y() << ")" << std::endl;
 		}
 
-		std::cout << "cam position: (" << cam.position.x() << ", " << cam.position.y() << ") cam zoom: " << cam.zoom << std::endl;
 		
 		gWorld.render(gRenderer);
 	}
