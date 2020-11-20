@@ -295,8 +295,8 @@ void MapLevel::render(SDL_Renderer* renderer) {
 			SDL_Rect box = {
 				(int)(sp1.x()),
 				(int)(sp1.y()),
-				(int)(sp2.x()-sp1.x()),
-				(int)(sp2.y()-sp1.y())
+				(int)(sp2.x()-sp1.x())-1,
+				(int)(sp2.y()-sp1.y())-1
 			};
 			SDL_SetRenderDrawColor(renderer, 0x77, 0x77, 0x77, 0xFF);
 			SDL_RenderFillRect(renderer, &box);

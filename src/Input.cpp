@@ -1,9 +1,9 @@
 #pragma once
 
-#define DEBUG true
-
-#if DEBUG
 #include <iostream>
+
+#define DEBUG false
+
 std::string _mouse_button_str(Uint8 button) {
 	if (button == SDL_BUTTON_LEFT) {
 		return "left mouse button";
@@ -22,7 +22,6 @@ std::string _mouse_button_str(Uint8 button) {
 	}
 	return "unknown mouse button";
 }
-#endif
 
 struct DragBox {
 	int x1;
@@ -41,8 +40,8 @@ struct Scroll {
 std::map<SDL_Keycode, bool> Input::keydown = {};
 std::map<Uint8, bool> Input::mousedown = {};
 std::map<Uint8, DragBox> Input::mousedrag = {};
-Scroll Input::mousescroll;
 std::pair<int, int> Input::mousepos;
+Scroll Input::mousescroll;
 SDL_Event Input::e;
 
 void Input::set_wheel(SDL_Event* e) {
@@ -230,7 +229,6 @@ DragBox Input::get_dragbox(Uint8 button) {
 }
 
 std::pair<int, int> Input::get_mouse_pos() {
-	// return std::make_pair(e.button.x, e.button.y);
 	return Input::mousepos;
 }
 
@@ -243,5 +241,6 @@ int Input::get_scrollx() {
 }
 
 bool Input::has_input() {
-	return Input::keydown.size() + Input::mousedown.size() > 0;
+	int scroll = Input::mousescroll.up + Input::mousescroll.down + Input::mousescroll.left + Input::mousescroll.right;
+	return scroll + Input::keydown.size() + Input::mousedown.size() > 0;
 }

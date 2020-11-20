@@ -295,8 +295,8 @@ int main(int argc, char* args[]) {
 		unprocessed_time += timer.reset() / 1e6;
 		render(unprocessed_time);
 		while (unprocessed_time >= MS_PER_UPDATE) {
-			update(MS_PER_UPDATE);
-			unprocessed_time -= MS_PER_UPDATE;
+			update(unprocessed_time / 2);
+			unprocessed_time /= 2;
 		}
 	}
 

@@ -10,14 +10,20 @@ class Vector2f {
 	public:
 		Vector2f() = default;
 		Vector2f(float x, float y);
-		//Vector2f(int x, int y);
 		void set(float x, float y);
+		void setx(float x);
+		void sety(float y);
+		void set(Vector2f v);
 		float x() const;
 		float y() const;
 		Vector2f add(const Vector2f& v) const;
 		Vector2f sub(const Vector2f& v) const;
 		Vector2f mul(const Vector2f& v) const;
 		Vector2f div(const Vector2f& v) const;
+		Vector2f add(const float x, const float y) const;
+		Vector2f sub(const float x, const float y) const;
+		Vector2f mul(const float x, const float y) const;
+		Vector2f div(const float x, const float y) const;
 		Vector2f scale(float v) const;
 		float dot(const Vector2f& v) const;
 		float len2() const;
@@ -27,7 +33,7 @@ class Vector2f {
 			return add(r);
 		}
 
-		Vector2f operator+=(Vector2f r){
+		Vector2f operator+=(Vector2f r) {
 			auto temp = add(r);
 			_x = temp._x;
 			_y = temp._y;
@@ -38,7 +44,7 @@ class Vector2f {
 			return sub(r);
 		}
 
-		Vector2f operator-=(Vector2f r){
+		Vector2f operator-=(Vector2f r) {
 			auto temp = sub(r);
 			_x = temp._x;
 			_y = temp._y;
@@ -49,7 +55,7 @@ class Vector2f {
 			return scale(r);
 		}
 
-		Vector2f operator*=(float r){
+		Vector2f operator*=(float r) {
 			auto temp = scale(r);
 			_x = temp._x;
 			_y = temp._y;
@@ -60,7 +66,7 @@ class Vector2f {
 			return scale(1/r);
 		}
 
-		Vector2f operator/=(float r){
+		Vector2f operator/=(float r) {
 			auto temp = scale(1/r);
 			_x = temp._x;
 			_y = temp._y;
@@ -76,11 +82,11 @@ class Vector2f {
 
 };
 
-Vector2f operator*(float l, Vector2f r){
+Vector2f operator*(float l, Vector2f r) {
 	return r*l;
 }
 
-std::ostream& operator<<(std::ostream& os, Vector2f v){
-	os << "v2f(" << v.x() << ", " << v.y() << ")";
+std::ostream& operator<<(std::ostream& os, Vector2f v) {
+	os << "Vector2f(" << v.x() << ", " << v.y() << ")";
 	return os;
 }

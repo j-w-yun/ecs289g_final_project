@@ -34,6 +34,14 @@ std::vector<std::shared_ptr<MapLevel>> World::get_levels() {
 	return levels;
 }
 
+void World::select(Vector2f drag_start, Vector2f drag_end, int drag_type) {
+	std::cout << "World::select(): implement me!" << std::endl;
+	std::cout << "drag_start: " << drag_start << std::endl;
+	std::cout << "drag_end: " << drag_end << std::endl;
+	std::cout << "drag_type: " << drag_type << std::endl;
+	std::cout << std::endl;
+}
+
 void World::render(SDL_Renderer* renderer) {
 	// Draw active level
 	if(activemap >= 0 && (size_t)activemap < levels.size())

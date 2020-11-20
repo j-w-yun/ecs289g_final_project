@@ -11,8 +11,8 @@ class Input {
 		static std::map<SDL_Keycode, bool> keydown;
 		static std::map<Uint8, bool> mousedown;
 		static std::map<Uint8, DragBox> mousedrag;
-		static Scroll mousescroll;
 		static std::pair<int, int> mousepos;
+		static Scroll mousescroll;
 		static SDL_Event e;
 		Input() {}
 		static void set_key(SDL_Event* e);
