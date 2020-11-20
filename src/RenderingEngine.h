@@ -32,13 +32,17 @@ namespace RenderingEngine {
 	Camera cam;
 
 	Vector2f world_to_screen(Vector2f world_vec) {
-		Vector2f screen_vec = (world_vec - cam.position) * (cam.zoom, cam.zoom*width/height);
-		screen_vec = screen_vec + Vector2f(width/2, height/2);
+		// Vector2f screen_vec = (world_vec - cam.position)*(cam.zoom, cam.zoom*width/height);
+		Vector2f screen_vec = world_vec - cam.position;
+		screen_vec.set(screen_vec.x()*cam.zoom, screen_vec.y()*cam.zoom*width/height);
+		screen_vec += Vector2f(width/2, height/2);
 		return screen_vec;
 	}
 
 	Vector2f screen_to_world(Vector2f screen_vec) {
-		// TODO
+		// Vector2f screen_vec = world_vec - cam.position;
+		// screen_vec *= Vector2f(cam.zoom, cam.zoom*width/height);
+		// screen_vec += Vector2f(width/2, height/2);
 		return screen_vec;
 	}
 
