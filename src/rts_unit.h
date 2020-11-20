@@ -18,6 +18,9 @@ struct rts_unit : GameObject {
 	std::vector<Vector2f> path;
 	int selected = 0;
 	MapLevel& map;
+	int layers = 1;
+	int side = layers*2 + 1;
+	int size = side * side - 1;
 
 	rts_unit(Vector2f p, Vector2f v, float r, int w, int h, int xt, int yt, float a, float ts, MapLevel& mp): GameObject(p, v, r, w, h, xt, yt), acc(a), topspeed(ts), map(mp) {}
 
@@ -71,7 +74,7 @@ struct rts_unit : GameObject {
 				set_v(v() * .95);
 				return Vector2f(0, 0);
 			}
-			
+
 			wpoint = path.back();
 			d = wpoint - p();
 		}
@@ -79,17 +82,16 @@ struct rts_unit : GameObject {
 		return d.unit();
 	}
 
-	std::vector<ip> neighbors() {
-		auto inbounds = [&](int x, int y) {
-			return x >= 0 && x < x_tiles && y >= 0 && y < y_tiles;
-		};
+	inline bool inbounds(int x, int y) {
+		return x >= 0 && x < x_tiles && y >= 0 && y < y_tiles;
+	}
 
+	/*std::vector<ip> neighbors() {
 		auto src = to_tile_space(p());
 
-		std::vector<ip> retval;
-
-		for (int i = -1; i <= 1; i++) {
-			for (int j = -1; j <= 1; j++) {
+		short ctr = 0;
+		for (int i = -layers; i <= layers; i++) {
+			for (int j = -layers; j <= layers; j++) {
 				if (!i && !j)
 					continue;
 
@@ -97,29 +99,31 @@ struct rts_unit : GameObject {
 
 				if (inbounds(p.first, p.second))
 					retval.push_back(p);
+
+				ctr++;
 			}
 		}
 
 		return retval;
-	}
+	}*/
 
 	// returns unit
 	virtual Vector2f avoid_obstacles(){
-		std::vector<Vector2f> local_obs;
-
-		for(auto n : neighbors()){
-			if(map.get_obgrid()[n.first][n.second]){
-				local_obs.push_back(to_world_space(n));
-			}
-		}
-
 		Vector2f retval(0, 0);
+		Vector2f d;
+		//Vector2f l;
+		int x, y;
 
-		for(auto ob : local_obs){
-			auto d = p() - ob;
-			auto l = d.len();
-			retval += 40.0f*d.unit()/(l*l);
-			//retval += 10.0f*d.unit()/(l);
+		auto pr = to_tile_space(p());
+
+		for(int i = 0; i < size; i++){
+			x = pr.first + i/side - layers;
+			y = pr.second + i%side - layers;
+			if(inbounds(x, y) && map.get_obgrid()[x][y]){
+				d = p() - to_world_space({x, y});
+				//auto l = d.len();
+				retval += 40.0f*d.unit()/(d.len2());
+			}
 		}
 
 		return retval;
@@ -161,6 +165,7 @@ struct rts_unit : GameObject {
 
 		auto deliberate = traverse_path()*acc;
 		auto avoidance = avoid_obstacles();
+		//Vector2f avoidance(0, 0);
 		auto dv = deliberate+avoidance;
 
 		auto nv = v() + dv;

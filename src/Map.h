@@ -70,8 +70,8 @@ class MapLevel: public GameObject {
 		std::vector<std::pair<int, int>> generate_obstructions(std::vector<std::pair<int, int>> bases, int padding);
 		int get_width() {return tiles_x;};
 		int get_height() {return tiles_y;};
-		std::vector<ip> get_obstructions() {return obstructions;};
-		std::vector<std::vector<bool>> get_obgrid() {return obgrid;};
+		const std::vector<ip>& get_obstructions() {return obstructions;};
+		const std::vector<std::vector<bool>>& get_obgrid() {return obgrid;};
 		std::vector<std::shared_ptr<GameObject>>& get_objects();
 		size_t get_unitcap() {return unitcap;}
 		void render(SDL_Renderer* renderer);

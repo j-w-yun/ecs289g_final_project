@@ -14,6 +14,7 @@
 #include "Noise.cpp"
 
 const float DENSITY = 0.3;
+const int update_groups = 100;
 
 MapLevel::MapLevel(int tx, int ty, int tw, int th, size_t uc): tiles_x(tx), tiles_y(ty), tile_width(tw), tile_height(th), unitcap(uc) {
 	class_string = MapLevel::static_class();
@@ -43,8 +44,6 @@ MapLevel::MapLevel(int tx, int ty, int tw, int th, size_t uc): tiles_x(tx), tile
 }
 
 bool MapLevel::add(std::shared_ptr<GameObject> o) {
-	std::cout << "E ctor" << std::endl;
-
 	if (!idstack.size()) return false;
 	
 	auto id = idstack.back();
@@ -53,13 +52,8 @@ bool MapLevel::add(std::shared_ptr<GameObject> o) {
 	units[id] = o;
 	auto tile = o->get_tile();
 
-	std::cout << "Hello" << std::endl;
-	std::cout << unitgrid.size() << std::endl;
-	std::cout << unitgrid[0].size() << std::endl;
-
 	unitgrid[tile.first][tile.second].push_back(id);
 	o->id = id;
-	std::cout << "Ex ctor" << std::endl;
 	return true;
 }
 
@@ -323,12 +317,15 @@ void MapLevel::update(float elapsed_time) {
 		}
 	}*/
 	
+	static int ctr = 0;
+	ctr = (ctr+1)%update_groups;
 
-	for (auto unit : units) {
+	for (int i = 0; i < (int)units.size(); i++) {
+		auto& unit = units[i];
 		if (unit.get()) {
 			// FIXME CANNOT BE PARALLELIZED
 			auto tile = unit->get_tile();
-			unit->update(elapsed_time, 1);
+			unit->update(elapsed_time, i % update_groups == ctr);
 			auto ntile = unit->get_tile();
 			if (ntile != tile) {
 				auto& vec = unitgrid[tile.first][tile.second];

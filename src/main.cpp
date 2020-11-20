@@ -66,8 +66,8 @@ bool is_running = false;
 // Pathfinding test variables
 // auto origin = std::make_pair(0, 0);
 // auto target = std::make_pair(X_TILES-1, Y_TILES-1);
-const int X_TILES = 100;
-const int Y_TILES = 100;
+const int X_TILES = 60;
+const int Y_TILES = 50;
 const int BASE_PADDING = 5;
 std::vector<std::pair<int, int>> bases;
 std::vector<std::vector<AStar::Vec2i>> paths;
@@ -92,15 +92,34 @@ void run_test() {
 	};
 
 	// Create level
-	std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES);
+	std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 10000);
 	MapLevel& map_level = *map_level_ptr;
 	//auto obstructions = map_level.generate_obstructions(bases, BASE_PADDING);
 	//map_level.set_obstructions(obstructions);
-	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 6, 5, 4, 10, 30, 1, 2);
-	map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 20, 5, 4, 30, 70, 1, 2);
+	map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 6, 5, 4, 10, 30, 1, 2);
+	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 20, 5, 4, 30, 70, 1, 2);
+	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 5, 4, 30, 70, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 2, 1, 1, 5, 10, 0, 1);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 1, 1, 5, 10, 0, 1);
 	gWorld.add(map_level_ptr);
+
+	for(int i = 0; i < 4000; i++){
+		auto rts_ptr = std::make_shared<rts_unit>(
+			//Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, bases.at(0).second * SCREEN_HEIGHT/Y_TILES),
+			Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, rand()%SCREEN_HEIGHT),
+			Vector2f(0, 0),
+			11,
+			SCREEN_WIDTH,
+			SCREEN_HEIGHT,
+			X_TILES,
+			Y_TILES,
+			.05,
+			2,
+			map_level
+		);
+		rts_ptr->selected = 1;
+		map_level.add(rts_ptr);
+	}
 
 	// // Test ball
 	// std::shared_ptr<GameObject> ball_ptr = std::make_shared<GameObject>(Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2), Vector2f(0, 0), 10, SCREEN_WIDTH, SCREEN_HEIGHT, X_TILES, Y_TILES);
@@ -180,22 +199,6 @@ void run_test() {
 	//		// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
 	//	}
 	//}
-
-	// FIXME enable
-	auto rts_ptr = std::make_shared<rts_unit>(
-		Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, bases.at(0).second * SCREEN_HEIGHT/Y_TILES),
-		Vector2f(0, 0),
-		11,
-		SCREEN_WIDTH,
-		SCREEN_HEIGHT,
-		X_TILES,
-		Y_TILES,
-		.05,
-		2,
-		map_level
-	);
-	rts_ptr->selected = 1;
-	map_level.add(rts_ptr);
 }
 
 bool init() {
