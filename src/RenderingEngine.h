@@ -28,7 +28,7 @@ namespace RenderingEngine {
 	class Camera {
 		public:
 			Vector2f position = Vector2f(0, 0);
-			float izoom = 10;
+			float izoom = 1;
 	};
 
 	Camera cam;
@@ -56,7 +56,7 @@ namespace RenderingEngine {
 	}
 
 	const int PANNING_PAD = 10;
-	const float PAN_SPEED = 0.04f;
+	const float PAN_SPEED = 0.2f;
 
 	void render(float delta_time, World& gWorld) {
 		// Get current window size
@@ -64,12 +64,12 @@ namespace RenderingEngine {
 		
 		// Zoom map
 		if (Input::has_input()) {
-			float sy = (float)Input::get_scrolly();
+			float sy = (float)Input::get_scrolly()/2;
 			cam.izoom += sy;
-			if (cam.izoom < 1.0f)
-				cam.izoom = 1.0f;
-			else if (cam.izoom > 100.0f)
-				cam.izoom = 100.0f;
+			if (cam.izoom < 0.5f)
+				cam.izoom = 0.5f;
+			else if (cam.izoom > 10.0f)
+				cam.izoom = 10.0f;
 
 			// Pan map
 			std::pair<int, int> mp = Input::get_mouse_pos();

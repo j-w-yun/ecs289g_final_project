@@ -13,11 +13,12 @@
 #include "GameObject.cpp"
 #include "Noise.cpp"
 #include "RenderingEngine.h"
+#include "Util.h"
 
 const float DENSITY = 0.3;
 const int update_groups = 100;
 
-MapLevel::MapLevel(int tx, int ty, int tw, int th, size_t uc): tiles_x(tx), tiles_y(ty), tile_width(tw), tile_height(th), unitcap(uc) {
+MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), tiles_y(ty), tile_width(tw), tile_height(th), unitcap(uc) {
 	class_string = MapLevel::static_class();
 
 	// const int MIN_L = tx<ty ? tx : ty;
@@ -146,15 +147,15 @@ bool MapLevel::climb(std::vector<std::pair<int, int>>* obs, double noise[], floa
 std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::pair<int, int>> bases, int min, int padding) {
 	std::vector<std::pair<int, int>> obs;
 	float threshold;
-	float persistence = ((float)rand()/RAND_MAX * 0.8f) + 0.4f;
-	int n_octaves = (int)((float)rand()/RAND_MAX * (max_octave-min_octave+1)) + min_octave;
-	int prime_index = (int)((float)rand()/RAND_MAX * 11);
-	int offset_x = (int)((float)rand()/RAND_MAX * 10000);
-	int offset_y = (int)((float)rand()/RAND_MAX * 10000);
+	float persistence;
+	int n_octaves;
+	int prime_index;
+	int offset_x;
+	int offset_y;
 	while ((int)obs.size() < min) {
 		// Seed random
-		seed += SDL_GetTicks() + 1;
-		srand(seed);
+		// seed += Util::get_counts();
+		srand(Util::get_counts());
 
 		// Random noise params
 		persistence = ((float)rand()/RAND_MAX * 0.6f) + 0.5f;
@@ -287,8 +288,8 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		for (int k = 0; k < tiles_y; k++) {
 			// Fill
 			// SDL_Rect box = {tile_width*j, tile_height*k, tile_width, tile_height};
-			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(j, k));
-			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(j+1, k+1)); // +1 should be world tile width or height
+			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(j*tile_width, k*tile_height));
+			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((j+1)*tile_width, (k+1)*tile_height));
 			SDL_Rect box = {
 				(int)(sp1.x()),
 				(int)(sp1.y()),
@@ -305,8 +306,8 @@ void MapLevel::render(SDL_Renderer* renderer) {
 	// Obstacles
 	for (auto& o : obstructions) {
 		// SDL_Rect box = {tile_width*o.first, tile_height*o.second, tile_width, tile_height};
-		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(o.first, o.second));
-		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(o.first+1, o.second+1)); // +1 should be world tile width or height
+		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(o.first*tile_width, o.second*tile_height));
+		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((o.first+1)*tile_width, (o.second+1)*tile_height));
 		SDL_Rect box = {
 			(int)(sp1.x()),
 			(int)(sp1.y()),

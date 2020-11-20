@@ -46,8 +46,8 @@ class MapLevel: public GameObject {
 		int max_octave;
 		int tiles_x;
 		int tiles_y;
-		int tile_width;
-		int tile_height;
+		float tile_width;
+		float tile_height;
 		std::vector<ip> obstructions;
 		std::vector<std::vector<bool>> obgrid;
 		std::vector<std::shared_ptr<GameObject>> units;
@@ -61,7 +61,7 @@ class MapLevel: public GameObject {
 
 	public:
 		MapLevel() = default;
-		MapLevel(int tx, int ty, int tw, int th, size_t uc = 200);
+		MapLevel(int tx, int ty, float tw, float th, size_t uc = 200);
 		bool add(std::shared_ptr<GameObject> o);
 		void set_size(int x, int y, int w, int h);
 		void set_obstructions(std::vector<std::pair<int, int>> o);
@@ -84,7 +84,7 @@ class MapLevel: public GameObject {
 			int x = (int)p.first;
 			int y = (int)p.second;
 			
-			return std::make_pair(x/tile_width, y/tile_height);
+			return std::make_pair(x/(int)tile_width, y/(int)tile_height);
 		}
 
 		std::pair<int, int> to_tile_space(Vector2f p){

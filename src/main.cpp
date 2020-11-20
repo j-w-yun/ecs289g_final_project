@@ -54,11 +54,11 @@ World gWorld;
 bool is_running = false;
 
 // Pathfinding test variables
-const int X_TILES = 60;
+const int X_TILES = 100;
 const int Y_TILES = 50;
-const int TILE_WIDTH = SCREEN_WIDTH/X_TILES;
-const int TILE_HEIGHT = SCREEN_HEIGHT/Y_TILES;
-const int BASE_PADDING = 4;
+const float TILE_WIDTH = 10.0f;
+const float TILE_HEIGHT = 10.0f;
+const int BASE_PADDING = 5;
 std::vector<std::pair<int, int>> bases;
 std::vector<std::vector<AStar::Vec2i>> paths;
 void run_test() {
@@ -82,11 +82,14 @@ void run_test() {
 	};
 
 	// Create level
-	std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 10000);
+	std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 10000);
 	MapLevel& map_level = *map_level_ptr;
-	//auto obstructions = map_level.generate_obstructions(bases, BASE_PADDING);
-	//map_level.set_obstructions(obstructions);
-	map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 6, 5, 4, 10, 30, 1, 2);
+	auto obstructions = map_level.generate_obstructions(bases, BASE_PADDING);
+	map_level.set_obstructions(obstructions);
+	// std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 10000);
+	// MapLevel& map_level = *map_level_ptr;
+	// map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, BASE_PADDING, 5, 4, 10, 30, 1, 2);
+	// map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, BASE_PADDING, 1, 1, 1, 2, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 20, 5, 4, 30, 70, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 5, 4, 30, 70, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 2, 1, 1, 5, 10, 0, 1);
@@ -103,24 +106,24 @@ void run_test() {
 		}
 	}
 
-	// Test RTS units
-	for(int i = 0; i < 4000; i++){
-		auto rts_ptr = std::make_shared<rts_unit>(
-			//Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, bases.at(0).second * SCREEN_HEIGHT/Y_TILES),
-			Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, rand()%SCREEN_HEIGHT),
-			Vector2f(0, 0),
-			11,
-			SCREEN_WIDTH,
-			SCREEN_HEIGHT,
-			X_TILES,
-			Y_TILES,
-			.05,
-			2,
-			map_level
-		);
-		rts_ptr->selected = 1;
-		map_level.add(rts_ptr);
-	}
+	// // Test RTS units
+	// for(int i = 0; i < 4000; i++){
+	// 	auto rts_ptr = std::make_shared<rts_unit>(
+	// 		//Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, bases.at(0).second * SCREEN_HEIGHT/Y_TILES),
+	// 		Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, rand()%SCREEN_HEIGHT),
+	// 		Vector2f(0, 0),
+	// 		11,
+	// 		SCREEN_WIDTH,
+	// 		SCREEN_HEIGHT,
+	// 		X_TILES,
+	// 		Y_TILES,
+	// 		.05,
+	// 		2,
+	// 		map_level
+	// 	);
+	// 	rts_ptr->selected = 1;
+	// 	map_level.add(rts_ptr);
+	// }
 
 	// // Test ball
 	// std::shared_ptr<GameObject> ball_ptr = std::make_shared<GameObject>(Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2), Vector2f(0, 0), 10, SCREEN_WIDTH, SCREEN_HEIGHT, X_TILES, Y_TILES);
@@ -232,10 +235,10 @@ void render(float delta_time) {
 	for (auto& path : paths) {
 		for (auto& p : path) {
 			// SDL_Rect box = {tile_width*p.x, tile_height*p.y, tile_width, tile_height};
-			// Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(p.x*TILE_WIDTH, p.y*TILE_HEIGHT));
-			// Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((p.x+1)*TILE_WIDTH, (p.y+1)*TILE_HEIGHT));
-			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(p.x, p.y));
-			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(p.x+1, p.y+1));
+			// Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(p.x, p.y));
+			// Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(p.x+1, p.y+1));
+			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(p.x*TILE_WIDTH, p.y*TILE_HEIGHT));
+			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((p.x+1)*TILE_WIDTH, (p.y+1)*TILE_HEIGHT));
 			SDL_Rect box = {
 				(int)(sp1.x()),
 				(int)(sp1.y()),
@@ -253,8 +256,10 @@ void render(float delta_time) {
 	for (int i = 0; i < (int)bases.size(); i++) {
 		auto base = bases.at(i);
 		// SDL_Rect base_tile = {tile_width*base.first, tile_height*base.second, tile_width, tile_height};
-		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(base.first, base.second));
-		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(base.first+1, base.second+1));
+		// Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(base.first, base.second));
+		// Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(base.first+1, base.second+1));
+		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(base.first*TILE_WIDTH, base.second*TILE_HEIGHT));
+			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((base.first+1)*TILE_WIDTH, (base.second+1)*TILE_HEIGHT));
 		SDL_Rect box = {
 			(int)(sp1.x()),
 			(int)(sp1.y()),
