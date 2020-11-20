@@ -1,5 +1,21 @@
 # ECS 289G Final Project
 
+Dependencies: pacman
+```
+pacman -S sdl2
+pacman -S sdl2_ttf
+```
+
+Dependencies: apt-get
+```
+apt-get install libsdl2-2.0
+apt-get install libsdl2-dev
+apt-get install libsdl2-ttf-2.0-0
+apt-get install libghc-sdl2-ttf-dev
+```
+
+---
+
 Build & run project in Linux
 ```
 $ ./build.sh
