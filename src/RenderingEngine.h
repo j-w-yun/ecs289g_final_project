@@ -36,7 +36,7 @@ namespace RenderingEngine {
 	Vector2f world_to_screen(Vector2f world_vec) {
 		float zoom = cam.izoom;
 		Vector2f screen_vec = world_vec.sub(cam.position);
-		screen_vec = screen_vec.mul(Vector2f(zoom, zoom*width/height));
+		screen_vec = screen_vec.mul(Vector2f(zoom, zoom));//*width/height));
 		screen_vec = screen_vec.add(Vector2f(width/2, height/2));
 		return screen_vec;
 	}
@@ -44,7 +44,7 @@ namespace RenderingEngine {
 	Vector2f screen_to_world(Vector2f screen_vec) {
 		float zoom = cam.izoom;
 		Vector2f world_vec = screen_vec.sub(Vector2f(width/2, height/2));
-		world_vec = world_vec.div(Vector2f(zoom, zoom*width/height));
+		world_vec = world_vec.div(Vector2f(zoom, zoom));//*width/height));
 		world_vec = world_vec.add(cam.position);
 		return world_vec;
 	}
