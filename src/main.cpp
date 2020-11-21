@@ -146,7 +146,7 @@ void run_test() {
 		auto rts_ptr = std::make_shared<rts_unit>(
 			position,
 			velocity,
-			2.0f,  // Radius
+			3.0f,  // Radius
 			WORLD_WIDTH,
 			WORLD_HEIGHT,
 			X_TILES,

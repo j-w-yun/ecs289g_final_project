@@ -292,7 +292,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 	// }
 
 	// Draw perlin noise
-	const float RESOLUTION = 2.5f;
+	const float RESOLUTION = 5.0f;
 	if (noise2d.size() == 0 || Input::is_key_pressed(SDLK_SPACE)) {
 		noise2d.clear();
 		noise2d.resize(ceil((X_MAX-X_MIN)/RESOLUTION));
@@ -350,7 +350,9 @@ void MapLevel::render(SDL_Renderer* renderer) {
 					(int)(sp2.x()-sp1.x())+1,
 					(int)(sp2.y()-sp1.y())+1
 				};
-				SDL_SetRenderDrawColor(renderer, 60, 90*z+40, 30, 150);
+				float f = ((float)SDL_GetTicks()/400.0f+(x+y+1)/10); 
+				SDL_SetRenderDrawColor(renderer, 40, 90*z+40, 30, 150+60*sin(f));
+				// SDL_SetRenderDrawColor(renderer, 60, 90*z+40, 30, 150);
 				SDL_RenderFillRect(renderer, &box);
 			}
 			xi++;
@@ -368,7 +370,9 @@ void MapLevel::render(SDL_Renderer* renderer) {
 			(int)(sp2.y()-sp1.y())+1
 		};
 		// Fill
-		SDL_SetRenderDrawColor(renderer, 32, 32, 32, 255);
+		float f = ((float)SDL_GetTicks()/1000.0f+(o.first+o.second+1)/4); 
+		SDL_SetRenderDrawColor(renderer, 40, 40, 190+50*sin(f), 255);
+		// SDL_SetRenderDrawColor(renderer, 32, 32, 190, 255);
 		SDL_RenderFillRect(renderer, &box);
 	}
 

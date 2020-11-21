@@ -21,8 +21,8 @@ namespace RenderingEngine {
 	const char* TTF_FILE = "./res/fonts/Roboto-Light.ttf";
 
 	// Default window dimensions
-	int width = 800;
-	int height = 600;
+	int width = 1200;
+	int height = 800;
 	float world_width;
 	float world_height;
 
@@ -34,7 +34,7 @@ namespace RenderingEngine {
 	class Camera {
 		public:
 			Vector2f position = Vector2f(-1, -1);
-			float zoom = 1;
+			float zoom = 8;
 			float get_zoom_factor() {
 				return zoom*zoom/100.0f + 0.5f;
 			}
