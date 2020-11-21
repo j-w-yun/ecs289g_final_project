@@ -540,13 +540,12 @@ class MapLevel: public GameObject {
 
 			compute_rectcover();
 
-			// show path for debugging
-			auto path = find_rect_path(Vector2f(10, 10), Vector2f(1178, 787));
-
-			std::cout << "Path: " << std::endl;
-			for(auto& v2f : path){
-				std::cout << v2f << std::endl;
-			}
+			// // show path for debugging
+			// auto path = find_rect_path(Vector2f(10, 10), Vector2f(1178, 787));
+			// std::cout << "Path: " << std::endl;
+			// for(auto& v2f : path){
+			// 	std::cout << v2f << std::endl;
+			// }
 		}
 
 		float dist(Vector2f l, Vector2f r){
