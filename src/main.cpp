@@ -58,21 +58,6 @@ void stacktrace_handler(int sig) {
     }
     exit(1);
 }
-#else
-// This might work on windows
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <execinfo.h>
-#include <signal.h>
-void stacktrace_handler(int sig) {
-	void *array[10];
-	size_t size;
-	size = backtrace(array, 10);
-	fprintf(stderr, "Error: signal %d:\n", sig);
-	backtrace_symbols_fd(array, size, STDERR_FILENO);
-	exit(1);
-}
 #endif
 
 // Screen dimension constants
@@ -105,7 +90,7 @@ bool is_running = false;
 std::vector<std::pair<int, int>> bases;
 std::vector<std::vector<AStar::Vec2i>> paths;
 void run_test() {
-	signal(SIGSEGV, stacktrace_handler);
+	// signal(SIGSEGV, stacktrace_handler);
 	// // Test stacktrace handler
 	// int *bad_pointer = (int*)-1;
 	// printf("%d\n", *bad_pointer);
@@ -324,6 +309,10 @@ void render(float delta_time) {
 #endif
 
 int main(int argc, char* args[]) {
+	#ifdef __linux__
+	signal(SIGSEGV, stacktrace_handler);
+	#endif
+	
 	// Start up SDL and create window
 	if (!init()) {
 		printf("Failed to initialize!\n");
