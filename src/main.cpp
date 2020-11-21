@@ -258,7 +258,7 @@ void render(float delta_time) {
 		// Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(base.first, base.second));
 		// Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(base.first+1, base.second+1));
 		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(base.first*TILE_WIDTH, base.second*TILE_HEIGHT));
-			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((base.first+1)*TILE_WIDTH, (base.second+1)*TILE_HEIGHT));
+		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((base.first+1)*TILE_WIDTH, (base.second+1)*TILE_HEIGHT));
 		SDL_Rect box = {
 			(int)(sp1.x()),
 			(int)(sp1.y()),
