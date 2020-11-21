@@ -161,7 +161,7 @@ struct rts_unit : GameObject {
 		
 		if(Input::is_mouse_pressed(SDL_BUTTON_RIGHT)){
 			auto temp = Input::get_mouse_pos();
-			dest.set(temp.first, temp.second);
+			dest = RenderingEngine::screen_to_world(Vector2f(temp.first, temp.second));
 		}
 
 		if(calc){

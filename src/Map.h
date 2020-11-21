@@ -106,6 +106,11 @@ class MapLevel: public GameObject {
 			return x >= 0 && x < (int)grid.size() && y >= 0 && y < (int)grid[0].size();
 		}
 
+		template<class T>
+		bool inbounds(std::vector<std::vector<T>>& grid, ip pr){
+			return pr.first >= 0 && pr.first < (int)grid.size() && pr.second >= 0 && pr.second < (int)grid[0].size();
+		}
+
 		std::vector<ip> neighbors(std::vector<std::vector<int>>& grid, int x, int y) {
 			auto inbounds = [&](int x, int y) {
 				return x >= 0 && x < (int)grid.size() && y >= 0 && y < (int)grid[0].size();

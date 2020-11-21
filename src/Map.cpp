@@ -512,9 +512,12 @@ std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 	};
 
 	auto s_tile = to_tile_space(s);
+	if(!inbounds(obgrid, s_tile) || obgrid[s_tile.first][s_tile.second]) return {};
 	int s_ind = grid_to_rectcover[s_tile.first][s_tile.second];
 	auto d_tile = to_tile_space(d);
+	if(!inbounds(obgrid, d_tile) || obgrid[d_tile.first][d_tile.second]) return {};
 	int d_ind = grid_to_rectcover[d_tile.first][d_tile.second];
+
 
 	//std::cout << "d_tile " << d_tile.first << ", " << d_tile.second << std::endl;
 	//std::cout << "sind/dind: " << s_ind << ", " << d_ind << std::endl;
