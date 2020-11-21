@@ -30,16 +30,64 @@
 #include "Util.h"
 #include "RenderingEngine.h"
 
-#include "rts_unit.h"
-#include "level.h"
 #include "algorithms.h"
+#include "rts_unit.h"
+// #include "level.h"
+
+// Print stacktrace and exit gracefully
+#ifdef __linux__
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/prctl.h>
+#include <sys/wait.h>
+void stacktrace_handler(int sig) {
+    char pid_buf[30];
+    sprintf(pid_buf, "%d", getpid());
+    char name_buf[512];
+    name_buf[readlink("/proc/self/exe", name_buf, 511)]=0;
+    prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0);
+    int child_pid = fork();
+    if (!child_pid) {           
+        dup2(2,1);
+        fprintf(stdout,"stack trace for %s pid=%s\n",name_buf,pid_buf);
+        execlp("gdb", "gdb", "--batch", "-n", "-ex", "thread", "-ex", "bt", name_buf, pid_buf, NULL);
+        abort();
+    } else {
+        waitpid(child_pid,NULL,0);
+    }
+    exit(1);
+}
+#else
+// // This might work on windows
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <unistd.h>
+// #include <execinfo.h>
+// #include <signal.h>
+// void stacktrace_handler(int sig) {
+// 	void *array[10];
+// 	size_t size;
+// 	size = backtrace(array, 10);
+// 	fprintf(stderr, "Error: signal %d:\n", sig);
+// 	backtrace_symbols_fd(array, size, STDERR_FILENO);
+// 	exit(1);
+// }
+#endif
 
 // Screen dimension constants
 const unsigned int SCREEN_WIDTH = 1200;
 const unsigned int SCREEN_HEIGHT = 800;
 
-// Update time slice
-const unsigned int MS_PER_UPDATE = 10;
+// Minimum delta time for update
+const unsigned int MIN_UPDATE_INTERVAL = 10;
+
+// Map settings
+const int X_TILES = 100;
+const int Y_TILES = 50;
+const float TILE_WIDTH = 10.0f;
+const float TILE_HEIGHT = 10.0f;
+const int BASE_PADDING = 5;
 
 // Starts up SDL and creates window
 bool init();
@@ -53,15 +101,15 @@ World gWorld;
 // Update if true
 bool is_running = false;
 
-// Pathfinding test variables
-const int X_TILES = 100;
-const int Y_TILES = 50;
-const float TILE_WIDTH = 10.0f;
-const float TILE_HEIGHT = 10.0f;
-const int BASE_PADDING = 5;
+// Temporary variables for tests
 std::vector<std::pair<int, int>> bases;
 std::vector<std::vector<AStar::Vec2i>> paths;
 void run_test() {
+	signal(SIGSEGV, stacktrace_handler);
+	// // Test stacktrace handler
+	// int *bad_pointer = (int*)-1;
+	// printf("%d\n", *bad_pointer);
+	
 	Util::test();
 
 	// // Generate bases
@@ -86,8 +134,11 @@ void run_test() {
 	// Create level
 	std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 10000);
 	MapLevel& map_level = *map_level_ptr;
+	gWorld.add(map_level_ptr);
+	
 	// Perlin
 	// map_level.set_obstructions(map_level.generate_obstructions(bases, BASE_PADDING));
+	
 	// Worms
 	// map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 4, BASE_PADDING, 4, 10, 30, 1, 2);
 	map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 4, BASE_PADDING, 4, 1, 9, 0, 1);
@@ -95,7 +146,6 @@ void run_test() {
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 5, 4, 30, 70, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 2, 1, 1, 5, 10, 0, 1);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 1, 1, 5, 10, 0, 1);
-	gWorld.add(map_level_ptr);
 
 	// Test pathfinding
 	for (int j = 0; j < (int)bases.size(); j++) {
@@ -111,11 +161,12 @@ void run_test() {
 	float WORLD_WIDTH = TILE_WIDTH*X_TILES;
 	float WORLD_HEIGHT = TILE_HEIGHT*Y_TILES;
 	for(int i = 0; i < 4000; i++){
+		auto position = Vector2f(bases.at(0).first * TILE_WIDTH, rand()%(int)WORLD_HEIGHT);
+		auto velocity = Vector2f(0, 0);
 		auto rts_ptr = std::make_shared<rts_unit>(
-			//Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, bases.at(0).second * SCREEN_HEIGHT/Y_TILES),
-			Vector2f(bases.at(0).first * TILE_WIDTH, rand()%(int)WORLD_HEIGHT),
-			Vector2f(0, 0),
-			5.0f,
+			position,
+			velocity,
+			5.0f,  // Radius
 			WORLD_WIDTH,
 			WORLD_HEIGHT,
 			X_TILES,
@@ -229,17 +280,12 @@ void render(float delta_time) {
 	RenderingEngine::clear();
 
 	// Draw world
-	// gWorld.render(gRenderer);
 	RenderingEngine::render(delta_time, gWorld);
 
-	// Path
-	// int tile_width = RenderingEngine::width / X_TILES;
-	// int tile_height = RenderingEngine::height / Y_TILES;
+	// Draw path
 	for (auto& path : paths) {
 		for (auto& p : path) {
 			// SDL_Rect box = {tile_width*p.x, tile_height*p.y, tile_width, tile_height};
-			// Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(p.x, p.y));
-			// Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(p.x+1, p.y+1));
 			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(p.x*TILE_WIDTH, p.y*TILE_HEIGHT));
 			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((p.x+1)*TILE_WIDTH, (p.y+1)*TILE_HEIGHT));
 			SDL_Rect box = {
@@ -257,8 +303,6 @@ void render(float delta_time) {
 	for (int i = 0; i < (int)bases.size(); i++) {
 		auto base = bases.at(i);
 		// SDL_Rect base_tile = {tile_width*base.first, tile_height*base.second, tile_width, tile_height};
-		// Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(base.first, base.second));
-		// Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(base.first+1, base.second+1));
 		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(base.first*TILE_WIDTH, base.second*TILE_HEIGHT));
 		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((base.first+1)*TILE_WIDTH, (base.second+1)*TILE_HEIGHT));
 		SDL_Rect box = {
@@ -296,9 +340,15 @@ int main(int argc, char* args[]) {
 		// Milliseconds
 		unprocessed_time += timer.reset() / 1e6;
 		render(unprocessed_time);
-		while (unprocessed_time >= MS_PER_UPDATE) {
-			update(unprocessed_time / 2);
-			unprocessed_time /= 2;
+		while (unprocessed_time >= MIN_UPDATE_INTERVAL) {
+			if (MIN_UPDATE_INTERVAL > unprocessed_time / 2) {
+				update(MIN_UPDATE_INTERVAL);
+				unprocessed_time -= MIN_UPDATE_INTERVAL;
+			}
+			else {
+				update(unprocessed_time / 2);
+				unprocessed_time /= 2;
+			}
 		}
 	}
 

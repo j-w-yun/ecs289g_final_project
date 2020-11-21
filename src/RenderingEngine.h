@@ -108,8 +108,8 @@ namespace RenderingEngine {
 				cam.zoom -= delta_time * ZOOM_KEY_SPEED;
 			if (cam.zoom < 1.0f)
 				cam.zoom = 1.0f;
-			else if (cam.zoom > 20.0f)
-				cam.zoom = 20.0f;
+			else if (cam.zoom > 30.0f)
+				cam.zoom = 30.0f;
 
 			// Pan map
 			Vector2f dp = Vector2f(0, 0);
