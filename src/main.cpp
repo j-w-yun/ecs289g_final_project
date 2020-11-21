@@ -90,7 +90,6 @@ bool is_running = false;
 std::vector<std::pair<int, int>> bases;
 std::vector<std::vector<AStar::Vec2i>> paths;
 void run_test() {
-	// signal(SIGSEGV, stacktrace_handler);
 	// // Test stacktrace handler
 	// int *bad_pointer = (int*)-1;
 	// printf("%d\n", *bad_pointer);
@@ -312,7 +311,7 @@ int main(int argc, char* args[]) {
 	#ifdef __linux__
 	signal(SIGSEGV, stacktrace_handler);
 	#endif
-	
+
 	// Start up SDL and create window
 	if (!init()) {
 		printf("Failed to initialize!\n");

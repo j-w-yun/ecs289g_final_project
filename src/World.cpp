@@ -42,6 +42,13 @@ void World::select(Vector2f drag_start, Vector2f drag_end, int drag_type) {
 	std::cout << std::endl;
 }
 
+void World::click(Vector2f position, int click_type) {
+	std::cout << "World::click(): implement me!" << std::endl;
+	std::cout << "drag_startposition: " << position << std::endl;
+	std::cout << "drag_endclick_type: " << click_type << std::endl;
+	std::cout << std::endl;
+}
+
 void World::render(SDL_Renderer* renderer) {
 	// Draw active level
 	if(activemap >= 0 && (size_t)activemap < levels.size())
