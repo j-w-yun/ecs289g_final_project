@@ -56,12 +56,12 @@ double InterpolatedNoise(int i, double x, double y) {
 	return Interpolate(i1, i2, fractional_Y);
 }
 
-double ValueNoise_2D(double x, double y, int n_octaves, float persistence, int prime_index) {
+double perlin_noise(double x, double y, int n_octaves, float persistence, int prime_index) {
 	double total = 0;
 	double frequency = pow(2.0, n_octaves);
 	double amplitude = 1;
 	for (int i = 0; i < n_octaves; ++i) {
-		frequency /= 2.1;
+		frequency /= 2;
 		amplitude *= persistence;
 		total += InterpolatedNoise((prime_index + i) % maxprime_index, x / frequency, y / frequency) * amplitude;
 	}

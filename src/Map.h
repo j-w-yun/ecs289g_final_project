@@ -42,6 +42,7 @@ typedef std::pair<int, int> ip;
 class MapLevel: public GameObject {
 	private:
 		unsigned long seed = time(NULL);
+		std::vector<std::vector<double>> noise2d;
 		int min_octave;
 		int max_octave;
 		int tiles_x;

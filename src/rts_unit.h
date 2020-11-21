@@ -37,10 +37,10 @@ struct rts_unit : GameObject {
 				(int)(sp2.y()-sp1.y())
 			};
 			// Fill
-			SDL_SetRenderDrawColor(renderer, 0, 0xFF, 0, 255);
+			SDL_SetRenderDrawColor(renderer, 91, 192, 222, 255);
 			SDL_RenderFillRect(renderer, &box);
 			// Outline
-			SDL_SetRenderDrawColor(renderer, 0, 0, 0xFF, 255);
+			SDL_SetRenderDrawColor(renderer, 2, 117, 216, 255);
 			SDL_RenderDrawRect(renderer, &box);
 		}
 	}

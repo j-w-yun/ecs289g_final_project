@@ -1,7 +1,10 @@
 #pragma once
 
+#include <algorithm>
 #include <functional>
+#include <iostream>
 #include <math.h>
+#include <numeric>
 #include <set>
 #include <time.h>
 #include <vector>
@@ -102,31 +105,6 @@ bool MapLevel::climb(std::vector<std::pair<int, int>>* obs, double noise[], floa
 		for (int k = 0; k < tiles_y; k++) {
 			if (noise[(j*tiles_y)+k] < threshold) {
 				bool valid = true;
-				// for (auto& b : bases)
-				// 	if (j == b.first && k == b.second)
-				// 		valid = false;
-				// if (!valid)
-				// 	return false;
-				// obs->push_back(std::make_pair(j, k));
-
-				// // Yikes
-				// for (auto& base : bases) {
-				// 	for (int n = -padding; n <= padding; n++) {
-				// 		for (int m = -padding; m <= padding; m++) {
-				// 			int x = base.first+n;
-				// 			int y = base.second+m;
-				// 			if (j == x && k == y) {
-				// 				valid = false;
-				// 				break;
-				// 			}
-				// 		}
-				// 		if (!valid) break;
-				// 	}
-				// 	if (!valid) break;
-				// }
-				// if (valid)
-				// 	obs->push_back(std::make_pair(j, k));
-
 				// Radius padding
 				for (auto& base : bases) {
 					float dx = (float)base.first - j;
@@ -155,16 +133,11 @@ std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::
 	int offset_x;
 	int offset_y;
 	while ((int)obs.size() < min || (int)obs.size() > max) {
-		// Seed random
-		seed += Util::get_counts();
-		srand(seed);
-
-		// Random noise params
-		persistence = ((float)rand()/RAND_MAX * 0.6f) + 0.5f;
-		n_octaves = (int)((float)rand()/RAND_MAX * (max_octave-min_octave+1)) + min_octave;
-		prime_index = (int)((float)rand()/RAND_MAX * 11);
-		offset_x = (int)((float)rand()/RAND_MAX * 10000);
-		offset_y = (int)((float)rand()/RAND_MAX * 10000);
+		persistence = Util::uniform_random(0.5, 1.2);
+		n_octaves = Util::uniform_random(min_octave, max_octave);
+		prime_index = (int)Util::uniform_random(0, 11);
+		offset_x = (int)Util::uniform_random(0, 100000);
+		offset_y = (int)Util::uniform_random(0, 100000);
 
 		obs.clear();
 		// std::cout << " n_octaves: " << n_octaves << " persistence: " << persistence << " prime_index: " << prime_index << std::endl;
@@ -174,12 +147,12 @@ std::vector<std::pair<int, int>> MapLevel::random_obstructions(std::vector<std::
 		noise.resize(tiles_x*tiles_y);
 		for (int j = 0; j < tiles_x; j++)
 			for (int k = 0; k < tiles_y; k++)
-				noise[(j*tiles_y)+k] = ValueNoise_2D(j+offset_x, k+offset_y, n_octaves, persistence, prime_index);
+				noise[(j*tiles_y)+k] = perlin_noise(j+offset_x, k+offset_y, n_octaves, persistence, prime_index);
 
 		while ((int)obs.size() < min && threshold < persistence) {
 			obs.clear();
 			if (!climb(&obs, &noise[0], threshold, bases, padding) || (int)obs.size() > max) {
-				std::cout << "failed at threshold: " << threshold << std::endl;
+				// std::cout << "failed at threshold: " << threshold << std::endl;
 				break;
 			}
 			threshold += 0.00005f;
@@ -245,86 +218,163 @@ std::vector<std::pair<int, int>> MapLevel::generate_obstructions(std::vector<std
 		}
 	}
 
-	// // Clear obstructions around base
-	// for (auto& base : bases) {
-	// 	for (int j = -padding; j <= padding; j++) {
-	// 		for (int k = -padding; k <= padding; k++) {
-	// 			int x = base.first+j;
-	// 			int y = base.second+k;
-	// 			auto i = std::begin(obs);
-	// 			while (i != std::end(obs)) {
-	// 				if ((*i).first == x && (*i).second == y)
-	// 					i = obs.erase(i);
-	// 				else
-	// 					++i;
-	// 			}
-	// 		}
-	// 	}
-	// }
-
 	return obs;
 }
 
+template <typename T>
+std::vector<size_t> sort_indexes(const std::vector<T> &v) {
+	std::vector<size_t> idx(v.size());
+	std::iota(idx.begin(), idx.end(), 0);
+	std::stable_sort(idx.begin(), idx.end(), [&v](size_t i1, size_t i2) {
+		return v[i1] < v[i2];
+	});
+	return idx;
+}
+
+const int n_types = 3;
+std::map<std::pair<int, int>, int> generate_texture(int width, int height) {
+	std::map<std::pair<int, int>, int> tex;
+	std::vector<std::pair<int, int>> ind;
+	float persistence = Util::uniform_random(0.5, 1.2);
+	int n_octaves = Util::uniform_random(1, 12);
+	int prime_index = (int)Util::uniform_random(0, 11);
+	int offset_x = (int)Util::uniform_random(0, 100000);
+	int offset_y = (int)Util::uniform_random(0, 100000);
+	std::vector<double> noise;
+	noise.resize(width * height);
+	for (int j = 0; j < width; j++) {
+		for (int k = 0; k < height; k++) {
+			double z = perlin_noise(j+offset_x, k+offset_y, n_octaves, persistence, prime_index);
+			noise[(j*height)+k] = z;
+			// TODO
+		}
+	}
+	for (auto i : sort_indexes(noise)) {
+		std::cout << noise[i] << std::endl;
+	}
+	return tex;
+}
+
 void MapLevel::render(SDL_Renderer* renderer) {
-	// // Tiles
+	// Draw tiles
+	const float X_MIN = 0;
+	const float Y_MIN = 0;
+	const float X_MAX = tile_width * tiles_x;
+	const float Y_MAX = tile_height * tiles_y;
+	Vector2f world1 = RenderingEngine::world_to_screen(Vector2f(X_MIN, Y_MIN));
+	Vector2f world2 = RenderingEngine::world_to_screen(Vector2f(X_MAX, Y_MAX));
+	SDL_Rect world_box = {
+		(int)(world1.x()),
+		(int)(world1.y()),
+		(int)(world2.x()-world1.x()),
+		(int)(world2.y()-world1.y())
+	};
+	SDL_SetRenderDrawColor(renderer, 239, 196, 121, 255);
+	SDL_RenderFillRect(renderer, &world_box);
+
 	// for (int j = 0; j < tiles_x; j++) {
 	// 	for (int k = 0; k < tiles_y; k++) {
+	// 		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(j*tile_width, k*tile_height));
+	// 		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((j+1)*tile_width, (k+1)*tile_height));
+	// 		SDL_Rect box = {
+	// 			(int)(sp1.x())-2,
+	// 			(int)(sp1.y())-2,
+	// 			(int)(sp2.x()-sp1.x())+2,
+	// 			(int)(sp2.y()-sp1.y())+2
+	// 		};
 	// 		// Fill
-	// 		SDL_Rect box = {tile_width*j, tile_height*k, tile_width, tile_height};
-	// 		SDL_SetRenderDrawColor(renderer, 0x77, 0x77, 0x77, 0xFF);
+	// 		SDL_SetRenderDrawColor(renderer, 239, 196, 121, 255);
 	// 		SDL_RenderFillRect(renderer, &box);
 	// 		// Outline
-	// 		SDL_SetRenderDrawColor(renderer, 0x33, 0x33, 0x33, 0xFF);
+	// 		SDL_SetRenderDrawColor(renderer, 0x33, 0x33, 0x33, 255);
 	// 		SDL_RenderDrawRect(renderer, &box);
 	// 	}
 	// }
-	// // Obstacles
-	// for (auto& o : obstructions) {
-	// 	SDL_Rect box = {tile_width*o.first, tile_height*o.second, tile_width, tile_height};
-	// 	SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
-	// 	SDL_RenderFillRect(renderer, &box);
-	// }
 
-	// Tiles
-	for (int j = 0; j < tiles_x; j++) {
-		for (int k = 0; k < tiles_y; k++) {
-			// Fill
-			// SDL_Rect box = {tile_width*j, tile_height*k, tile_width, tile_height};
-			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(j*tile_width, k*tile_height));
-			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((j+1)*tile_width, (k+1)*tile_height));
-			SDL_Rect box = {
-				(int)(sp1.x()),
-				(int)(sp1.y()),
-				(int)(sp2.x()-sp1.x())-1,
-				(int)(sp2.y()-sp1.y())-1
-			};
-			SDL_SetRenderDrawColor(renderer, 0x77, 0x77, 0x77, 0xFF);
-			SDL_RenderFillRect(renderer, &box);
-			// Outline
-			SDL_SetRenderDrawColor(renderer, 0x33, 0x33, 0x33, 0xFF);
-			SDL_RenderDrawRect(renderer, &box);
+	// Draw perlin noise
+	const float RESOLUTION = 2.5f;
+	if (noise2d.size() == 0 || Input::is_key_pressed(SDLK_SPACE)) {
+		noise2d.clear();
+		noise2d.resize(ceil((X_MAX-X_MIN)/RESOLUTION));
+
+		// Noise settings
+		int n_octaves = (int)Util::uniform_random(4, 6);  // More octaves generates bigger structures
+		float persistence = Util::uniform_random(0.7, 1);  // Between 0 to 1
+		int prime_index = (int)Util::uniform_random(0, 10);  // Between 0 to 9
+		float offset_x = Util::uniform_random(0, 100000);
+		float offset_y = Util::uniform_random(0, 100000);
+
+		// Print generated map settings
+		std::cout << std::endl;
+		std::cout << "Generated map settings" << std::endl;
+		std::cout << "n_octaves: " << n_octaves << std::endl;
+		std::cout << "persistence: " << persistence << std::endl;
+		std::cout << "prime_index: " << prime_index << std::endl;
+		std::cout << std::endl;
+
+		// Used for normalizing noise
+		double min_z = 0;
+		double max_z = 0;
+
+		// Get noise array
+		int xi = 0;
+		for (float x = X_MIN; x < X_MAX; x += RESOLUTION) {
+			for (float y = Y_MIN; y < Y_MAX; y += RESOLUTION) {
+				double z = perlin_noise(x+offset_x, y+offset_y, n_octaves, persistence, prime_index);
+				noise2d[xi].push_back(z);
+				min_z = z < min_z ? z : min_z;
+				max_z = z > max_z ? z : max_z;
+			}
+			xi++;
+		}
+
+		// Normalize noise from 0 to 1
+		for (int xi = 0; xi < (int)noise2d.size(); xi++)
+			for (int yi = 0; yi < (int)noise2d[xi].size(); yi++)
+				noise2d[xi][yi] = (noise2d[xi][yi] - min_z) / (max_z - min_z);
+	}
+	if (noise2d.size() > 0) {
+		// Normalize noise from 0 to 1 and draw 
+		int xi = 0;
+		for (float x = X_MIN; x < X_MAX; x += RESOLUTION) {
+			int yi = 0;
+			for (float y = Y_MIN; y < Y_MAX; y += RESOLUTION) {
+				// Choose color according to Z
+				double z = noise2d[xi][yi++];
+				// Draw overlapping squares
+				Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(x-RESOLUTION, y-RESOLUTION));
+				Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(x+RESOLUTION*2, y+RESOLUTION*2));
+				SDL_Rect box = {
+					(int)(sp1.x()),
+					(int)(sp1.y()),
+					(int)(sp2.x()-sp1.x())+1,
+					(int)(sp2.y()-sp1.y())+1
+				};
+				SDL_SetRenderDrawColor(renderer, 60, 90*z+40, 30, 150);
+				SDL_RenderFillRect(renderer, &box);
+			}
+			xi++;
 		}
 	}
-	// Obstacles
+
+	// Draw obstacles
 	for (auto& o : obstructions) {
-		// SDL_Rect box = {tile_width*o.first, tile_height*o.second, tile_width, tile_height};
 		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(o.first*tile_width, o.second*tile_height));
 		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((o.first+1)*tile_width, (o.second+1)*tile_height));
 		SDL_Rect box = {
 			(int)(sp1.x()),
 			(int)(sp1.y()),
-			(int)(sp2.x()-sp1.x()),
-			(int)(sp2.y()-sp1.y())
+			(int)(sp2.x()-sp1.x())+1,
+			(int)(sp2.y()-sp1.y())+1
 		};
-		SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+		// Fill
+		SDL_SetRenderDrawColor(renderer, 32, 32, 32, 255);
 		SDL_RenderFillRect(renderer, &box);
 	}
 
-	for (auto unit : units) {
-		if (unit.get()) {
+	for (auto unit : units)
+		if (unit.get())
 			unit->render(renderer);
-		}
-	}
 }
 
 template<class T>

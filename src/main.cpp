@@ -127,15 +127,15 @@ void run_test() {
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 2, 1, 1, 5, 10, 0, 1);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 1, 1, 5, 10, 0, 1);
 
-	// Test pathfinding
-	for (int j = 0; j < (int)bases.size(); j++) {
-		for (int k = j+1; k < (int)bases.size(); k++) {
-			auto path = find_path(map_level, bases.at(j), bases.at(k));
-			paths.push_back(path);
-			// for (auto& p : path)
-			// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
-		}
-	}
+	// // Test pathfinding
+	// for (int j = 0; j < (int)bases.size(); j++) {
+	// 	for (int k = j+1; k < (int)bases.size(); k++) {
+	// 		auto path = find_path(map_level, bases.at(j), bases.at(k));
+	// 		paths.push_back(path);
+	// 		// for (auto& p : path)
+	// 		// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
+	// 	}
+	// }
 
 	// Test RTS units
 	float WORLD_WIDTH = TILE_WIDTH*X_TILES;
@@ -146,13 +146,13 @@ void run_test() {
 		auto rts_ptr = std::make_shared<rts_unit>(
 			position,
 			velocity,
-			5.0f,  // Radius
+			2.0f,  // Radius
 			WORLD_WIDTH,
 			WORLD_HEIGHT,
 			X_TILES,
 			Y_TILES,
-			0.05f,
-			2.0f,
+			0.05f,  // Acceleration
+			0.5f,  // Travel speed
 			map_level
 		);
 		rts_ptr->selected = 1;
@@ -329,7 +329,7 @@ int main(int argc, char* args[]) {
 		unprocessed_time += current_time - last_time;
 		last_time = current_time;
 		render((float)unprocessed_time);
-		std::cout << current_time << ", " << last_time << ", " << unprocessed_time << std::endl;
+		// std::cout << current_time << ", " << last_time << ", " << unprocessed_time << std::endl;
 		while (unprocessed_time >= MIN_UPDATE_INTERVAL) {
 			// if (MIN_UPDATE_INTERVAL > unprocessed_time / 2) {
 			// 	update(MIN_UPDATE_INTERVAL);

@@ -71,7 +71,7 @@ namespace RenderingEngine {
 		SDL_GetWindowSize(gWindow, &width, &height);
 
 		// Clear screen
-		SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
+		SDL_SetRenderDrawColor(gRenderer, 16, 16, 16, 255);
 		SDL_RenderClear(gRenderer);
 	}
 
