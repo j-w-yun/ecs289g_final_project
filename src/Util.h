@@ -11,7 +11,7 @@ namespace Util {
 	*/
 
 	const Uint64 INIT_COUNT = SDL_GetPerformanceCounter();
-	const Uint64 COUNT_PER_S = SDL_GetPerformanceFrequency();
+	// const Uint64 COUNT_PER_S = SDL_GetPerformanceFrequency();
 
 	Uint64 get_counts(bool is_relative=true) {
 		return SDL_GetPerformanceCounter() - (is_relative ? INIT_COUNT : 0);
@@ -22,15 +22,15 @@ namespace Util {
 	}
 
 	Uint64 get_microseconds(bool is_relative=true) {
-		return get_counts(is_relative) / (COUNT_PER_S / (Uint64)1e6);
+		return get_counts(is_relative) / (Uint64)1e3; // (COUNT_PER_S / (Uint64)1e6);
 	}
 
 	Uint64 get_milliseconds(bool is_relative=true) {
-		return get_counts(is_relative) / (COUNT_PER_S / (Uint64)1e3);
+		return get_counts(is_relative) / (Uint64)1e6; // (COUNT_PER_S / (Uint64)1e3);
 	}
 
 	Uint64 get_seconds(bool is_relative=true) {
-		return get_counts(is_relative) / COUNT_PER_S;
+		return get_counts(is_relative) / (Uint64)1e9; // COUNT_PER_S;
 	}
 
 	class Timer {
@@ -73,7 +73,7 @@ namespace Util {
 		std::cout << std::endl;
 		std::cout << "SDL_GetPerformanceCounter(): " << SDL_GetPerformanceCounter() << std::endl;
 		std::cout << "SDL_GetTicks(): " << SDL_GetTicks() << std::endl;
-		std::cout << "COUNT_PER_S: " << COUNT_PER_S << std::endl;
+		// std::cout << "COUNT_PER_S: " << COUNT_PER_S << std::endl;
 		std::cout << "Util::get_counts(): " << Util::get_counts() << std::endl;
 		std::cout << "Util::get_nanoseconds(): " << Util::get_nanoseconds() << std::endl;
 		std::cout << "Util::get_microseconds(): " << Util::get_microseconds() << std::endl;
