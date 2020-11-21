@@ -262,7 +262,7 @@ namespace RenderingEngine {
 		}
 
 		// Grab mouse
-		SDL_SetWindowGrab(gWindow, SDL_TRUE);
+		// SDL_SetWindowGrab(gWindow, SDL_TRUE);
 		
 		// Set blending
 		SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);

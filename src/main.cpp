@@ -107,24 +107,26 @@ void run_test() {
 		}
 	}
 
-	// // Test RTS units
-	// for(int i = 0; i < 4000; i++){
-	// 	auto rts_ptr = std::make_shared<rts_unit>(
-	// 		//Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, bases.at(0).second * SCREEN_HEIGHT/Y_TILES),
-	// 		Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, rand()%SCREEN_HEIGHT),
-	// 		Vector2f(0, 0),
-	// 		11,
-	// 		SCREEN_WIDTH,
-	// 		SCREEN_HEIGHT,
-	// 		X_TILES,
-	// 		Y_TILES,
-	// 		.05,
-	// 		2,
-	// 		map_level
-	// 	);
-	// 	rts_ptr->selected = 1;
-	// 	map_level.add(rts_ptr);
-	// }
+	// Test RTS units
+	float WORLD_WIDTH = TILE_WIDTH*X_TILES;
+	float WORLD_HEIGHT = TILE_HEIGHT*Y_TILES;
+	for(int i = 0; i < 4000; i++){
+		auto rts_ptr = std::make_shared<rts_unit>(
+			//Vector2f(bases.at(0).first * SCREEN_WIDTH/X_TILES, bases.at(0).second * SCREEN_HEIGHT/Y_TILES),
+			Vector2f(bases.at(0).first * TILE_WIDTH, rand()%(int)WORLD_HEIGHT),
+			Vector2f(0, 0),
+			5.0f,
+			WORLD_WIDTH,
+			WORLD_HEIGHT,
+			X_TILES,
+			Y_TILES,
+			0.05f,
+			2.0f,
+			map_level
+		);
+		rts_ptr->selected = 1;
+		map_level.add(rts_ptr);
+	}
 
 	// // Test ball
 	// std::shared_ptr<GameObject> ball_ptr = std::make_shared<GameObject>(Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2), Vector2f(0, 0), 10, SCREEN_WIDTH, SCREEN_HEIGHT, X_TILES, Y_TILES);
@@ -243,8 +245,6 @@ void render(float delta_time) {
 			SDL_Rect box = {
 				(int)(sp1.x()),
 				(int)(sp1.y()),
-				// TILE_WIDTH,
-				// TILE_HEIGHT
 				(int)(sp2.x()-sp1.x()),
 				(int)(sp2.y()-sp1.y())
 			};

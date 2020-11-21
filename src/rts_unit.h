@@ -25,18 +25,24 @@ struct rts_unit : GameObject {
 	rts_unit(Vector2f p, Vector2f v, float r, int w, int h, int xt, int yt, float a, float ts, MapLevel& mp): GameObject(p, v, r, w, h, xt, yt), acc(a), topspeed(ts), map(mp) {}
 
 	virtual void render(SDL_Renderer* renderer){
-		int padding = 4;
-
+		// int padding = 4;
 		if(selected == 1){
-			SDL_Rect box = {(int)(p().x() - r()) - padding, (int)(p().y() - r()) - padding, (int)(2 * r()) + 2*padding, (int)(2 * r()) + 2*padding};
+			// SDL_Rect box = {(int)(p().x() - r()) - padding, (int)(p().y() - r()) - padding, (int)(2 * r()) + 2*padding, (int)(2 * r()) + 2*padding};
+			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f((int)(p().x() - r()), (int)(p().y() - r())));
+			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((int)(p().x() + r()), (int)(p().y() + r())));
+			SDL_Rect box = {
+				(int)(sp1.x()),
+				(int)(sp1.y()),
+				(int)(sp2.x()-sp1.x()),
+				(int)(sp2.y()-sp1.y())
+			};
+			// Fill
 			SDL_SetRenderDrawColor(renderer, 0, 0xFF, 0, 255);
 			SDL_RenderFillRect(renderer, &box);
+			// Outline
+			SDL_SetRenderDrawColor(renderer, 0, 0, 0xFF, 255);
+			SDL_RenderDrawRect(renderer, &box);
 		}
-
-		//SDL_RenderDrawPoint(renderer, (int)p().x(), (int)p().y());
-		SDL_Rect box = {(int)(p().x() - r()), (int)(p().y() - r()), (int)(2 * r()), (int)(2 * r())};
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0xFF, 255);
-		SDL_RenderFillRect(renderer, &box);
 	}
 
 	virtual void update_path(){
