@@ -4,33 +4,36 @@
 #include <time.h>
 #include <random>
 
+
 namespace Util {
 
 	/*
 	Time utilities
 	*/
 
-	const Uint64 INIT_COUNT = SDL_GetPerformanceCounter();
-	// const Uint64 COUNT_PER_S = SDL_GetPerformanceFrequency();
+	Uint64 INIT_COUNT = SDL_GetPerformanceCounter();
+	Uint64 COUNT_PER_S = SDL_GetPerformanceFrequency();
 
 	Uint64 get_counts(bool is_relative=true) {
-		return SDL_GetPerformanceCounter() - (is_relative ? INIT_COUNT : 0);
+		if (is_relative)
+			return SDL_GetPerformanceCounter() - INIT_COUNT;
+		return SDL_GetPerformanceCounter();
 	}
 
 	Uint64 get_nanoseconds(bool is_relative=true) {
-		return get_counts(is_relative);
+		return get_counts(is_relative) / SDL_GetPerformanceFrequency() * 1000000000.0;
 	}
 
 	Uint64 get_microseconds(bool is_relative=true) {
-		return get_counts(is_relative) / (Uint64)1e3; // (COUNT_PER_S / (Uint64)1e6);
+		return get_counts(is_relative) / SDL_GetPerformanceFrequency() * 1000000.0;
 	}
 
 	Uint64 get_milliseconds(bool is_relative=true) {
-		return get_counts(is_relative) / (Uint64)1e6; // (COUNT_PER_S / (Uint64)1e3);
+		return get_counts(is_relative) / SDL_GetPerformanceFrequency() * 1000.0;
 	}
 
 	Uint64 get_seconds(bool is_relative=true) {
-		return get_counts(is_relative) / (Uint64)1e9; // COUNT_PER_S;
+		return get_counts(is_relative) / SDL_GetPerformanceFrequency();
 	}
 
 	class Timer {

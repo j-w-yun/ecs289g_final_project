@@ -61,7 +61,7 @@ void stacktrace_handler(int sig) {
 #endif
 
 // Minimum delta time for update
-const unsigned int MIN_UPDATE_INTERVAL = 10;
+const Uint64 MIN_UPDATE_INTERVAL = 10;
 
 // Map settings
 const int X_TILES = 100;
@@ -315,24 +315,32 @@ int main(int argc, char* args[]) {
 	}
 
 	// Game loop
-	Util::Timer timer;
-	Uint64 unprocessed_time;
+	// Util::Timer timer;
+	Uint64 unprocessed_time = 0;
+	Uint64 last_time = 0;
 	while (Input::process_inputs()) {
 		if (Input::has_input())
 			is_running = true;
 
-		// Milliseconds
-		unprocessed_time += timer.reset();
-		render(unprocessed_time);
+		// unprocessed_time += timer.reset();
+		if (last_time == 0)
+			last_time = SDL_GetTicks();
+		Uint64 current_time = SDL_GetTicks();
+		unprocessed_time += current_time - last_time;
+		last_time = current_time;
+		render((float)unprocessed_time);
+		std::cout << current_time << ", " << last_time << ", " << unprocessed_time << std::endl;
 		while (unprocessed_time >= MIN_UPDATE_INTERVAL) {
-			if (MIN_UPDATE_INTERVAL > unprocessed_time / 2) {
-				update(MIN_UPDATE_INTERVAL);
-				unprocessed_time -= MIN_UPDATE_INTERVAL;
-			}
-			else {
-				update(unprocessed_time / 2);
-				unprocessed_time /= 2;
-			}
+			// if (MIN_UPDATE_INTERVAL > unprocessed_time / 2) {
+			// 	update(MIN_UPDATE_INTERVAL);
+			// 	unprocessed_time -= MIN_UPDATE_INTERVAL;
+			// }
+			// else {
+			// 	update(unprocessed_time / 2);
+			// 	unprocessed_time /= 2;
+			// }
+			update((float)MIN_UPDATE_INTERVAL);
+			unprocessed_time -= MIN_UPDATE_INTERVAL;
 		}
 	}
 

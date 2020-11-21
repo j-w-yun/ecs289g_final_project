@@ -37,8 +37,8 @@ void Stat::render_text(SDL_Renderer* renderer, TTF_Font* font) {
 }
 
 void Stat::calculate() {
-	unsigned int current_time = (unsigned int)SDL_GetTicks();
-	float delta_seconds = (current_time - Stat::last_time) / 1000;
+	Uint64 current_time = SDL_GetTicks();
+	float delta_seconds = current_time - Stat::last_time;
 	if (delta_seconds >= 0.5f && delta_seconds > 0) {
 		Stat::last_time = current_time;
 		Stat::fps = Stat::frames / delta_seconds;
@@ -65,7 +65,7 @@ void Stat::render(SDL_Renderer* renderer, TTF_Font* font) {
 	Stat::offset_y = 4;
 
 	// Display time
-	sprintf(text_str, "Time: %ims", (unsigned int)Util::get_milliseconds());
+	sprintf(text_str, "Time: %ims", SDL_GetTicks());
 	render_text(renderer, font);
 
 	// Display Frames
