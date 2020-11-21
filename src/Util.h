@@ -37,14 +37,17 @@ namespace Util {
 		public:
 			Uint64 start_time;
 			Timer() {
-				start_time = get_nanoseconds(true);
+				// start_time = get_nanoseconds(true);
+				start_time = SDL_GetTicks();
 			}
 			Uint64 delta() {
-				return get_nanoseconds(true) - start_time;
+				// return get_nanoseconds(true) - start_time;
+				return SDL_GetTicks() - start_time;
 			}
 			Uint64 reset() {
 				Uint64 _delta = delta();
-				start_time = get_nanoseconds(true);
+				// start_time = get_nanoseconds(true);
+				start_time = SDL_GetTicks();
 				return _delta;
 			}
 	};

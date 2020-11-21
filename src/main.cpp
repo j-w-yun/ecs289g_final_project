@@ -59,20 +59,20 @@ void stacktrace_handler(int sig) {
     exit(1);
 }
 #else
-// // This might work on windows
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <unistd.h>
-// #include <execinfo.h>
-// #include <signal.h>
-// void stacktrace_handler(int sig) {
-// 	void *array[10];
-// 	size_t size;
-// 	size = backtrace(array, 10);
-// 	fprintf(stderr, "Error: signal %d:\n", sig);
-// 	backtrace_symbols_fd(array, size, STDERR_FILENO);
-// 	exit(1);
-// }
+// This might work on windows
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <execinfo.h>
+#include <signal.h>
+void stacktrace_handler(int sig) {
+	void *array[10];
+	size_t size;
+	size = backtrace(array, 10);
+	fprintf(stderr, "Error: signal %d:\n", sig);
+	backtrace_symbols_fd(array, size, STDERR_FILENO);
+	exit(1);
+}
 #endif
 
 // Screen dimension constants
@@ -338,7 +338,7 @@ int main(int argc, char* args[]) {
 			is_running = true;
 
 		// Milliseconds
-		unprocessed_time += timer.reset() / 1e6;
+		unprocessed_time += timer.reset();
 		render(unprocessed_time);
 		while (unprocessed_time >= MIN_UPDATE_INTERVAL) {
 			if (MIN_UPDATE_INTERVAL > unprocessed_time / 2) {
