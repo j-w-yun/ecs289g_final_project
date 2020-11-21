@@ -62,6 +62,8 @@ const int BASE_PADDING = 5;
 std::vector<std::pair<int, int>> bases;
 std::vector<std::vector<AStar::Vec2i>> paths;
 void run_test() {
+	Util::test();
+
 	// // Generate bases
 	// srand(time(NULL));
 	// int xh = X_TILES / 2;

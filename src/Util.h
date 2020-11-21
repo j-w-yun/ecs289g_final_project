@@ -18,7 +18,7 @@ namespace Util {
 	}
 
 	Uint64 get_nanoseconds(bool is_relative=true) {
-		return get_counts(is_relative) / (COUNT_PER_S / (Uint64)1e9);
+		return get_counts(is_relative);
 	}
 
 	Uint64 get_microseconds(bool is_relative=true) {
@@ -73,6 +73,7 @@ namespace Util {
 		std::cout << std::endl;
 		std::cout << "SDL_GetPerformanceCounter(): " << SDL_GetPerformanceCounter() << std::endl;
 		std::cout << "SDL_GetTicks(): " << SDL_GetTicks() << std::endl;
+		std::cout << "COUNT_PER_S: " << COUNT_PER_S << std::endl;
 		std::cout << "Util::get_counts(): " << Util::get_counts() << std::endl;
 		std::cout << "Util::get_nanoseconds(): " << Util::get_nanoseconds() << std::endl;
 		std::cout << "Util::get_microseconds(): " << Util::get_microseconds() << std::endl;
