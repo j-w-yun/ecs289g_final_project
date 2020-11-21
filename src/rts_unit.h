@@ -124,10 +124,72 @@ struct rts_unit : GameObject {
 		for(int i = 0; i < size; i++){
 			x = pr.first + i/side - layers;
 			y = pr.second + i%side - layers;
-			if(inbounds(x, y) && map.get_obgrid()[x][y]){
-				d = p() - to_world_space({x, y});
-				//auto l = d.len();
-				retval += 40.0f*d.unit()/(d.len2());
+
+			if(inbounds(x, y)){
+				// wall
+				if(map.get_obgrid()[x][y]){
+					d = p() - to_world_space({x, y});
+					//auto l = d.len();
+					retval += 40.0f*d.unit()/(d.len2());
+				}
+				// units
+				else{
+					for(auto uind : map.get_unitgrid()[x][y]){
+						if(uind == id) continue;
+
+						d = p() - map.get_units()[uind]->p();
+						//auto l = d.len();
+						retval += 20.0f*d.unit()/(std::max(d.len2(), .001f));
+					}
+				}
+			}
+		}
+
+		return retval;
+	}
+
+	virtual Vector2f avoid_units(){
+		Vector2f retval(0, 0);
+		Vector2f d;
+		//Vector2f l;
+		int x, y;
+
+		Vector2f vu = v().unit();
+		Vector2f pu = par_unit(v());
+
+		auto pr = to_tile_space(p());
+
+		for(int i = 0; i < size; i++){
+			x = pr.first + i/side - layers;
+			y = pr.second + i%side - layers;
+			if(inbounds(x, y) && !map.get_obgrid()[x][y]){
+				for(auto uind : map.get_unitgrid()[x][y]){
+					//std::cout << "unid is  " << uind << std::endl;
+
+					// don't avoid self
+					if(uind == id) continue;
+
+					auto& unit = *(map.get_units()[uind]);
+
+					d = unit.p() - p();
+
+					d = components(v(), d);
+
+					// only influenced by units in front
+					//if(d.y() < 0) continue;
+
+					//float slow = -d.y() / d.x();
+					//float turn = d.x()/d.y();
+
+					int sign = (d.x() > 0) * 2 - 1;
+
+					auto fun = v().len() * exp(-(d.y() * d.x()));
+					float slow = fun/std::max(d.y(), .001f);
+					float turn = sign * fun/std::max(abs(d.x()), .001f);
+
+					retval = retval + slow*vu + turn*pu;
+					//std::cout << "done" << std::endl;
+				}
 			}
 		}
 
@@ -135,6 +197,8 @@ struct rts_unit : GameObject {
 	}
 
 	virtual void update(float elapsed_time, bool calc){
+		//std::cout << "unit pos before " << p() << std::endl;
+
 		set_p(p() + v());
 
 		auto x = p().x(), y = p().y();
@@ -159,6 +223,8 @@ struct rts_unit : GameObject {
 			set_v(Vector2f(v().x(), -v().y()));
 		}
 		
+		//std::cout << "unit pos after " << p() << std::endl;
+
 		if(Input::is_mouse_pressed(SDL_BUTTON_RIGHT)){
 			auto temp = Input::get_mouse_pos();
 			dest = RenderingEngine::screen_to_world(Vector2f(temp.first, temp.second));
@@ -170,13 +236,24 @@ struct rts_unit : GameObject {
 
 		auto deliberate = traverse_path()*acc;
 		auto avoidance = avoid_obstacles();
+		//auto group = avoid_units();
+		//Vector2f group(0, 0);
+		//std::cout << "deliberate is " << deliberate << std::endl;
+		//std::cout << "avoidance is " << avoidance << std::endl;
+		//std::cout << "group is " << group << std::endl;
 		//Vector2f avoidance(0, 0);
 		auto dv = deliberate+avoidance;
 
+		//std::cout << "dv is " << dv << std::endl;
+		//std::cout << "v is " << v() << std::endl;
+
 		auto nv = v() + dv;
 		if(nv.len() > topspeed){
+			//std::cout << "In if" << std::endl;
 			nv = (nv/nv.len())*topspeed;
 		}
+
+		//std::cout << "nv is " << nv << std::endl;
 
 		set_v(nv);
 	}

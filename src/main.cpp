@@ -64,10 +64,10 @@ void stacktrace_handler(int sig) {
 const Uint64 MIN_UPDATE_INTERVAL = 10;
 
 // Map settings
-const int X_TILES = 100;
-const int Y_TILES = 50;
-const float TILE_WIDTH = 10.0f;
-const float TILE_HEIGHT = 10.0f;
+const int X_TILES = 40;
+const int Y_TILES = 40;
+const float TILE_WIDTH = 30.0f;
+const float TILE_HEIGHT = 30.0f;
 const int BASE_PADDING = 5;
 
 // Starts up SDL and creates window
@@ -140,7 +140,7 @@ void run_test() {
 	// Test RTS units
 	float WORLD_WIDTH = TILE_WIDTH*X_TILES;
 	float WORLD_HEIGHT = TILE_HEIGHT*Y_TILES;
-	for(int i = 0; i < 4000; i++){
+	for(int i = 0; i < 200; i++){
 		auto position = Vector2f(bases.at(0).first * TILE_WIDTH, rand()%(int)WORLD_HEIGHT);
 		auto velocity = Vector2f(0, 0);
 		auto rts_ptr = std::make_shared<rts_unit>(

@@ -75,6 +75,8 @@ class MapLevel: public GameObject {
 		int get_tile_height() {return tile_height;};
 		const std::vector<ip>& get_obstructions() {return obstructions;};
 		const std::vector<std::vector<bool>>& get_obgrid() {return obgrid;};
+		const std::vector<std::vector<std::vector<size_t>>>& get_unitgrid() {return unitgrid;};
+		const std::vector<std::shared_ptr<GameObject>>& get_units() {return units;}
 		std::vector<std::shared_ptr<GameObject>>& get_objects();
 		size_t get_unitcap() {return unitcap;}
 		void render(SDL_Renderer* renderer);

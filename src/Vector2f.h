@@ -55,6 +55,10 @@ class Vector2f {
 			return scale(r);
 		}
 
+		//Vector2f operator*(const Vector2f& r) const {
+		//	return mul(r);
+		//}
+
 		Vector2f operator*=(float r) {
 			auto temp = scale(r);
 			_x = temp._x;
@@ -82,11 +86,27 @@ class Vector2f {
 
 };
 
-Vector2f operator*(float l, Vector2f r) {
+Vector2f operator*(const float& l, const Vector2f& r) {
 	return r*l;
+}
+
+float operator*(const Vector2f& l, const Vector2f& r) {
+	return l.dot(r);
 }
 
 std::ostream& operator<<(std::ostream& os, Vector2f v) {
 	os << "Vector2f(" << v.x() << ", " << v.y() << ")";
 	return os;
+}
+
+Vector2f par_unit(const Vector2f& v){
+	return Vector2f(v.y(), -v.x()).unit();
+}
+
+// components of r perpendicular and parallel to l
+Vector2f components(const Vector2f& l, const Vector2f& r){
+	float par = l.unit() * r;
+	//float par = l.unit().mul((const Vector2f&)r);
+	float perp = (r - par*l.unit()).len();
+	return Vector2f(perp, par);
 }

@@ -61,6 +61,9 @@ bool MapLevel::add(std::shared_ptr<GameObject> o) {
 
 	unitgrid[tile.first][tile.second].push_back(id);
 	o->id = id;
+
+	std::cout << "Adding unit " << id << std::endl;
+
 	return true;
 }
 
@@ -272,24 +275,24 @@ void MapLevel::render(SDL_Renderer* renderer) {
 	SDL_SetRenderDrawColor(renderer, 239, 196, 121, 255);
 	SDL_RenderFillRect(renderer, &world_box);
 
-	// for (int j = 0; j < tiles_x; j++) {
-	// 	for (int k = 0; k < tiles_y; k++) {
-	// 		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(j*tile_width, k*tile_height));
-	// 		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((j+1)*tile_width, (k+1)*tile_height));
-	// 		SDL_Rect box = {
-	// 			(int)(sp1.x())-2,
-	// 			(int)(sp1.y())-2,
-	// 			(int)(sp2.x()-sp1.x())+2,
-	// 			(int)(sp2.y()-sp1.y())+2
-	// 		};
-	// 		// Fill
-	// 		SDL_SetRenderDrawColor(renderer, 239, 196, 121, 255);
-	// 		SDL_RenderFillRect(renderer, &box);
-	// 		// Outline
-	// 		SDL_SetRenderDrawColor(renderer, 0x33, 0x33, 0x33, 255);
-	// 		SDL_RenderDrawRect(renderer, &box);
-	// 	}
-	// }
+	/*for (int j = 0; j < tiles_x; j++) {
+		for (int k = 0; k < tiles_y; k++) {
+			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(j*tile_width, k*tile_height));
+			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((j+1)*tile_width, (k+1)*tile_height));
+			SDL_Rect box = {
+				(int)(sp1.x())-2,
+				(int)(sp1.y())-2,
+				(int)(sp2.x()-sp1.x())+2,
+				(int)(sp2.y()-sp1.y())+2
+			};
+			// Fill
+			SDL_SetRenderDrawColor(renderer, 239, 196, 121, 255);
+			SDL_RenderFillRect(renderer, &box);
+			// Outline
+			SDL_SetRenderDrawColor(renderer, 0x33, 0x33, 0x33, 255);
+			SDL_RenderDrawRect(renderer, &box);
+		}
+	}*/
 
 	// Draw perlin noise
 	const float RESOLUTION = 5.0f;
@@ -414,6 +417,10 @@ void MapLevel::update(float elapsed_time) {
 			auto tile = unit->get_tile();
 			unit->update(elapsed_time, i % update_groups == ctr);
 			auto ntile = unit->get_tile();
+
+			//std::cout << "pos " << unit->p() << std::endl;
+			//std::cout << "ntile " << ntile.first << ", " << ntile.second << std::endl;
+
 			if (ntile != tile) {
 				auto& vec = unitgrid[tile.first][tile.second];
 				remove(vec, unit->id);
