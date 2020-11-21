@@ -134,10 +134,13 @@ namespace RenderingEngine {
 			if (cam.position.y() > world_height)
 				cam.position.sety(world_height);
 
-			// std::cout << "cam position: " << cam.position << " cam zoom: " << cam.zoom << std::endl;
-			// std::cout << "world_width: " << world_width << " world_height: " << world_height << std::endl;
-			// Vector2f world = screen_to_world(Vector2f(mp.first, mp.second));
-			// std::cout << "mouse world position: (" << world.x() << ", " << world.y() << ")" << std::endl;
+			// Send click world coordinates to World
+			if (Input::is_mouse_pressed(SDL_BUTTON_LEFT) || Input::is_mouse_pressed(SDL_BUTTON_RIGHT)) {
+				std::pair<int, int> pos = Input::get_mouse_pos();
+				Vector2f world_pos = screen_to_world(pos.first, pos.second);
+				int click_type = Input::is_mouse_pressed(SDL_BUTTON_LEFT) ? 0 : 1;
+				gWorld.click(world_pos, click_type);
+			}
 		}
 
 		// Render world
