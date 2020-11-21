@@ -20,8 +20,8 @@ class World {
 		void remove_level(int i);
 		void clear_levels();
 		std::vector<std::shared_ptr<MapLevel>> get_levels();
-		void select(Vector2f drag_start, Vector2f drag_end, int drag_type);
-		void click(Vector2f position, int click_type);
+		void select(Vector2f drag_start, Vector2f drag_end, int button);
+		void click(Vector2f position, int button, int type);
 		void render(SDL_Renderer* renderer);
 		void update(float elapsed_time);
 };

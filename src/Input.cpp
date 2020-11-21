@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#define DEBUG true
+#define DEBUG false
 
 std::string _mouse_button_str(Uint8 button) {
 	if (button == SDL_BUTTON_LEFT) {

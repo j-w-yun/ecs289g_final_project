@@ -21,8 +21,8 @@ namespace RenderingEngine {
 	const char* TTF_FILE = "./res/fonts/Roboto-Light.ttf";
 
 	// Default window dimensions
-	int width = 1200;
-	int height = 800;
+	int width = 800;
+	int height = 600;
 	float world_width;
 	float world_height;
 
@@ -81,6 +81,8 @@ namespace RenderingEngine {
 
 	Vector2f ldrag_start = Vector2f(-1, -1);
 	Vector2f rdrag_start = Vector2f(-1, -1);
+	bool lbutton_down = false;
+	bool rbutton_down = false;
 
 	void render(float delta_time, World& gWorld) {
 		// Get world size
@@ -135,11 +137,37 @@ namespace RenderingEngine {
 				cam.position.sety(world_height);
 
 			// Send click world coordinates to World
-			if (Input::is_mouse_pressed(SDL_BUTTON_LEFT) || Input::is_mouse_pressed(SDL_BUTTON_RIGHT)) {
+			if (Input::is_mouse_pressed(SDL_BUTTON_LEFT)) {
+				if (!lbutton_down) {
+					// Button down
+					std::pair<int, int> pos = Input::get_mouse_pos();
+					Vector2f world_pos = screen_to_world(pos.first, pos.second);
+					gWorld.click(world_pos, 0, 0);
+					lbutton_down = true;
+				}
+			}
+			else if (lbutton_down) {
+				// Button released
 				std::pair<int, int> pos = Input::get_mouse_pos();
 				Vector2f world_pos = screen_to_world(pos.first, pos.second);
-				int click_type = Input::is_mouse_pressed(SDL_BUTTON_LEFT) ? 0 : 1;
-				gWorld.click(world_pos, click_type);
+				gWorld.click(world_pos, 0, 1);
+				lbutton_down = false;
+			}
+			if (Input::is_mouse_pressed(SDL_BUTTON_RIGHT)) {
+				if (!rbutton_down) {
+					// Button down
+					std::pair<int, int> pos = Input::get_mouse_pos();
+					Vector2f world_pos = screen_to_world(pos.first, pos.second);
+					gWorld.click(world_pos, 1, 0);
+					rbutton_down = true;
+				}
+			}
+			else if (rbutton_down) {
+				// Button released
+				std::pair<int, int> pos = Input::get_mouse_pos();
+				Vector2f world_pos = screen_to_world(pos.first, pos.second);
+				gWorld.click(world_pos, 1, 1);
+				rbutton_down = false;
 			}
 		}
 

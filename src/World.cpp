@@ -34,18 +34,38 @@ std::vector<std::shared_ptr<MapLevel>> World::get_levels() {
 	return levels;
 }
 
-void World::select(Vector2f drag_start, Vector2f drag_end, int drag_type) {
-	std::cout << "World::select(): implement me!" << std::endl;
-	std::cout << "drag_start: " << drag_start << std::endl;
-	std::cout << "drag_end: " << drag_end << std::endl;
-	std::cout << "drag_type: " << drag_type << std::endl;
-	std::cout << std::endl;
+/**
+drag_start:
+	world position of mouse drag origin
+drag_end:
+	world position of current mouse position
+button:
+	0: left button
+	1: right button
+*/
+void World::select(Vector2f drag_start, Vector2f drag_end, int button) {
+	// std::cout << "World::select(): implement me!" << std::endl;
+	// std::cout << "drag_start: " << drag_start << std::endl;
+	// std::cout << "drag_end: " << drag_end << std::endl;
+	// std::cout << "button: " << button << std::endl;
+	// std::cout << std::endl;
 }
 
-void World::click(Vector2f position, int click_type) {
+/**
+position:
+	world position of mouse click event
+button:
+	0: left button
+	1: right button
+type:
+	0: button down
+	1: button release
+*/
+void World::click(Vector2f position, int button, int type) {
 	std::cout << "World::click(): implement me!" << std::endl;
-	std::cout << "drag_startposition: " << position << std::endl;
-	std::cout << "drag_endclick_type: " << click_type << std::endl;
+	std::cout << "position: " << position << std::endl;
+	std::cout << "button: " << button << std::endl;
+	std::cout << "type: " << type << std::endl;
 	std::cout << std::endl;
 }
 

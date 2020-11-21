@@ -60,10 +60,6 @@ void stacktrace_handler(int sig) {
 }
 #endif
 
-// Screen dimension constants
-const unsigned int SCREEN_WIDTH = 1200;
-const unsigned int SCREEN_HEIGHT = 800;
-
 // Minimum delta time for update
 const unsigned int MIN_UPDATE_INTERVAL = 10;
 
