@@ -38,7 +38,7 @@ void Stat::render_text(SDL_Renderer* renderer, TTF_Font* font) {
 
 void Stat::calculate() {
 	Uint64 current_time = SDL_GetTicks();
-	float delta_seconds = current_time - Stat::last_time;
+	float delta_seconds = (current_time - Stat::last_time) / 1000;
 	if (delta_seconds >= 0.5f && delta_seconds > 0) {
 		Stat::last_time = current_time;
 		Stat::fps = Stat::frames / delta_seconds;
