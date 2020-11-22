@@ -104,12 +104,12 @@ class MapLevel: public GameObject {
 		}
 
 		template<class T>
-		bool inbounds(std::vector<std::vector<T>>& grid, int x, int y){
+		bool inbounds(const std::vector<std::vector<T>>& grid, int x, int y){
 			return x >= 0 && x < (int)grid.size() && y >= 0 && y < (int)grid[0].size();
 		}
 
 		template<class T>
-		bool inbounds(std::vector<std::vector<T>>& grid, ip pr){
+		bool inbounds(const std::vector<std::vector<T>>& grid, ip pr){
 			return pr.first >= 0 && pr.first < (int)grid.size() && pr.second >= 0 && pr.second < (int)grid[0].size();
 		}
 

@@ -199,7 +199,15 @@ struct rts_unit : GameObject {
 	virtual void update(float elapsed_time, bool calc){
 		//std::cout << "unit pos before " << p() << std::endl;
 
-		set_p(p() + v());
+		auto temp = p() + v();
+
+		auto temp_tile = to_tile_space(temp);
+
+		if(map.inbounds(map.get_obgrid(), temp_tile) && !map.get_obgrid()[temp_tile.first][temp_tile.second]){
+			set_p(temp);
+		}
+
+		//set_p(p() + v());
 
 		auto x = p().x(), y = p().y();
 
