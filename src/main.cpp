@@ -12,6 +12,9 @@
 #include <math.h>
 #include <utility>
 
+#include "glad.h"
+#include "glad.c"
+
 #include "Stat.h"
 #include "Stat.cpp"
 #include "Input.h"

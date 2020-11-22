@@ -19,7 +19,7 @@ std::vector<SDL_Surface*> Stat::surfaces;
 std::vector<SDL_Texture*> Stat::textures;
 
 SDL_Color Stat::color = {0, 255, 0};
-SDL_Rect Stat::text_rect = {x: 8};
+SDL_Rect Stat::text_rect;
 char Stat::text_str[64];
 int Stat::w;
 int Stat::h;

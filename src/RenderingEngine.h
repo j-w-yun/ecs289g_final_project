@@ -193,8 +193,8 @@ namespace RenderingEngine {
 		Dimension dim = get_dimension(ps);
 		// Fill polygon
 		std::vector<int> node_x;
-		node_x.resize(ps.size());
 		for (int y = dim.top; y < dim.bottom; y++) {
+			node_x.resize(ps.size());
 			int nodes = 0;
 			int j = (int)ps.size() - 1;
 			for (int i = 0; i < (int)ps.size(); i++) {
@@ -438,7 +438,7 @@ namespace RenderingEngine {
 			SDL_WINDOWPOS_UNDEFINED,
 			width,
 			height,
-			SDL_WINDOW_SHOWN
+			SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
 		);
 		if (gWindow == NULL) {
 			printf("Window could not be created: %s\n", SDL_GetError());
@@ -454,6 +454,15 @@ namespace RenderingEngine {
 		if (gRenderer == NULL) {
 			printf("Renderer could not be created: %s\n", SDL_GetError());
 			return false;
+		}
+
+		// Create a OpenGL context on SDL2
+		SDL_GLContext gl_context = SDL_GL_CreateContext(gWindow);
+
+		// Load GL extensions using glad
+		if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+			std::cerr << "Failed to initialize the OpenGL context." << std::endl;
+			exit(1);
 		}
 
 		// Create font from TrueType Font file
