@@ -30,6 +30,10 @@ void World::clear_levels() {
 	levels.clear();
 }
 
+int World::num_levels() {
+	return levels.size();
+}
+
 std::vector<std::shared_ptr<MapLevel>> World::get_levels() {
 	return levels;
 }
@@ -44,11 +48,11 @@ button:
 	1: right button
 */
 void World::select(Vector2f drag_start, Vector2f drag_end, int button) {
-	// std::cout << "World::select(): implement me!" << std::endl;
-	// std::cout << "drag_start: " << drag_start << std::endl;
-	// std::cout << "drag_end: " << drag_end << std::endl;
-	// std::cout << "button: " << button << std::endl;
-	// std::cout << std::endl;
+	std::cout << "World::select(): implement me!" << std::endl;
+	std::cout << "drag_start: " << drag_start << std::endl;
+	std::cout << "drag_end: " << drag_end << std::endl;
+	std::cout << "button: " << button << std::endl;
+	std::cout << std::endl;
 }
 
 /**

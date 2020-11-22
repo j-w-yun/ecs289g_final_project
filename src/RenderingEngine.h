@@ -15,6 +15,68 @@
 #include "World.h"
 #include "World.cpp"
 
+struct Dimension {
+	int top;
+	int right;
+	int bottom;
+	int left;
+};
+
+Dimension get_dimension(const std::vector<Vector2f>& vs) {
+	// Find dimensions
+	Dimension d;
+	d.left = vs[0].x();
+	d.right = vs[0].x();
+	d.top = vs[0].y();
+	d.bottom = vs[0].y();
+	for (int j = 0; j < (int)vs.size(); j++) {
+		d.left = vs[j].x() < d.left ? vs[j].x() : d.left;
+		d.right = vs[j].x() > d.right ? vs[j].x() : d.right;
+		d.top = vs[j].y() < d.top ? vs[j].y() : d.top;
+		d.bottom = vs[j].y() > d.bottom ? vs[j].y() : d.bottom;
+	}
+	return d;
+}
+
+double cubic_interpolate(double y0, double y1, double y2, double y3, double mu) {
+	double a0, a1, a2, a3, mu2;
+	mu2 = mu * mu;
+	a0 = y3 - y2 - y0 + y1;
+	a1 = y0 - y1 - a0;
+	a2 = y2 - y0;
+	a3 = y1;
+	return a0 * mu * mu2+a1 * mu2+a2 * mu+a3;
+}
+
+std::vector<Vector2f> cubic_interpolate(const std::vector<Vector2f>& vs, int np) {
+	std::vector<Vector2f> ps;
+	int nv = (int)vs.size();
+	ps.resize(np*nv);
+	for (int j = 0; j < nv; j++) {
+		Vector2f v1 = vs[j];
+		Vector2f v2 = vs[(j+1)%nv];
+		Vector2f v3 = vs[(j+2)%nv];
+		Vector2f v4 = vs[(j+3)%nv];
+		for (int k = 0; k < np; k++) {
+			ps[j*np+k].setx(cubic_interpolate(v1.x(), v2.x(), v3.x(), v4.x(), (double)k/np));
+			ps[j*np+k].sety(cubic_interpolate(v1.y(), v2.y(), v3.y(), v4.y(), (double)k/np));
+		}
+	}
+	return ps;
+}
+
+// std::vector<std::vector<Vector2f>> group_mesh(std::vector<Vector2f>& is) {
+// 	for (int j = 0; j < is.size(); j++) {
+// 		for (int k = j+1; k < is.size(); k++) {
+// 		}
+// 	}
+// }
+// std::vector<Vector2f> optimize_mesh(std::vector<Vector2f>& vs) {
+// 	std::vector<Vector2f> ps;
+// 	Dimension dim = get_dimension(ps);
+// 	return ps;
+// }
+
 namespace RenderingEngine {
 
 	// Font file
@@ -30,6 +92,64 @@ namespace RenderingEngine {
 	SDL_Window* gWindow;
 	SDL_Renderer* gRenderer;
 	TTF_Font* gFont;
+	World gWorld;
+
+	void set_world(World& world) {
+		gWorld = world;
+
+		if (gWorld.num_levels() == 0)
+			return;
+
+		// Get world size
+		MapLevel& level = gWorld.get_level(0);
+		world_width = level.get_tile_width() * level.get_width();
+		world_height = level.get_tile_height() * level.get_height();
+
+		// std::vector<std::pair<int, int>> obs = level.get_obstructions();
+		// // std::map<std::pair<int, int>, int> groups;
+		// std::vector<std::vector<int>> grid;
+		// grid.resize(level.get_width());
+		// for (auto& g : grid)
+		// 	g.resize(level.get_height());
+		// int group_id = 1;
+		// int size = (int)obs.size();
+		// for (int j = 0; j < size; j++) {
+		// 	bool next_group = true;
+		// 	// grid[obs[j].first][obs[j].second] = group_id;
+		// 	for (int k = 0; k < size; k++) {
+		// 		std::cout << std::endl;
+		// 		std::cout << abs(obs.at(j).first - obs.at(k).first) << std::endl;
+		// 		std::cout << abs(obs.at(j).second - obs.at(k).second) << std::endl;
+		// 		std::cout << obs.at(j).first << std::endl;
+		// 		std::cout << obs.at(k).first << std::endl;
+		// 		std::cout << obs.at(j).second << std::endl;
+		// 		std::cout << obs.at(k).second << std::endl;
+		// 		if ((abs(obs.at(j).first - obs.at(k).first) == 1 && obs.at(j).second == obs.at(k).second) ||
+		// 			(abs(obs.at(j).second - obs.at(k).second) == 1 && obs.at(j).first == obs.at(k).first)) {
+		// 			// if (groups.find(std::make_pair(j, k)) == groups.end())
+		// 			// 	groups.insert(std::make_pair(std::make_pair(j, k), group_id));
+		// 			if (grid[obs.at(k).first][obs.at(k).second] == 0) {
+		// 				grid[obs.at(k).first][obs.at(k).second] = group_id;
+		// 				next_group = false;
+		// 			}
+		// 			std::cout << "group: " << group_id << " : " << j << ", " << k << std::endl;
+		// 		}
+		// 		std::cout << std::endl;
+		// 	}
+		// 	if (next_group)
+		// 		group_id++;
+		// }
+		// // auto& grid = level.get_obgrid();
+		// for (int j = 0; j < level.get_width(); j++) {
+		// 	for (int k = 0; k < level.get_height(); k++) {
+		// 		if (grid[j][k] != 0)
+		// 			std::cout << grid[j][k] << " ";
+		// 		else
+		// 			std::cout << "  ";
+		// 	}
+		// 	std::cout << std::endl;
+		// }
+	}
 
 	class Camera {
 		public:
@@ -66,6 +186,40 @@ namespace RenderingEngine {
 		return screen_to_world(Vector2f(x, y));
 	}
 
+	void fill_poly(std::vector<Vector2f> ps) {
+		if (ps.size() == 0)
+			return;
+		// Find dimensions
+		Dimension dim = get_dimension(ps);
+		// Fill polygon
+		std::vector<int> node_x;
+		node_x.resize(ps.size());
+		for (int y = dim.top; y < dim.bottom; y++) {
+			int nodes = 0;
+			int j = (int)ps.size() - 1;
+			for (int i = 0; i < (int)ps.size(); i++) {
+				if ((ps[i].y() < (double)y && ps[j].y() >= (double)y) || (ps[j].y() < (double)y && ps[i].y() >= (double)y))
+					node_x[nodes++] = (int)(ps[i].x()+(y-ps[i].y())/(ps[j].y()-ps[i].y())*(ps[j].x()-ps[i].x()));
+				j = i;
+			}
+			node_x.resize(nodes);
+			std::sort(node_x.begin(), node_x.end());
+			for (int i = 0; i < nodes; i += 2) {
+				if (node_x[i] >= dim.right)
+					break;
+				if (node_x[i+1] > dim.left) {
+					if (node_x[i] < dim.left)
+						node_x[i] = dim.left;
+					if (node_x[i+1] > dim.right)
+						node_x[i+1] = dim.right;
+					SDL_RenderDrawLine(gRenderer, node_x[i], y, node_x[i+1], y);
+					// for (int x = node_x[i]; x < node_x[i+1]; x++)
+					// 	SDL_RenderDrawPoint(gRenderer, x, y);
+				}
+			}
+		}
+	}
+
 	void clear() {
 		// Get current window size
 		SDL_GetWindowSize(gWindow, &width, &height);
@@ -84,12 +238,7 @@ namespace RenderingEngine {
 	bool lbutton_down = false;
 	bool rbutton_down = false;
 
-	void render(float delta_time, World& gWorld) {
-		// Get world size
-		MapLevel& level = gWorld.get_level(0);
-		world_width = level.get_tile_width() * level.get_width();
-		world_height = level.get_tile_height() * level.get_height();
-
+	void render(float delta_time) {
 		// Move camera to center if unset
 		if (cam.position.x() < 0 && cam.position.y() < 0)
 			cam.position.set(world_width/2, world_height/2);
@@ -227,6 +376,31 @@ namespace RenderingEngine {
 		else {
 			rdrag_start = Vector2f(-1, -1);
 		}
+
+		float cx = width/2;
+		float cy = height/2;
+		const float DX = 100;
+		const float DY = 100;
+		std::vector<Vector2f> vs;
+		vs.push_back(Vector2f(cx-DX, cy+DY));
+		vs.push_back(Vector2f(cx-DX, cy-DY));
+		vs.push_back(Vector2f(cx+DX, cy-DY));
+		vs.push_back(Vector2f(cx+DX*2, cy+DY*2));
+		for (auto& v : vs) {
+			SDL_Rect box = {(int)v.x(), (int)v.y(), 10, 10};
+			SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0xFF);
+			SDL_RenderFillRect(gRenderer, &box);
+		}
+
+		std::vector<Vector2f> ps = cubic_interpolate(vs, 10);
+		for (auto& p : ps) {
+			SDL_Rect box = {(int)p.x(), (int)p.y(), 10, 10};
+			SDL_SetRenderDrawColor(gRenderer, 0x77, 0xFF, 0x77, 0x33);
+			SDL_RenderFillRect(gRenderer, &box);
+		}
+		
+		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x77, 0x77, 0x33);
+		fill_poly(ps);
 	}
 
 	void show() {

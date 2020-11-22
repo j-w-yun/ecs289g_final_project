@@ -19,6 +19,7 @@ class World {
 		MapLevel& get_level(int i);
 		void remove_level(int i);
 		void clear_levels();
+		int num_levels();
 		std::vector<std::shared_ptr<MapLevel>> get_levels();
 		void select(Vector2f drag_start, Vector2f drag_end, int button);
 		void click(Vector2f position, int button, int type);
