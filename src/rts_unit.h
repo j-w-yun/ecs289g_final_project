@@ -83,7 +83,7 @@ struct rts_unit : GameObject {
 		//	update_path();
 		//	recomp = true;
 		//}
-		if(dist < (float)xtwidth/5){
+		if(dist < (float)xtwidth){
 			path.pop_back();
 			recomp = true;
 		}
@@ -143,6 +143,8 @@ struct rts_unit : GameObject {
 				if(map.get_obgrid()[x][y]){
 					d = p() - to_world_space({x, y});
 					//auto l = d.len();
+					//float force = 40.0f/(d.len2());
+
 					retval += 40.0f*d.unit()/(d.len2());
 				}
 				// units

@@ -503,6 +503,8 @@ std::vector<Vector2f> MapLevel::reconstruct_path(std::vector<int>& from, std::ve
 std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 	//std::cout << "In find_rect_path" << std::endl;
 
+	//std::vector<rect>& rectcover = pathcover;
+
 	std::vector<int> from(rectcover.size(), -1);
 	std::vector<float> gscore(rectcover.size(), std::numeric_limits<float>::infinity());
 	std::vector<float> fscore(rectcover.size(), std::numeric_limits<float>::infinity());
