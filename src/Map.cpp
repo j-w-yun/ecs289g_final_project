@@ -46,13 +46,13 @@ MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), 
 	// init unitgrid
 	unitgrid = std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y));
 
-	// init obgrid 
+	// init obgrid
 	obgrid = std::vector<std::vector<bool>>(tx, std::vector<bool>(ty, 0));
 }
 
 bool MapLevel::add(std::shared_ptr<GameObject> o) {
 	if (!idstack.size()) return false;
-	
+
 	auto id = idstack.back();
 	idstack.pop_back();
 
@@ -84,7 +84,7 @@ void MapLevel::set_size(int x, int y, int w, int h) {
 	// init unitgrid
 	unitgrid = std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y));
 
-	// init obgrid 
+	// init obgrid
 	obgrid = std::vector<std::vector<bool>>(tiles_x, std::vector<bool>(tiles_y, 0));
 }
 
@@ -202,7 +202,7 @@ std::vector<std::pair<int, int>> MapLevel::generate_obstructions(std::vector<std
 				level->set_obstructions(obs);
 				path.clear();
 				path = find_path(*level, a, b, true);
-				
+
 				// No path found
 				if (path.size() == 0) {
 					found = false;
@@ -337,7 +337,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 				noise2d[xi][yi] = (noise2d[xi][yi] - min_z) / (max_z - min_z);
 	}
 	if (noise2d.size() > 0) {
-		// Normalize noise from 0 to 1 and draw 
+		// Normalize noise from 0 to 1 and draw
 		int xi = 0;
 		for (float x = X_MIN; x < X_MAX; x += RESOLUTION) {
 			int yi = 0;
@@ -353,7 +353,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 					(int)(sp2.x()-sp1.x())+1,
 					(int)(sp2.y()-sp1.y())+1
 				};
-				float f = ((float)SDL_GetTicks()/400.0f+(x+y+1)/10); 
+				float f = ((float)SDL_GetTicks()/400.0f+(x+y+1)/10);
 				SDL_SetRenderDrawColor(renderer, 40, 90*z+40, 30, 150+60*sin(f));
 				// SDL_SetRenderDrawColor(renderer, 60, 90*z+40, 30, 150);
 				SDL_RenderFillRect(renderer, &box);
@@ -373,8 +373,8 @@ void MapLevel::render(SDL_Renderer* renderer) {
 			(int)(sp2.y()-sp1.y())+1
 		};
 		// Fill
-		float f = ((float)SDL_GetTicks()/1000.0f+(o.first+o.second+1)/4); 
-		SDL_SetRenderDrawColor(renderer, 40, 40, 190+50*sin(f), 255);
+		float f = ((float)SDL_GetTicks()/1000.0f+(o.first+o.second+1)/4);
+		SDL_SetRenderDrawColor(renderer, 40, 40, 190+50*sin(f), 127);
 		// SDL_SetRenderDrawColor(renderer, 32, 32, 190, 255);
 		SDL_RenderFillRect(renderer, &box);
 	}
@@ -406,7 +406,7 @@ void MapLevel::update(float elapsed_time) {
 			std::cout << "\t" << a << std::endl;
 		}
 	}*/
-	
+
 	static int ctr = 0;
 	ctr = (ctr+1)%update_groups;
 
@@ -509,7 +509,7 @@ std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 	std::vector<Vector2f> point_in_r(rectcover.size());
 
 	auto dv = [&](int li, int ri){
-		rect& r = rectcover[ri]; 
+		rect& r = rectcover[ri];
 
 		return closest_point(point_in_r[li], r);
 	};
