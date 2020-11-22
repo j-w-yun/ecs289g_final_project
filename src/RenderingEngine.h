@@ -97,17 +97,36 @@ std::vector<Vector2f> hermite_interpolate(const std::vector<Vector2f>& vs, int n
 	return ps;
 }
 
-// std::vector<std::vector<Vector2f>> group_mesh(std::vector<Vector2f>& is) {
-// 	for (int j = 0; j < is.size(); j++) {
-// 		for (int k = j+1; k < is.size(); k++) {
-// 		}
-// 	}
-// }
-// std::vector<Vector2f> optimize_mesh(std::vector<Vector2f>& vs) {
-// 	std::vector<Vector2f> ps;
-// 	Dimension dim = get_dimension(ps);
-// 	return ps;
-// }
+Vector2f bspline(Vector2f& p1, Vector2f& p2, Vector2f& p3, Vector2f& p4, double t) {
+	Vector2f p;
+	double t2 = t * t;
+	double t3 = t2 * t;
+	double mt = 1.0 - t;
+	double mt3 = mt * mt * mt;
+	double bi3 = mt3;
+	double bi2 = 3 * t3 - 6 * t2 + 4;
+	double bi1 =-3 * t3 + 3 * t2 + 3 * t + 1;
+	double bi  = t3;
+	p.setx((p1.x()*bi3 + p2.x()*bi2 +p3.x()*bi1 + p4.x()*bi) / 6.0);
+	p.sety((p1.y()*bi3 + p2.y()*bi2 +p3.y()*bi1 + p4.y()*bi) / 6.0);
+	return p;
+}
+
+std::vector<Vector2f> bspline(const std::vector<Vector2f>& vs, int np) {
+	std::vector<Vector2f> ps;
+	int nv = (int)vs.size();
+	ps.resize(np*nv);
+	for (int j = 0; j < nv; j++) {
+		Vector2f v1 = vs[j];
+		Vector2f v2 = vs[(j+1)%nv];
+		Vector2f v3 = vs[(j+2)%nv];
+		Vector2f v4 = vs[(j+3)%nv];
+		for (int k = 0; k < np; k++) {
+			ps[j*np+k] = bspline(v1, v2, v3, v4, (double)k/np);
+		}
+	}
+	return ps;
+}
 
 namespace RenderingEngine {
 
@@ -432,11 +451,29 @@ namespace RenderingEngine {
 		}
 
 		// Draw interpolated vertices as polygon
-		// std::vector<Vector2f> ps = cubic_interpolate(vs, 100);
-		std::vector<Vector2f> ps = hermite_interpolate(vs, 100, 0.5, 0);
-		Vector2f last_p = ps.at(ps.size()-1);
+		std::vector<Vector2f> ps;
+		Vector2f last_p;
+		// Cubic
+		ps = cubic_interpolate(vs, 100);
+		last_p = ps.at(ps.size()-1);
 		for (auto& p : ps) {
-			SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255);
+			SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 200);
+			SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
+			last_p = p;
+		}
+		// Hermite
+		ps = hermite_interpolate(vs, 100, 0.5, 0);
+		last_p = ps.at(ps.size()-1);
+		for (auto& p : ps) {
+			SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 200);
+			SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
+			last_p = p;
+		}
+		// Bspline
+		ps = bspline(vs, 100);
+		last_p = ps.at(ps.size()-1);
+		for (auto& p : ps) {
+			SDL_SetRenderDrawColor(gRenderer, 0, 0, 255, 200);
 			SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
 			last_p = p;
 		}
@@ -511,7 +548,7 @@ namespace RenderingEngine {
 
 		// Grab mouse
 		// SDL_SetWindowGrab(gWindow, SDL_TRUE);
-		
+
 		// Set blending
 		SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
 
