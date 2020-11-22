@@ -45,7 +45,7 @@ double cubic_interpolate(double y0, double y1, double y2, double y3, double mu) 
 	a1 = y0 - y1 - a0;
 	a2 = y2 - y0;
 	a3 = y1;
-	return a0 * mu * mu2+a1 * mu2+a2 * mu+a3;
+	return a0*mu*mu2 + a1*mu2 + a2*mu + a3;
 }
 
 std::vector<Vector2f> cubic_interpolate(const std::vector<Vector2f>& vs, int np) {
@@ -60,6 +60,38 @@ std::vector<Vector2f> cubic_interpolate(const std::vector<Vector2f>& vs, int np)
 		for (int k = 0; k < np; k++) {
 			ps[j*np+k].setx(cubic_interpolate(v1.x(), v2.x(), v3.x(), v4.x(), (double)k/np));
 			ps[j*np+k].sety(cubic_interpolate(v1.y(), v2.y(), v3.y(), v4.y(), (double)k/np));
+		}
+	}
+	return ps;
+}
+
+double hermite_interpolate(double y0, double y1, double y2, double y3, double mu, double tension, double bias) {
+	double a0, a1, a2, a3, m0, m1, mu2, mu3;
+	mu2 = mu * mu;
+	mu3 = mu2 * mu;
+	m0 = (y1 - y0) * (1 + bias) * (1 - tension)/2;
+	m0 += (y2 - y1) * (1 - bias) * (1 - tension)/2;
+	m1 = (y2 - y1) * (1 + bias) * (1 - tension)/2;
+	m1 += (y3 - y2) * (1 - bias) * (1 - tension)/2;
+	a0 = 2 * mu3 - 3 * mu2 + 1;
+	a1 = mu3 - 2 * mu2 + mu;
+	a2 = mu3 - mu2;
+	a3 = -2 * mu3 + 3 * mu2;
+	return a0*y1 + a1*m0 + a2*m1 + a3*y2;
+}
+
+std::vector<Vector2f> hermite_interpolate(const std::vector<Vector2f>& vs, int np, double tension, double bias) {
+	std::vector<Vector2f> ps;
+	int nv = (int)vs.size();
+	ps.resize(np*nv);
+	for (int j = 0; j < nv; j++) {
+		Vector2f v1 = vs[j];
+		Vector2f v2 = vs[(j+1)%nv];
+		Vector2f v3 = vs[(j+2)%nv];
+		Vector2f v4 = vs[(j+3)%nv];
+		for (int k = 0; k < np; k++) {
+			ps[j*np+k].setx(hermite_interpolate(v1.x(), v2.x(), v3.x(), v4.x(), (double)k/np, tension, bias));
+			ps[j*np+k].sety(hermite_interpolate(v1.y(), v2.y(), v3.y(), v4.y(), (double)k/np, tension, bias));
 		}
 	}
 	return ps;
@@ -193,8 +225,8 @@ namespace RenderingEngine {
 		Dimension dim = get_dimension(ps);
 		// Fill polygon
 		std::vector<int> node_x;
-		node_x.resize(ps.size());
 		for (int y = dim.top; y < dim.bottom; y++) {
+			node_x.resize(ps.size());
 			int nodes = 0;
 			int j = (int)ps.size() - 1;
 			for (int i = 0; i < (int)ps.size(); i++) {
@@ -377,29 +409,40 @@ namespace RenderingEngine {
 			rdrag_start = Vector2f(-1, -1);
 		}
 
+		// Interpolate and fillpoly demo
 		float cx = width/2;
 		float cy = height/2;
 		const float DX = 100;
 		const float DY = 100;
+
+		// Make test vertices
 		std::vector<Vector2f> vs;
 		vs.push_back(Vector2f(cx-DX, cy+DY));
 		vs.push_back(Vector2f(cx-DX, cy-DY));
 		vs.push_back(Vector2f(cx+DX, cy-DY));
 		vs.push_back(Vector2f(cx+DX*2, cy+DY*2));
+		vs.push_back(Vector2f(cx+DX*3, cy+DY));
+
+		// Draw original vertices as polygon
+		Vector2f last_v = vs.at(vs.size()-1);
 		for (auto& v : vs) {
-			SDL_Rect box = {(int)v.x(), (int)v.y(), 10, 10};
-			SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0xFF);
-			SDL_RenderFillRect(gRenderer, &box);
+			SDL_SetRenderDrawColor(gRenderer, 0, 255, 255, 255);
+			SDL_RenderDrawLine(gRenderer, v.x(), v.y(), last_v.x(), last_v.y());
+			last_v = v;
 		}
 
-		std::vector<Vector2f> ps = cubic_interpolate(vs, 10);
+		// Draw interpolated vertices as polygon
+		// std::vector<Vector2f> ps = cubic_interpolate(vs, 100);
+		std::vector<Vector2f> ps = hermite_interpolate(vs, 100, 0.5, 0);
+		Vector2f last_p = ps.at(ps.size()-1);
 		for (auto& p : ps) {
-			SDL_Rect box = {(int)p.x(), (int)p.y(), 10, 10};
-			SDL_SetRenderDrawColor(gRenderer, 0x77, 0xFF, 0x77, 0x33);
-			SDL_RenderFillRect(gRenderer, &box);
+			SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255);
+			SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
+			last_p = p;
 		}
-		
-		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x77, 0x77, 0x33);
+
+		// Fill interpolated vertices as polygon
+		SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 64);
 		fill_poly(ps);
 	}
 
