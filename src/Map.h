@@ -25,7 +25,7 @@ struct rect{
 		yl = yh = (int)v.y();
 	}
 
-	rect center(){
+	rect center() const{
 		int x = (xh - xl)/2;
 		int y = (yh - yl)/2;
 		return rect(x, y, x, y);
@@ -56,6 +56,7 @@ class MapLevel: public GameObject {
 		std::vector<std::vector<std::vector<size_t>>> unitgrid;
 		size_t unitcap;
 		std::vector<rect> rectcover;
+		std::vector<rect> pathcover;
 		std::vector<std::vector<int>> grid_to_rectcover;
 		std::vector<std::vector<size_t>> rectgraph;
 		bool climb(std::vector<std::pair<int, int>>* obs, double noise[], float threshold, std::vector<std::pair<int, int>> bases, int padding);
@@ -276,7 +277,16 @@ class MapLevel: public GameObject {
 			return ax || ay;
 		}
 		
+		rect shrink(const rect& r, int amt){
+			rect nr(r.xl + amt, r.yl + amt, r.xh - amt, r.yh - amt);
+			if(nr.xl > nr.xh || nr.yl > nr.yh) nr = r.center();
+			return nr;
+		}
+
 		void compute_rectcover(){
+			rectcover = {};
+			pathcover = {};
+
 			int x_tiles = tiles_x;
 			int y_tiles = tiles_y;
 
@@ -443,6 +453,8 @@ class MapLevel: public GameObject {
 				}
 
 				cover.push_back(r);
+				pathcover.push_back(shrink(r, 1));
+
 			}
 
 			std::cout << "Rectangle cover: " << std::endl;

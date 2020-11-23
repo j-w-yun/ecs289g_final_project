@@ -45,21 +45,21 @@
 #include <sys/prctl.h>
 #include <sys/wait.h>
 void stacktrace_handler(int sig) {
-    char pid_buf[30];
-    sprintf(pid_buf, "%d", getpid());
-    char name_buf[512];
-    name_buf[readlink("/proc/self/exe", name_buf, 511)]=0;
-    prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0);
-    int child_pid = fork();
-    if (!child_pid) {           
-        dup2(2,1);
-        fprintf(stdout,"stack trace for %s pid=%s\n",name_buf,pid_buf);
-        execlp("gdb", "gdb", "--batch", "-n", "-ex", "thread", "-ex", "bt", name_buf, pid_buf, NULL);
-        abort();
-    } else {
-        waitpid(child_pid,NULL,0);
-    }
-    exit(1);
+	char pid_buf[30];
+	sprintf(pid_buf, "%d", getpid());
+	char name_buf[512];
+	name_buf[readlink("/proc/self/exe", name_buf, 511)]=0;
+	prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0);
+	int child_pid = fork();
+	if (!child_pid) {
+		dup2(2,1);
+		fprintf(stdout,"stack trace for %s pid=%s\n",name_buf,pid_buf);
+		execlp("gdb", "gdb", "--batch", "-n", "-ex", "thread", "-ex", "bt", name_buf, pid_buf, NULL);
+		abort();
+	} else {
+		waitpid(child_pid,NULL,0);
+	}
+	exit(1);
 }
 #endif
 
@@ -92,7 +92,7 @@ void run_test() {
 	// // Test stacktrace handler
 	// int *bad_pointer = (int*)-1;
 	// printf("%d\n", *bad_pointer);
-	
+
 	// Util::test();
 
 	// // Generate bases
@@ -105,7 +105,7 @@ void run_test() {
 	// 	{(float)rand()/RAND_MAX * (xh+1), (float)rand()/RAND_MAX * (Y_TILES+1)+yh},
 	// 	{(float)rand()/RAND_MAX * (X_TILES+1)+xh, (float)rand()/RAND_MAX * (Y_TILES+1)+yh},
 	// };
-	
+
 	// Bases
 	bases = {
 		{BASE_PADDING, BASE_PADDING},
@@ -118,13 +118,13 @@ void run_test() {
 	std::shared_ptr<MapLevel> map_level_ptr = std::make_shared<MapLevel>(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 10000);
 	MapLevel& map_level = *map_level_ptr;
 	gWorld.add(map_level_ptr);
-	
+
 	// Perlin
 	// map_level.set_obstructions(map_level.generate_obstructions(bases, BASE_PADDING));
-	
+
 	// Worms
 	// map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 4, BASE_PADDING, 4, 10, 30, 1, 2);
-	map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 4, BASE_PADDING, 4, 1, 9, 0, 1);
+	map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 4, BASE_PADDING, 6, 10, 30, 1, 2);
 	// map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 20, 5, 4, 30, 70, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 5, 4, 30, 70, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 2, 1, 1, 5, 10, 0, 1);
@@ -143,7 +143,7 @@ void run_test() {
 	// Test RTS units
 	float WORLD_WIDTH = TILE_WIDTH*X_TILES;
 	float WORLD_HEIGHT = TILE_HEIGHT*Y_TILES;
-	for(int i = 0; i < 2000; i++){
+	for(int i = 0; i < 200; i++){
 		auto position = Vector2f(bases.at(0).first * TILE_WIDTH, rand()%(int)WORLD_HEIGHT);
 		auto velocity = Vector2f(0, 0);
 		auto rts_ptr = std::make_shared<rts_unit>(
@@ -230,7 +230,7 @@ void run_test() {
 	// ball.set_render_callback(render_callback);
 	// ball.set_update_callback(update_callback);
 	// map_level.add(ball_ptr);
-	
+
 	RenderingEngine::set_world(gWorld);
 }
 

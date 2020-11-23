@@ -23,7 +23,7 @@ struct Dimension {
 };
 
 Dimension get_dimension(const std::vector<Vector2f>& vs) {
-	// Find dimensions
+	// Find range of x and y
 	Dimension d;
 	d.left = vs[0].x();
 	d.right = vs[0].x();
@@ -38,19 +38,18 @@ Dimension get_dimension(const std::vector<Vector2f>& vs) {
 	return d;
 }
 
-double cubic_interpolate(double y0, double y1, double y2, double y3, double mu) {
-	double a0, a1, a2, a3, mu2;
-	mu2 = mu * mu;
-	a0 = y3 - y2 - y0 + y1;
-	a1 = y0 - y1 - a0;
-	a2 = y2 - y0;
-	a3 = y1;
-	return a0 * mu * mu2+a1 * mu2+a2 * mu+a3;
+double cubic_interpolate(const double y0, const double y1, const double y2, const double y3, const double mu) {
+	double mu2 = mu * mu;
+	double a0 = y3 - y2 - y0 + y1;
+	double a1 = y0 - y1 - a0;
+	double a2 = y2 - y0;
+	double a3 = y1;
+	return a0*mu*mu2 + a1*mu2 + a2*mu + a3;
 }
 
-std::vector<Vector2f> cubic_interpolate(const std::vector<Vector2f>& vs, int np) {
-	std::vector<Vector2f> ps;
+std::vector<Vector2f> cubic_interpolate(const std::vector<Vector2f>& vs, const int np) {
 	int nv = (int)vs.size();
+	std::vector<Vector2f> ps;
 	ps.resize(np*nv);
 	for (int j = 0; j < nv; j++) {
 		Vector2f v1 = vs[j];
@@ -65,26 +64,111 @@ std::vector<Vector2f> cubic_interpolate(const std::vector<Vector2f>& vs, int np)
 	return ps;
 }
 
-// std::vector<std::vector<Vector2f>> group_mesh(std::vector<Vector2f>& is) {
-// 	for (int j = 0; j < is.size(); j++) {
-// 		for (int k = j+1; k < is.size(); k++) {
-// 		}
-// 	}
-// }
-// std::vector<Vector2f> optimize_mesh(std::vector<Vector2f>& vs) {
-// 	std::vector<Vector2f> ps;
-// 	Dimension dim = get_dimension(ps);
-// 	return ps;
-// }
+double hermite_interpolate(const double y0, const double y1, const double y2, const double y3, const double mu, const double tension, const double bias) {
+	double mu2 = mu * mu;
+	double mu3 = mu2 * mu;
+	double m0 = (y1-y0) * (1+bias) * (1-tension)/2 + (y2-y1) * (1-bias) * (1-tension)/2;
+	double m1 = (y2-y1) * (1+bias) * (1-tension)/2 + (y3-y2) * (1-bias) * (1-tension)/2;
+	double a0 = 2 * mu3 - 3 * mu2 + 1;
+	double a1 = mu3 - 2 * mu2 + mu;
+	double a2 = mu3 - mu2;
+	double a3 = -2 * mu3 + 3 * mu2;
+	return a0*y1 + a1*m0 + a2*m1 + a3*y2;
+}
+
+std::vector<Vector2f> hermite_interpolate(const std::vector<Vector2f>& vs, const int np, const double tension, const double bias) {
+	int nv = (int)vs.size();
+	std::vector<Vector2f> ps;
+	ps.resize(np*nv);
+	for (int j = 0; j < nv; j++) {
+		Vector2f v1 = vs[j];
+		Vector2f v2 = vs[(j+1)%nv];
+		Vector2f v3 = vs[(j+2)%nv];
+		Vector2f v4 = vs[(j+3)%nv];
+		for (int k = 0; k < np; k++) {
+			ps[j*np+k].setx(hermite_interpolate(v1.x(), v2.x(), v3.x(), v4.x(), (double)k/np, tension, bias));
+			ps[j*np+k].sety(hermite_interpolate(v1.y(), v2.y(), v3.y(), v4.y(), (double)k/np, tension, bias));
+		}
+	}
+	return ps;
+}
+
+Vector2f bspline_interpolate(const Vector2f& p0, const Vector2f& p1, const Vector2f& p2, const Vector2f& p3, const double mu) {
+	double mu2 = mu * mu;
+	double mu3 = mu2 * mu;
+	double mt = 1 - mu;
+	double mt3 = mt * mt * mt;
+	double bi0 = mt3;
+	double bi1 = 3 * mu3 - 6 * mu2 + 4;
+	double bi2 = -3 * mu3 + 3 * mu2 + 3 * mu + 1;
+	double bi3 = mu3;
+	return Vector2f(
+		(p0.x()*bi0 + p1.x()*bi1 +p2.x()*bi2 + p3.x()*bi3)/6,
+		(p0.y()*bi0 + p1.y()*bi1 +p2.y()*bi2 + p3.y()*bi3)/6
+	);
+}
+
+std::vector<Vector2f> bspline_interpolate(const std::vector<Vector2f>& vs, const int np) {
+	int nv = (int)vs.size();
+	std::vector<Vector2f> ps;
+	ps.resize(np*nv);
+	for (int j = 0; j < nv; j++) {
+		Vector2f v1 = vs[j];
+		Vector2f v2 = vs[(j+1)%nv];
+		Vector2f v3 = vs[(j+2)%nv];
+		Vector2f v4 = vs[(j+3)%nv];
+		for (int k = 0; k < np; k++)
+			ps[j*np+k] = bspline_interpolate(v1, v2, v3, v4, (double)k/np);
+	}
+	return ps;
+}
 
 namespace RenderingEngine {
 
-	// Font file
-	const char* TTF_FILE = "./res/fonts/Roboto-Light.ttf";
-
 	// Default window dimensions
-	int width = 1200;
-	int height = 800;
+	const int DEFAULT_WINDOW_WIDTH = 1200;
+	const int DEFAULT_WINDOW_HEIGHT = 800;
+
+	// Font for all rendered text
+	const char* TTF_FILE = "./res/fonts/Roboto-Light.ttf";
+	const int FONT_SIZE = 16;
+
+	// Distance of mouse from window edge to activate map panning
+	const int PAN_REGION_SIZE = 10;
+
+	// Camera settings
+	const float PAN_SPEED = 0.3f;
+	const float ZOOM_KEY_SPEED = 0.01f;
+	const float DEFAULT_ZOOM = 8.0f;
+	const float MIN_ZOOM = 1.0f;
+	const float MAX_ZOOM = 20.0f;
+
+	/**
+	Used to convert world space into screen coordinates.
+	*/
+	class Camera {
+		public:
+			Vector2f position = Vector2f(-1, -1);
+			float zoom = DEFAULT_ZOOM;
+			float get_zoom_factor() {
+				return zoom*zoom/100.0f + 0.5f;
+			}
+	};
+
+	// Player camera
+	Camera cam;
+
+	// Track mouse input states
+	Vector2f ldrag_start = Vector2f(-1, -1);
+	Vector2f rdrag_start = Vector2f(-1, -1);
+	bool lbutton_down = false;
+	bool rbutton_down = false;
+
+	// Screen dimensions
+	int width = DEFAULT_WINDOW_WIDTH;
+	int height = DEFAULT_WINDOW_HEIGHT;
+
+	// World dimensions
 	float world_width;
 	float world_height;
 
@@ -94,7 +178,11 @@ namespace RenderingEngine {
 	TTF_Font* gFont;
 	World gWorld;
 
-	void set_world(World& world) {
+	/**
+	Set the world to render.
+	*/
+	std::vector<std::vector<Vector2f>> vertices;
+	void set_world(const  World& world) {
 		gWorld = world;
 
 		if (gWorld.num_levels() == 0)
@@ -105,63 +193,200 @@ namespace RenderingEngine {
 		world_width = level.get_tile_width() * level.get_width();
 		world_height = level.get_tile_height() * level.get_height();
 
-		// std::vector<std::pair<int, int>> obs = level.get_obstructions();
-		// // std::map<std::pair<int, int>, int> groups;
-		// std::vector<std::vector<int>> grid;
-		// grid.resize(level.get_width());
-		// for (auto& g : grid)
-		// 	g.resize(level.get_height());
-		// int group_id = 1;
-		// int size = (int)obs.size();
-		// for (int j = 0; j < size; j++) {
-		// 	bool next_group = true;
-		// 	// grid[obs[j].first][obs[j].second] = group_id;
-		// 	for (int k = 0; k < size; k++) {
-		// 		std::cout << std::endl;
-		// 		std::cout << abs(obs.at(j).first - obs.at(k).first) << std::endl;
-		// 		std::cout << abs(obs.at(j).second - obs.at(k).second) << std::endl;
-		// 		std::cout << obs.at(j).first << std::endl;
-		// 		std::cout << obs.at(k).first << std::endl;
-		// 		std::cout << obs.at(j).second << std::endl;
-		// 		std::cout << obs.at(k).second << std::endl;
-		// 		if ((abs(obs.at(j).first - obs.at(k).first) == 1 && obs.at(j).second == obs.at(k).second) ||
-		// 			(abs(obs.at(j).second - obs.at(k).second) == 1 && obs.at(j).first == obs.at(k).first)) {
-		// 			// if (groups.find(std::make_pair(j, k)) == groups.end())
-		// 			// 	groups.insert(std::make_pair(std::make_pair(j, k), group_id));
-		// 			if (grid[obs.at(k).first][obs.at(k).second] == 0) {
-		// 				grid[obs.at(k).first][obs.at(k).second] = group_id;
-		// 				next_group = false;
-		// 			}
-		// 			std::cout << "group: " << group_id << " : " << j << ", " << k << std::endl;
-		// 		}
-		// 		std::cout << std::endl;
-		// 	}
-		// 	if (next_group)
-		// 		group_id++;
-		// }
-		// // auto& grid = level.get_obgrid();
-		// for (int j = 0; j < level.get_width(); j++) {
-		// 	for (int k = 0; k < level.get_height(); k++) {
-		// 		if (grid[j][k] != 0)
-		// 			std::cout << grid[j][k] << " ";
-		// 		else
-		// 			std::cout << "  ";
-		// 	}
-		// 	std::cout << std::endl;
-		// }
+		// Get obstruction grid
+		std::vector<std::vector<bool>> bool_grid = level.get_obgrid();
+		int grid_x = (int)bool_grid.size();
+		int grid_y = (int)bool_grid[0].size();
+
+		// Create obstruction group grid
+		std::vector<std::vector<int>> grid;
+		grid.resize(grid_x);
+		for (int x = 0; x < grid_x; x++)
+			for (int y = 0; y < grid_y; y++)
+				grid[x].push_back(bool_grid[x][y] ? 1 : 0);
+
+		// Define grid value check
+		auto grid_contains = [&grid, grid_x, grid_y](int value) -> bool {
+			for (int x = 0; x < grid_x; x++)
+				for (int y = 0; y < grid_y; y++)
+					if (grid[x][y] == value)
+						return true;
+			return false;
+		};
+
+		// Define recursive assignment for a group
+		std::function<void(int, int, int)> neighbor_assign;
+		neighbor_assign = [&grid, grid_x, grid_y, &neighbor_assign](int x, int y, int group) -> void {
+			grid[x][y] = group;
+			if (x-1 >= 0 && grid[x-1][y] == 1)
+				neighbor_assign(x-1, y, group);
+			if (x+1 < grid_x && grid[x+1][y] == 1)
+				neighbor_assign(x+1, y, group);
+			if (y-1 >= 0 && grid[x][y-1] == 1)
+				neighbor_assign(x, y-1, group);
+			if (y+1 < grid_y && grid[x][y+1] == 1)
+				neighbor_assign(x, y+1, group);
+		};
+
+		// Define search and group assignment
+		auto group_assign = [&grid, grid_x, grid_y, &neighbor_assign](int group) -> void {
+			for (int x = 0; x < grid_x; x++)
+				for (int y = 0; y < grid_y; y++)
+					if (grid[x][y] == 1)
+						return neighbor_assign(x, y, group);
+		};
+
+		// Assign groups
+		int group = 2;
+		while (grid_contains(1))
+			group_assign(group++);
+
+		for (const auto& row : grid) {
+			for (const auto& v : row)
+				std::cout << v << " ";
+			std::cout << std::endl;
+		}
+
+		// Define safe grid value getter
+		auto get_value = [&grid, grid_x, grid_y](int x, int y) -> int {
+			if (x >= 0 && x < grid_x && y >= 0 && y < grid_y)
+				return grid[x][y];
+			return 0;
+		};
+
+		// Define neighbor count
+		auto n_neighbors = [&grid, grid_x, grid_y, &get_value](int x, int y) -> int {
+			int ns = 0;
+			if (get_value(x, y-1) != 0)
+				ns++;
+			if (get_value(x+1, y) != 0)
+				ns++;
+			if (get_value(x, y+1) != 0)
+				ns++;
+			if (get_value(x-1, y) != 0)
+				ns++;
+			return ns;
+		};
+
+		// Define next perimeter
+		auto next_perimeter = [&grid, grid_x, grid_y, &get_value, &n_neighbors](int x, int y, int& direction, int last_direction) -> std::pair<int, int> {
+			int nn = n_neighbors(x, y);
+			// Solo
+			if (nn == 0)
+				return std::make_pair(x, y);
+			// // Deadend
+			// if (nn == 1)
+			// 	direction = (direction+2)%4;
+
+			for (int j = 0; j < 4; j++) {
+				if (direction == 0) {
+					// Up
+					if (get_value(x, y-1) != 0) {
+						if (get_value(x-1, y-1) != 0)  // Something to the left
+							direction = 3;
+						return std::make_pair(x, y-1);
+					}
+				}
+				else if (direction == 1) {
+					// Right
+					if (get_value(x+1, y) != 0) {
+						if (get_value(x+1, y-1) != 0)  // Something to the top
+							direction = 0;
+						return std::make_pair(x+1, y);
+					}
+				}
+				else if (direction == 2) {
+					// Down
+					if (get_value(x, y+1) != 0) {
+						if (get_value(x+1, y+1) != 0)  // Something to the right
+							direction = 1;
+						return std::make_pair(x, y+1);
+					}
+				}
+				else if (direction == 3) {
+					// Left
+					if (get_value(x-1, y) != 0) {
+						if (get_value(x-1, y+1) != 0)  // Something to the bottom
+							direction = 2;
+						return std::make_pair(x-1, y);
+					}
+				}
+				direction = (direction+1)%4;
+				// if (direction == (last_direction+2)%4)
+				// 	direction = (direction+1)%4;
+			}
+			std::cout << "Error: no perimeter found" << std::endl;
+			return std::make_pair(x, y);
+		};
+
+		// Define vertex search for group starting at x and y
+		float grid_w = level.get_tile_width();
+		float grid_h = level.get_tile_height();
+		auto group_vertices = [&grid, grid_x, grid_y, grid_w, grid_h, &next_perimeter](int x, int y, int group) -> std::vector<Vector2f> {
+			std::vector<Vector2f> vs;
+			vs.push_back(Vector2f(x*grid_w + grid_w/2, y*grid_h + grid_h/2));
+
+			std::pair<int, int> next_grid = {-1, -1};
+			std::pair<int, int> last_grid = {x, y};
+			int direction = 1;
+			int last_direction = 1;
+			bool rewind = false;
+			while (true) {
+				if (next_grid.first == x && next_grid.second == y) {
+					if (!rewind)
+						rewind = true;
+					else
+						break;
+				}
+				// Compute next grid
+				next_grid = next_perimeter(last_grid.first, last_grid.second, direction, last_direction);
+
+				// std::cout << std::endl;
+				// std::cout << "group: " << group << std::endl;
+				// std::cout << "last_direction: " << last_direction << std::endl;
+				// std::cout << "direction: " << direction << std::endl;
+				// std::cout << "last_grid: " << last_grid.first << ", " << last_grid.second << std::endl;
+				// std::cout << "next_grid: " << next_grid.first << ", " << next_grid.second << std::endl;
+				// std::cout << "origin: " << x << ", " << y << std::endl;
+				// std::cout << std::endl;
+
+				if (last_direction != direction) {
+					// Vertex found
+					if (rewind)
+						vs.insert(vs.begin(), 1, Vector2f(last_grid.first*grid_w + grid_w/2, last_grid.second*grid_h + grid_h/2));
+					else
+						vs.push_back(Vector2f(last_grid.first*grid_w + grid_w/2, last_grid.second*grid_h + grid_h/2));
+				}
+				last_direction = direction;
+				last_grid = next_grid;
+			}
+
+			// Remove duplicates
+			std::set<std::pair<float, float>> set;
+			for (auto i = vs.begin(); i != vs.end();) {
+				std::pair<float, float> v = std::make_pair((*i).x(), (*i).y());
+				if (set.find(v) != set.end()) {
+					i = vs.erase(i);
+				}
+				else {
+					set.insert(v);
+					++i;
+				}
+			}
+			return vs;
+		};
+
+		// Build final vector
+		int process_group = 2;
+		for (int x = 0; x < grid_x; x++)
+			for (int y = 0; y < grid_y; y++)
+				if (grid[x][y] == process_group && process_group <= group)
+					vertices.push_back(group_vertices(x, y, process_group++));
 	}
 
-	class Camera {
-		public:
-			Vector2f position = Vector2f(-1, -1);
-			float zoom = 8;
-			float get_zoom_factor() {
-				return zoom*zoom/100.0f + 0.5f;
-			}
-	};
-
-	Camera cam;
-
+	/**
+	Convert world position to screen coordinate.
+	*/
 	Vector2f world_to_screen(Vector2f world_vec) {
 		Vector2f screen_vec = world_vec;
 		screen_vec = screen_vec.sub(cam.position);
@@ -174,6 +399,9 @@ namespace RenderingEngine {
 		return world_to_screen(Vector2f(x, y));
 	}
 
+	/**
+	Convert screen coordinate to world position.
+	*/
 	Vector2f screen_to_world(Vector2f screen_vec) {
 		Vector2f world_vec = screen_vec;
 		world_vec = world_vec.sub(width/2, height/2);
@@ -186,12 +414,16 @@ namespace RenderingEngine {
 		return screen_to_world(Vector2f(x, y));
 	}
 
+	/**
+	Fill inside a polygon.
+	Set color using SDL_SetRenderDrawColor() beforehand.
+	*/
 	void fill_poly(std::vector<Vector2f> ps) {
 		if (ps.size() == 0)
 			return;
 		// Find dimensions
 		Dimension dim = get_dimension(ps);
-		// Fill polygon
+		// Sweep line
 		std::vector<int> node_x;
 		for (int y = dim.top; y < dim.bottom; y++) {
 			node_x.resize(ps.size());
@@ -202,8 +434,10 @@ namespace RenderingEngine {
 					node_x[nodes++] = (int)(ps[i].x()+(y-ps[i].y())/(ps[j].y()-ps[i].y())*(ps[j].x()-ps[i].x()));
 				j = i;
 			}
+			// Sort
 			node_x.resize(nodes);
 			std::sort(node_x.begin(), node_x.end());
+			// Draw lines
 			for (int i = 0; i < nodes; i += 2) {
 				if (node_x[i] >= dim.right)
 					break;
@@ -213,8 +447,6 @@ namespace RenderingEngine {
 					if (node_x[i+1] > dim.right)
 						node_x[i+1] = dim.right;
 					SDL_RenderDrawLine(gRenderer, node_x[i], y, node_x[i+1], y);
-					// for (int x = node_x[i]; x < node_x[i+1]; x++)
-					// 	SDL_RenderDrawPoint(gRenderer, x, y);
 				}
 			}
 		}
@@ -228,15 +460,6 @@ namespace RenderingEngine {
 		SDL_SetRenderDrawColor(gRenderer, 16, 16, 16, 255);
 		SDL_RenderClear(gRenderer);
 	}
-
-	const int PANNING_PAD = 10;
-	const float PAN_SPEED = 0.3f;
-	const float ZOOM_KEY_SPEED = 0.01f;
-
-	Vector2f ldrag_start = Vector2f(-1, -1);
-	Vector2f rdrag_start = Vector2f(-1, -1);
-	bool lbutton_down = false;
-	bool rbutton_down = false;
 
 	void render(float delta_time) {
 		// Move camera to center if unset
@@ -257,20 +480,20 @@ namespace RenderingEngine {
 				cam.zoom += delta_time * ZOOM_KEY_SPEED;
 			else if (Input::is_key_pressed(SDLK_PAGEDOWN))
 				cam.zoom -= delta_time * ZOOM_KEY_SPEED;
-			if (cam.zoom < 1.0f)
-				cam.zoom = 1.0f;
-			else if (cam.zoom > 30.0f)
-				cam.zoom = 30.0f;
+			if (cam.zoom < MIN_ZOOM)
+				cam.zoom = MIN_ZOOM;
+			else if (cam.zoom > MAX_ZOOM)
+				cam.zoom = MAX_ZOOM;
 
 			// Pan map
 			Vector2f dp = Vector2f(0, 0);
-			if (mp.first < PANNING_PAD || Input::is_key_pressed(SDLK_LEFT))
+			if (mp.first < PAN_REGION_SIZE || Input::is_key_pressed(SDLK_LEFT))
 				dp.setx(-PAN_SPEED);
-			if (mp.first > width - PANNING_PAD || Input::is_key_pressed(SDLK_RIGHT))
+			if (mp.first > width - PAN_REGION_SIZE || Input::is_key_pressed(SDLK_RIGHT))
 				dp.setx(PAN_SPEED);
-			if (mp.second < PANNING_PAD || Input::is_key_pressed(SDLK_UP))
+			if (mp.second < PAN_REGION_SIZE || Input::is_key_pressed(SDLK_UP))
 				dp.sety(-PAN_SPEED);
-			if (mp.second > height - PANNING_PAD || Input::is_key_pressed(SDLK_DOWN))
+			if (mp.second > height - PAN_REGION_SIZE || Input::is_key_pressed(SDLK_DOWN))
 				dp.sety(PAN_SPEED);
 			dp = dp.scale(delta_time);
 
@@ -377,30 +600,115 @@ namespace RenderingEngine {
 			rdrag_start = Vector2f(-1, -1);
 		}
 
-		float cx = width/2;
-		float cy = height/2;
-		const float DX = 100;
-		const float DY = 100;
-		std::vector<Vector2f> vs;
-		vs.push_back(Vector2f(cx-DX, cy+DY));
-		vs.push_back(Vector2f(cx-DX, cy-DY));
-		vs.push_back(Vector2f(cx+DX, cy-DY));
-		vs.push_back(Vector2f(cx+DX*2, cy+DY*2));
-		for (auto& v : vs) {
-			SDL_Rect box = {(int)v.x(), (int)v.y(), 10, 10};
-			SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0xFF);
-			SDL_RenderFillRect(gRenderer, &box);
+		// Draw obstruction vertices
+		for (auto& vs : vertices) {
+			if (vs.size() == 0)
+				continue;
+
+			// Interpolate
+			std::vector<Vector2f> ps;
+			Vector2f last_p;
+
+			// // Hermite
+			// ps = hermite_interpolate(vs, 4, -1.0, 0);
+			// last_p = world_to_screen(ps.at(ps.size()-1));
+			// for (auto& p : ps)
+			// 	p = world_to_screen(p);
+			// // Fill poly
+			// SDL_SetRenderDrawColor(gRenderer, 128, 128, 255, 255);
+			// fill_poly(ps);
+
+			const int N_ITER = 10;
+			for (int j = 0; j < N_ITER; j++) {
+				float t = ((float)j/N_ITER)-1;
+				// Hermite 2
+				ps = hermite_interpolate(vs, 4, t, 0);
+				last_p = world_to_screen(ps.at(ps.size()-1));
+				for (auto& p : ps)
+					p = world_to_screen(p);
+				// Fill poly
+				SDL_SetRenderDrawColor(gRenderer, 64, 32, 200, 64);
+				fill_poly(ps);
+			}
+
+			// Cubic
+			ps = cubic_interpolate(vs, 4);
+			last_p = world_to_screen(ps.at(ps.size()-1));
+			for (auto& p : ps)
+				p = world_to_screen(p);
+			// Fill poly
+			SDL_SetRenderDrawColor(gRenderer, 64, 32, 200, 127);
+			fill_poly(ps);
+
+			// Bspline
+			ps = bspline_interpolate(vs, 4);
+			last_p = world_to_screen(ps.at(ps.size()-1));
+			// Interpolate vertices
+			for (auto& p : ps)
+				p = world_to_screen(p);
+			// Fill poly
+			SDL_SetRenderDrawColor(gRenderer, 64, 32, 200, 127);
+			fill_poly(ps);
+
+			// Grid vertices
+			last_p = world_to_screen(vs[(int)vs.size()-1]);
+			for (auto& v : vs) {
+				Vector2f p = world_to_screen(v);
+				SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 64);
+				SDL_RenderDrawLine(gRenderer, last_p.x(), last_p.y(), p.x(), p.y());
+				last_p = p;
+			}
 		}
 
-		std::vector<Vector2f> ps = cubic_interpolate(vs, 10);
-		for (auto& p : ps) {
-			SDL_Rect box = {(int)p.x(), (int)p.y(), 10, 10};
-			SDL_SetRenderDrawColor(gRenderer, 0x77, 0xFF, 0x77, 0x33);
-			SDL_RenderFillRect(gRenderer, &box);
-		}
-		
-		SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x77, 0x77, 0x33);
-		fill_poly(ps);
+		// // Interpolate and fillpoly demo
+		// float cx = width/2;
+		// float cy = height/2;
+		// const float DX = 100;
+		// const float DY = 100;
+		// // Make test vertices
+		// std::vector<Vector2f> vs;
+		// vs.push_back(Vector2f(cx-DX, cy+DY));
+		// vs.push_back(Vector2f(cx-DX, cy-DY));
+		// vs.push_back(Vector2f(cx+DX, cy-DY));
+		// vs.push_back(Vector2f(cx+DX*2, cy+DY*2));
+		// vs.push_back(Vector2f(cx+DX*3, cy+DY));
+		// // Draw original vertices as polygon
+		// Vector2f last_v = vs.at(vs.size()-1);
+		// for (auto& v : vs) {
+		// 	SDL_SetRenderDrawColor(gRenderer, 0, 255, 255, 255);
+		// 	SDL_RenderDrawLine(gRenderer, v.x(), v.y(), last_v.x(), last_v.y());
+		// 	last_v = v;
+		// }
+		// // Draw interpolated vertices as polygon
+		// std::vector<Vector2f> ps;
+		// Vector2f last_p;
+		// // Cubic
+		// ps = cubic_interpolate(vs, 100);
+		// last_p = ps.at(ps.size()-1);
+		// for (auto& p : ps) {
+		// 	SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 200);
+		// 	SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
+		// 	last_p = p;
+		// }
+		// // Hermite
+		// ps = hermite_interpolate(vs, 100, 0.5, 0);
+		// last_p = ps.at(ps.size()-1);
+		// for (auto& p : ps) {
+		// 	SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 200);
+		// 	SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
+		// 	last_p = p;
+		// }
+		// // Bspline
+		// ps = bspline_interpolate(vs, 100);
+		// last_p = ps.at(ps.size()-1);
+		// for (auto& p : ps) {
+		// 	SDL_SetRenderDrawColor(gRenderer, 0, 0, 255, 200);
+		// 	SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
+		// 	last_p = p;
+		// }
+		// // Fill interpolated vertices as polygon
+		// SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 64);
+		// fill_poly(ps);
 	}
 
 	void show() {
@@ -468,7 +776,7 @@ namespace RenderingEngine {
 		// Create font from TrueType Font file
 		gFont = TTF_OpenFont(
 			TTF_FILE,
-			16
+			FONT_SIZE
 		);
 		if (gFont == NULL) {
 			printf("Failed to load font: %s\n", TTF_GetError());
@@ -477,7 +785,7 @@ namespace RenderingEngine {
 
 		// Grab mouse
 		// SDL_SetWindowGrab(gWindow, SDL_TRUE);
-		
+
 		// Set blending
 		SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
 

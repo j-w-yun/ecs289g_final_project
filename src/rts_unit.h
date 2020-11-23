@@ -42,6 +42,19 @@ struct rts_unit : GameObject {
 			// Outline
 			SDL_SetRenderDrawColor(renderer, 2, 117, 216, 255);
 			SDL_RenderDrawRect(renderer, &box);
+
+			if(path.size()){
+				SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+				Vector2f p1 = RenderingEngine::world_to_screen(p());
+				Vector2f p2 = RenderingEngine::world_to_screen(path.back());
+				SDL_RenderDrawLine(renderer, p1.x(), p1.y(), p2.x(), p2.y());
+				for(size_t i = path.size() - 1; i; i--){
+					SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+					Vector2f p1 = RenderingEngine::world_to_screen(path[i]);
+					Vector2f p2 = RenderingEngine::world_to_screen(path[i - 1]);
+					SDL_RenderDrawLine(renderer, p1.x(), p1.y(), p2.x(), p2.y());
+				}
+			}
 		}
 	}
 
@@ -70,7 +83,7 @@ struct rts_unit : GameObject {
 		//	update_path();
 		//	recomp = true;
 		//}
-		if(dist < (float)xtwidth/5){
+		if(dist < (float)xtwidth){
 			path.pop_back();
 			recomp = true;
 		}
@@ -130,6 +143,8 @@ struct rts_unit : GameObject {
 				if(map.get_obgrid()[x][y]){
 					d = p() - to_world_space({x, y});
 					//auto l = d.len();
+					//float force = 40.0f/(d.len2());
+
 					retval += 40.0f*d.unit()/(d.len2());
 				}
 				// units
