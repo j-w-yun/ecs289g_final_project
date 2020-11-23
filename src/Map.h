@@ -269,6 +269,17 @@ class MapLevel: public GameObject {
 			return 0;
 		}
 
+		rect intersection(const rect& l, const rect& r){
+			if(!intersects(l, r)) return rect(0, 0, 0, 0);
+
+			int xl = std::max(l.xl, r.xl);
+			int yl = std::max(l.yl, r.yl);
+			int xh = std::min(l.xh, r.xh);
+			int yh = std::min(l.yh, r.yh);
+
+			return rect(xl, yl, xh, yh);
+		}
+
 		// orient 0 x 1 y 2 both
 		bool abuts(const rect& l, const rect& r){
 			bool ax = (l.xh == r.xl || l.xl == r.xh) && intersects(l, r, 1);
@@ -622,6 +633,15 @@ class MapLevel: public GameObject {
 				return world_rect(x, y, x, y);
 			}
 		};
+
+		//rect get_edge(const rect& )
+
+		world_rect to_world_rect(const rect& _a){
+			auto lows = to_world_space(std::make_pair(_a.xl, _a.yl));
+			auto highs = to_world_space(std::make_pair(_a.xh, _a.yh));
+
+			return world_rect(lows.x(), lows.y(), highs.x(), highs.y());
+		}
 
 		// p is in world space, a is in tile space
 		// transforms 
