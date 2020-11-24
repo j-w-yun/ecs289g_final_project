@@ -36,28 +36,29 @@
 
 // Print stacktrace and exit gracefully
 #ifdef __linux__
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/prctl.h>
-#include <sys/wait.h>
-void stacktrace_handler(int sig) {
-	char pid_buf[30];
-	sprintf(pid_buf, "%d", getpid());
-	char name_buf[512];
-	name_buf[readlink("/proc/self/exe", name_buf, 511)]=0;
-	prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0);
-	int child_pid = fork();
-	if (!child_pid) {
-		dup2(2,1);
-		fprintf(stdout,"stack trace for %s pid=%s\n",name_buf,pid_buf);
-		execlp("gdb", "gdb", "--batch", "-n", "-ex", "thread", "-ex", "bt", name_buf, pid_buf, NULL);
-		abort();
-	} else {
-		waitpid(child_pid,NULL,0);
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <unistd.h>
+	#include <sys/prctl.h>
+	#include <sys/wait.h>
+	void stacktrace_handler(int sig) {
+		char pid_buf[30];
+		sprintf(pid_buf, "%d", getpid());
+		char name_buf[512];
+		name_buf[readlink("/proc/self/exe", name_buf, 511)]=0;
+		prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0);
+		int child_pid = fork();
+		if (!child_pid) {
+			dup2(2,1);
+			fprintf(stdout, "stack trace for %s pid=%s\n", name_buf,pid_buf);
+			execlp("gdb", "gdb", "--batch", "-n", "-ex", "thread", "-ex", "bt", name_buf, pid_buf, NULL);
+			abort();
+		}
+		else {
+			waitpid(child_pid, NULL, 0);
+		}
+		exit(1);
 	}
-	exit(1);
-}
 #endif
 
 // Minimum delta time for update

@@ -340,22 +340,23 @@ namespace RenderingEngine {
 				}
 				// Compute next grid
 				next_grid = next_perimeter(last_grid.first, last_grid.second, direction, last_direction);
-
-				// std::cout << std::endl;
-				// std::cout << "group: " << group << std::endl;
-				// std::cout << "last_direction: " << last_direction << std::endl;
-				// std::cout << "direction: " << direction << std::endl;
-				// std::cout << "last_grid: " << last_grid.first << ", " << last_grid.second << std::endl;
-				// std::cout << "next_grid: " << next_grid.first << ", " << next_grid.second << std::endl;
-				// std::cout << "origin: " << x << ", " << y << std::endl;
-				// std::cout << std::endl;
-
 				if (last_direction != direction) {
 					// Vertex found
+					float xv = last_grid.first*grid_w;
+					float yv = last_grid.second*grid_h;
+					if (direction == 0)
+						xv += grid_w/2;
+					if (direction == 2)
+						xv += grid_w;
+					if (direction == 1)
+						yv += grid_h/2;
+					if (direction == 3)
+						yv += grid_h;
+					Vector2f v = Vector2f(xv, yv);
 					if (rewind)
-						vs.insert(vs.begin(), 1, Vector2f(last_grid.first*grid_w + grid_w/2, last_grid.second*grid_h + grid_h/2));
+						vs.insert(vs.begin(), 1, v);
 					else
-						vs.push_back(Vector2f(last_grid.first*grid_w + grid_w/2, last_grid.second*grid_h + grid_h/2));
+						vs.push_back(v);
 				}
 				last_direction = direction;
 				last_grid = next_grid;
@@ -615,30 +616,42 @@ namespace RenderingEngine {
 			// for (auto& p : ps)
 			// 	p = world_to_screen(p);
 			// // Fill poly
-			// SDL_SetRenderDrawColor(gRenderer, 128, 128, 255, 255);
+			// SDL_SetRenderDrawColor(gRenderer, 0, 8, 127, 255);
 			// fill_poly(ps);
 
 			const int N_ITER = 10;
 			for (int j = 0; j < N_ITER; j++) {
-				float t = ((float)j/N_ITER)-1;
-				// Hermite 2
-				ps = hermite_interpolate(vs, 4, t, 0);
+				float t = ((float)j/N_ITER)/2 + 0.5f;
+				// Hermite
+				ps = hermite_interpolate(vs, 5, t, 0);
 				last_p = world_to_screen(ps.at(ps.size()-1));
 				for (auto& p : ps)
 					p = world_to_screen(p);
 				// Fill poly
-				SDL_SetRenderDrawColor(gRenderer, 64, 32, 200, 64);
+				SDL_SetRenderDrawColor(gRenderer, 0, 8, 100, 127);
 				fill_poly(ps);
 			}
 
-			// Cubic
-			ps = cubic_interpolate(vs, 4);
-			last_p = world_to_screen(ps.at(ps.size()-1));
-			for (auto& p : ps)
-				p = world_to_screen(p);
-			// Fill poly
-			SDL_SetRenderDrawColor(gRenderer, 64, 32, 200, 127);
-			fill_poly(ps);
+			// for (int j = 0; j < N_ITER; j++) {
+			// 	float t = ((float)j/N_ITER)-1;
+			// 	// Hermite 2
+			// 	ps = hermite_interpolate(vs, 4, t, 0);
+			// 	last_p = world_to_screen(ps.at(ps.size()-1));
+			// 	for (auto& p : ps)
+			// 		p = world_to_screen(p);
+			// 	// Fill poly
+			// SDL_SetRenderDrawColor(gRenderer, 0, 8, 100, 127);
+			// 	fill_poly(ps);
+			// }
+
+			// // Cubic
+			// ps = cubic_interpolate(vs, 4);
+			// last_p = world_to_screen(ps.at(ps.size()-1));
+			// for (auto& p : ps)
+			// 	p = world_to_screen(p);
+			// // Fill poly
+			// SDL_SetRenderDrawColor(gRenderer, 16, 32, 127, 64);
+			// fill_poly(ps);
 
 			// Bspline
 			ps = bspline_interpolate(vs, 4);
@@ -647,14 +660,14 @@ namespace RenderingEngine {
 			for (auto& p : ps)
 				p = world_to_screen(p);
 			// Fill poly
-			SDL_SetRenderDrawColor(gRenderer, 64, 32, 200, 127);
+			SDL_SetRenderDrawColor(gRenderer, 0, 8, 127, 255);
 			fill_poly(ps);
 
 			// Grid vertices
 			last_p = world_to_screen(vs[(int)vs.size()-1]);
 			for (auto& v : vs) {
 				Vector2f p = world_to_screen(v);
-				SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 64);
+				SDL_SetRenderDrawColor(gRenderer, 64, 64, 64, 64);
 				SDL_RenderDrawLine(gRenderer, last_p.x(), last_p.y(), p.x(), p.y());
 				last_p = p;
 			}
