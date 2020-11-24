@@ -374,7 +374,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		};
 		// Fill
 		float f = ((float)SDL_GetTicks()/1000.0f+(o.first+o.second+1)/4);
-		SDL_SetRenderDrawColor(renderer, 40, 40, 190+50*sin(f), 127);
+		SDL_SetRenderDrawColor(renderer, 40, 40, 190+50*sin(f), 255);
 		// SDL_SetRenderDrawColor(renderer, 32, 32, 190, 255);
 		SDL_RenderFillRect(renderer, &box);
 	}

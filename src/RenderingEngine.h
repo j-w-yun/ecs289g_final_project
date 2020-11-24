@@ -269,7 +269,7 @@ namespace RenderingEngine {
 		};
 
 		// Define next perimeter
-		auto next_perimeter = [&grid, grid_x, grid_y, &get_value, &n_neighbors](int x, int y, int& direction, int last_direction) -> std::pair<int, int> {
+		auto next_perimeter = [&grid, grid_x, grid_y, &get_value, &n_neighbors](int x, int y, int& direction) -> std::pair<int, int> {
 			int nn = n_neighbors(x, y);
 			// Solo
 			if (nn == 0)
@@ -324,12 +324,50 @@ namespace RenderingEngine {
 		float grid_h = level.get_tile_height();
 		auto group_vertices = [&grid, grid_x, grid_y, grid_w, grid_h, &next_perimeter](int x, int y, int group) -> std::vector<Vector2f> {
 			std::vector<Vector2f> vs;
-			vs.push_back(Vector2f(x*grid_w + grid_w/2, y*grid_h + grid_h/2));
-
 			std::pair<int, int> next_grid = {-1, -1};
 			std::pair<int, int> last_grid = {x, y};
-			int direction = 1;
-			int last_direction = 1;
+			int direction = 0;
+			int last_direction = 0;
+
+			auto add_grid = [&vs, grid_w, grid_h](std::pair<int, int> grid, int last_direction, int direction) -> void {
+				// Initial point is always top left. No need to offset.
+				if (vs.size() == 0) {
+					vs.push_back(Vector2f(grid.first*grid_w, grid.second*grid_h));
+					return;
+				}
+
+				float x = grid.first*grid_w;
+				float y = grid.second*grid_h;
+				if (last_direction == 0) {
+					if (direction == 0)
+						return;
+					vs.push_back(Vector2f(x, y));
+					if (direction == 2)
+						vs.push_back(Vector2f(x+grid_w, y));
+				}
+				else if (last_direction == 1) {
+					if (direction == 1)
+						return;
+					vs.push_back(Vector2f(x+grid_w, y));
+					if (direction == 3)
+						vs.push_back(Vector2f(x+grid_w, y+grid_h));
+				}
+				else if (last_direction == 2) {
+					if (direction == 2)
+						return;
+					vs.push_back(Vector2f(x+grid_w, y+grid_h));
+					if (direction == 0)
+						vs.push_back(Vector2f(x, y+grid_h));
+				}
+				else if (last_direction == 3) {
+					if (direction == 3)
+						return;
+					vs.push_back(Vector2f(x, y+grid_h));
+					if (direction == 1)
+						vs.push_back(Vector2f(x, y));
+				}
+			};
+
 			bool rewind = false;
 			while (true) {
 				if (next_grid.first == x && next_grid.second == y) {
@@ -338,26 +376,24 @@ namespace RenderingEngine {
 					else
 						break;
 				}
+
+				// If there are two identical vertices, we've reached the starting point
+				// if ()
+
 				// Compute next grid
-				next_grid = next_perimeter(last_grid.first, last_grid.second, direction, last_direction);
-				if (last_direction != direction) {
-					// Vertex found
-					float xv = last_grid.first*grid_w;
-					float yv = last_grid.second*grid_h;
-					if (direction == 0)
-						xv += grid_w/2;
-					if (direction == 2)
-						xv += grid_w;
-					if (direction == 1)
-						yv += grid_h/2;
-					if (direction == 3)
-						yv += grid_h;
-					Vector2f v = Vector2f(xv, yv);
-					if (rewind)
-						vs.insert(vs.begin(), 1, v);
-					else
-						vs.push_back(v);
-				}
+				next_grid = next_perimeter(last_grid.first, last_grid.second, direction);
+				if (last_direction != direction)
+					add_grid(last_grid, last_direction, direction);
+				// if (last_direction != direction) {
+				// 	// Vertex found
+				// 	float xv = last_grid.first*grid_w;
+				// 	float yv = last_grid.second*grid_h;
+				// 	Vector2f v = Vector2f(xv, yv);
+				// 	if (rewind)
+				// 		vs.insert(vs.begin(), 1, v);
+				// 	else
+				// 		vs.push_back(v);
+				// }
 				last_direction = direction;
 				last_grid = next_grid;
 			}
@@ -610,27 +646,28 @@ namespace RenderingEngine {
 			std::vector<Vector2f> ps;
 			Vector2f last_p;
 
-			// // Hermite
-			// ps = hermite_interpolate(vs, 4, -1.0, 0);
-			// last_p = world_to_screen(ps.at(ps.size()-1));
-			// for (auto& p : ps)
-			// 	p = world_to_screen(p);
-			// // Fill poly
-			// SDL_SetRenderDrawColor(gRenderer, 0, 8, 127, 255);
-			// fill_poly(ps);
+			// Hermite
+			ps = hermite_interpolate(vs, 4, 0.5, 0);
+			last_p = world_to_screen(ps.at(ps.size()-1));
+			for (auto& p : ps)
+				p = world_to_screen(p);
+			// Fill poly
+			// SDL_SetRenderDrawColor(gRenderer, 64, 64, 127, 200);
+			SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 90);
+			fill_poly(ps);
 
-			const int N_ITER = 10;
-			for (int j = 0; j < N_ITER; j++) {
-				float t = ((float)j/N_ITER)/2 + 0.5f;
-				// Hermite
-				ps = hermite_interpolate(vs, 5, t, 0);
-				last_p = world_to_screen(ps.at(ps.size()-1));
-				for (auto& p : ps)
-					p = world_to_screen(p);
-				// Fill poly
-				SDL_SetRenderDrawColor(gRenderer, 0, 8, 100, 127);
-				fill_poly(ps);
-			}
+			// const int N_ITER = 10;
+			// for (int j = 0; j < N_ITER; j++) {
+			// 	float t = ((float)j/N_ITER)/2 + 0.5f;
+			// 	// Hermite
+			// 	ps = hermite_interpolate(vs, 5, t, 0);
+			// 	last_p = world_to_screen(ps.at(ps.size()-1));
+			// 	for (auto& p : ps)
+			// 		p = world_to_screen(p);
+			// 	// Fill poly
+			// 	SDL_SetRenderDrawColor(gRenderer, 0, 8, 100, 127);
+			// 	fill_poly(ps);
+			// }
 
 			// for (int j = 0; j < N_ITER; j++) {
 			// 	float t = ((float)j/N_ITER)-1;
@@ -660,14 +697,15 @@ namespace RenderingEngine {
 			for (auto& p : ps)
 				p = world_to_screen(p);
 			// Fill poly
-			SDL_SetRenderDrawColor(gRenderer, 0, 8, 127, 255);
+			// SDL_SetRenderDrawColor(gRenderer, 0, 8, 127, 90);
+			SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 90);
 			fill_poly(ps);
 
 			// Grid vertices
 			last_p = world_to_screen(vs[(int)vs.size()-1]);
 			for (auto& v : vs) {
 				Vector2f p = world_to_screen(v);
-				SDL_SetRenderDrawColor(gRenderer, 64, 64, 64, 64);
+				SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 255);
 				SDL_RenderDrawLine(gRenderer, last_p.x(), last_p.y(), p.x(), p.y());
 				last_p = p;
 			}
