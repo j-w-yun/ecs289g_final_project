@@ -6,6 +6,8 @@
 #include <SDL2/SDL_ttf.h>
 #endif
 
+//#define USE_SDL2_RENDERER
+
 #include <stdio.h>
 #include <string>
 #include <iostream>
@@ -279,8 +281,10 @@ void render(float delta_time) {
 				(int)(sp2.x()-sp1.x()),
 				(int)(sp2.y()-sp1.y())
 			};
+#ifdef USE_SDL2_RENDERER
 			SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 0x22, 0xFF, 0x22, 0x55);
 			SDL_RenderFillRect(RenderingEngine::gRenderer, &box);
+#endif
 		}
 	}
 
@@ -296,8 +300,10 @@ void render(float delta_time) {
 			(int)(sp2.x()-sp1.x()),
 			(int)(sp2.y()-sp1.y())
 		};
+#ifdef USE_SDL2_RENDERER
 		SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 0x77, 0x22, 0x22, 0xFF);
 		SDL_RenderFillRect(RenderingEngine::gRenderer, &box);
+#endif
 	}
 
 	// Update screen

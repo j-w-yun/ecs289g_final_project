@@ -32,7 +32,9 @@ void Stat::render_text(SDL_Renderer* renderer, TTF_Font* font) {
 	Stat::text_rect.w = Stat::w;
 	Stat::text_rect.h = Stat::h;
 	Stat::text_rect.y = Stat::offset_y;
+#ifdef USE_SDL2_RENDERER
 	SDL_RenderCopy(renderer, Stat::textures.back(), NULL, &Stat::text_rect);
+#endif
 	Stat::offset_y += Stat::h;
 }
 

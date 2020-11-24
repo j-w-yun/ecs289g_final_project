@@ -272,8 +272,10 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		(int)(world2.x()-world1.x()),
 		(int)(world2.y()-world1.y())
 	};
+#ifdef USE_SDL2_RENDERER
 	SDL_SetRenderDrawColor(renderer, 239, 196, 121, 255);
 	SDL_RenderFillRect(renderer, &world_box);
+#endif
 
 	/*for (int j = 0; j < tiles_x; j++) {
 		for (int k = 0; k < tiles_y; k++) {
@@ -285,12 +287,14 @@ void MapLevel::render(SDL_Renderer* renderer) {
 				(int)(sp2.x()-sp1.x())+2,
 				(int)(sp2.y()-sp1.y())+2
 			};
+			#ifdef USE_SDL2_RENDERER
 			// Fill
 			SDL_SetRenderDrawColor(renderer, 239, 196, 121, 255);
 			SDL_RenderFillRect(renderer, &box);
 			// Outline
 			SDL_SetRenderDrawColor(renderer, 0x33, 0x33, 0x33, 255);
 			SDL_RenderDrawRect(renderer, &box);
+			#endif
 		}
 	}*/
 
@@ -354,9 +358,11 @@ void MapLevel::render(SDL_Renderer* renderer) {
 					(int)(sp2.y()-sp1.y())+1
 				};
 				float f = ((float)SDL_GetTicks()/400.0f+(x+y+1)/10);
+#ifdef USE_SDL2_RENDERER
 				SDL_SetRenderDrawColor(renderer, 40, 90*z+40, 30, 150+60*sin(f));
 				// SDL_SetRenderDrawColor(renderer, 60, 90*z+40, 30, 150);
 				SDL_RenderFillRect(renderer, &box);
+#endif
 			}
 			xi++;
 		}
@@ -374,9 +380,11 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		};
 		// Fill
 		float f = ((float)SDL_GetTicks()/1000.0f+(o.first+o.second+1)/4);
+#ifdef USE_SDL2_RENDERER
 		SDL_SetRenderDrawColor(renderer, 40, 40, 190+50*sin(f), 127);
 		// SDL_SetRenderDrawColor(renderer, 32, 32, 190, 255);
 		SDL_RenderFillRect(renderer, &box);
+#endif
 	}
 
 	for (auto unit : units)

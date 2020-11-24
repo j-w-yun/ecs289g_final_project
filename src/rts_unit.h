@@ -36,6 +36,7 @@ struct rts_unit : GameObject {
 				(int)(sp2.x()-sp1.x()),
 				(int)(sp2.y()-sp1.y())
 			};
+#ifdef USE_SDL2_RENDERER
 			// Fill
 			SDL_SetRenderDrawColor(renderer, 91, 192, 222, 255);
 			SDL_RenderFillRect(renderer, &box);
@@ -55,6 +56,7 @@ struct rts_unit : GameObject {
 					SDL_RenderDrawLine(renderer, p1.x(), p1.y(), p2.x(), p2.y());
 				}
 			}
+#endif
 		}
 	}
 

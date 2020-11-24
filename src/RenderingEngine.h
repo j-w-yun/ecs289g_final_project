@@ -446,19 +446,23 @@ namespace RenderingEngine {
 						node_x[i] = dim.left;
 					if (node_x[i+1] > dim.right)
 						node_x[i+1] = dim.right;
+#ifdef USE_SDL2_RENDERER
 					SDL_RenderDrawLine(gRenderer, node_x[i], y, node_x[i+1], y);
+#endif
 				}
 			}
 		}
 	}
 
 	void clear() {
+#ifdef USE_SDL2_RENDERER
 		// Get current window size
 		SDL_GetWindowSize(gWindow, &width, &height);
 
 		// Clear screen
 		SDL_SetRenderDrawColor(gRenderer, 16, 16, 16, 255);
 		SDL_RenderClear(gRenderer);
+#endif
 	}
 
 	void render(float delta_time) {
@@ -562,12 +566,14 @@ namespace RenderingEngine {
 			// Send drag world coordinates to World
 			Vector2f ldrag_end = screen_to_world(box.x2, box.y2);
 			gWorld.select(ldrag_start, ldrag_end, 0);
+#ifdef USE_SDL2_RENDERER
 			// Render filled quad
 			SDL_SetRenderDrawColor(gRenderer, 0x99, 0xFF, 0x99, 0x55);
 			SDL_RenderFillRect(gRenderer, &dragbox);
 			// Render outline quad
 			SDL_SetRenderDrawColor(gRenderer, 0x99, 0xFF, 0x99, 0xFF);
 			SDL_RenderDrawRect(gRenderer, &dragbox);
+#endif
 		}
 		else {
 			ldrag_start = Vector2f(-1, -1);
@@ -589,12 +595,14 @@ namespace RenderingEngine {
 			// Send drag world coordinates to World
 			Vector2f rdrag_end = screen_to_world(box.x2, box.y2);
 			gWorld.select(rdrag_start, rdrag_end, 1);
+#ifdef USE_SDL2_RENDERER
 			// Render filled quad
 			SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0x55);
 			SDL_RenderFillRect(gRenderer, &dragbox);
 			// Render outline quad
 			SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0xFF);
 			SDL_RenderDrawRect(gRenderer, &dragbox);
+#endif
 		}
 		else {
 			rdrag_start = Vector2f(-1, -1);
@@ -654,8 +662,10 @@ namespace RenderingEngine {
 			last_p = world_to_screen(vs[(int)vs.size()-1]);
 			for (auto& v : vs) {
 				Vector2f p = world_to_screen(v);
+#ifdef USE_SDL2_RENDERER
 				SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 64);
 				SDL_RenderDrawLine(gRenderer, last_p.x(), last_p.y(), p.x(), p.y());
+#endif
 				last_p = p;
 			}
 		}
@@ -675,8 +685,10 @@ namespace RenderingEngine {
 		// // Draw original vertices as polygon
 		// Vector2f last_v = vs.at(vs.size()-1);
 		// for (auto& v : vs) {
+#ifdef USE_SDL2_RENDERER
 		// 	SDL_SetRenderDrawColor(gRenderer, 0, 255, 255, 255);
 		// 	SDL_RenderDrawLine(gRenderer, v.x(), v.y(), last_v.x(), last_v.y());
+#endif
 		// 	last_v = v;
 		// }
 		// // Draw interpolated vertices as polygon
@@ -686,29 +698,37 @@ namespace RenderingEngine {
 		// ps = cubic_interpolate(vs, 100);
 		// last_p = ps.at(ps.size()-1);
 		// for (auto& p : ps) {
+#ifdef USE_SDL2_RENDERER
 		// 	SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 200);
 		// 	SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
+#endif
 		// 	last_p = p;
 		// }
 		// // Hermite
 		// ps = hermite_interpolate(vs, 100, 0.5, 0);
 		// last_p = ps.at(ps.size()-1);
 		// for (auto& p : ps) {
+#ifdef USE_SDL2_RENDERER
 		// 	SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 200);
 		// 	SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
+#endif
 		// 	last_p = p;
 		// }
 		// // Bspline
 		// ps = bspline_interpolate(vs, 100);
 		// last_p = ps.at(ps.size()-1);
 		// for (auto& p : ps) {
+#ifdef USE_SDL2_RENDERER
 		// 	SDL_SetRenderDrawColor(gRenderer, 0, 0, 255, 200);
 		// 	SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
+#endif
 		// 	last_p = p;
 		// }
 		// // Fill interpolated vertices as polygon
+#ifdef USE_SDL2_RENDERER
 		// SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 64);
 		// fill_poly(ps);
+#endif
 	}
 
 	void show() {
