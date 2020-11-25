@@ -654,6 +654,8 @@ namespace RenderingEngine {
 
 			// Interpolate
 			std::vector<Vector2f> ps;
+			std::vector<Vector2f> ps1;
+			std::vector<Vector2f> ps2;
 			Vector2f last_p;
 
 			// // Bspline
@@ -666,18 +668,37 @@ namespace RenderingEngine {
 			// SDL_SetRenderDrawColor(gRenderer, 0, 8, 127, 127);
 			// fill_poly(ps);
 
-			// Hermite
-			ps = hermite_interpolate(vs, 10, 0.2, 0);
+			ps = hermite_interpolate(vs, 10, -1.0, 0);
 			last_p = world_to_screen(ps.at(ps.size()-1));
 			for (auto& p : ps)
 				p = world_to_screen(p);
 			// Fill poly
-			SDL_SetRenderDrawColor(gRenderer, 0, 8, 64, 64);
+			SDL_SetRenderDrawColor(gRenderer, 194, 178, 128, 32);
+			fill_poly(ps);
+
+			ps1 = cubic_interpolate(vs, 10);
+			ps2 = hermite_interpolate(vs, 10, -1.0, 0);
+			ps = weighted_average(ps1, ps2, 1, 1);
+			last_p = world_to_screen(ps.at(ps.size()-1));
+			for (auto& p : ps)
+				p = world_to_screen(p);
+			// Fill poly
+			SDL_SetRenderDrawColor(gRenderer, 194, 178, 128, 64);
+			fill_poly(ps);
+
+			// Hermite
+			ps = hermite_interpolate(vs, 10, 0, 0);
+			last_p = world_to_screen(ps.at(ps.size()-1));
+			for (auto& p : ps)
+				p = world_to_screen(p);
+			// Fill poly
+			// SDL_SetRenderDrawColor(gRenderer, 0, 8, 64, 64);
+			SDL_SetRenderDrawColor(gRenderer, 194, 178, 128, 127);
 			fill_poly(ps);
 
 			// Bspline + Hermite
-			std::vector<Vector2f> ps1 = bspline_interpolate(vs, 10);
-			std::vector<Vector2f> ps2 = hermite_interpolate(vs, 10, 0.5, 0);
+			ps1 = bspline_interpolate(vs, 10);
+			ps2 = hermite_interpolate(vs, 10, 0.5, 0);
 			ps = weighted_average(ps1, ps2, 1, 2);
 			last_p = world_to_screen(ps.at(ps.size()-1));
 			// Interpolate vertices
@@ -694,7 +715,7 @@ namespace RenderingEngine {
 			for (auto& p : ps)
 				p = world_to_screen(p);
 			// Fill poly
-			SDL_SetRenderDrawColor(gRenderer, 0, 8, 64, 200);
+			SDL_SetRenderDrawColor(gRenderer, 0, 8, 64, 180);
 			fill_poly(ps);
 
 			// const int N_ITER = 10;
@@ -709,15 +730,6 @@ namespace RenderingEngine {
 			// 	SDL_SetRenderDrawColor(gRenderer, 0, 8, 100, 127);
 			// 	fill_poly(ps);
 			// }
-
-			// // Cubic
-			// ps = cubic_interpolate(vs, 4);
-			// last_p = world_to_screen(ps.at(ps.size()-1));
-			// for (auto& p : ps)
-			// 	p = world_to_screen(p);
-			// // Fill poly
-			// SDL_SetRenderDrawColor(gRenderer, 16, 32, 127, 64);
-			// fill_poly(ps);
 
 			// // Grid vertices
 			// last_p = world_to_screen(vs[(int)vs.size()-1]);
