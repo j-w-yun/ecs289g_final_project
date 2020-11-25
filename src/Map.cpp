@@ -48,6 +48,9 @@ MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), 
 
 	// init obgrid
 	obgrid = std::vector<std::vector<bool>>(tx, std::vector<bool>(ty, 0));
+
+	// Generate texture
+	generate_texture();
 }
 
 bool MapLevel::add(std::shared_ptr<GameObject> o) {
@@ -234,37 +237,119 @@ std::vector<size_t> sort_indexes(const std::vector<T> &v) {
 	return idx;
 }
 
-const int n_types = 3;
-std::map<std::pair<int, int>, int> generate_texture(int width, int height) {
-	std::map<std::pair<int, int>, int> tex;
-	std::vector<std::pair<int, int>> ind;
-	float persistence = Util::uniform_random(0.5, 1.2);
-	int n_octaves = Util::uniform_random(1, 12);
-	int prime_index = (int)Util::uniform_random(0, 11);
-	int offset_x = (int)Util::uniform_random(0, 100000);
-	int offset_y = (int)Util::uniform_random(0, 100000);
-	std::vector<double> noise;
-	noise.resize(width * height);
-	for (int j = 0; j < width; j++) {
-		for (int k = 0; k < height; k++) {
-			double z = perlin_noise(j+offset_x, k+offset_y, n_octaves, persistence, prime_index);
-			noise[(j*height)+k] = z;
-			// TODO
+void MapLevel::generate_texture() {
+	float width = tile_width * tiles_x;
+	float height = tile_height * tiles_y;
+
+	noise2d.clear();
+	noise2d.resize(ceil(width/texture_resolution));
+
+	// Noise settings
+	int n_octaves = (int)Util::uniform_random(4, 6);  // More octaves generates bigger structures
+	float persistence = Util::uniform_random(0.7, 1);  // Between 0 to 1
+	int prime_index = (int)Util::uniform_random(0, 10);  // Between 0 to 9
+	float offset_x = Util::uniform_random(0, 100000);
+	float offset_y = Util::uniform_random(0, 100000);
+
+	// Print generated map settings
+	std::cout << std::endl;
+	std::cout << "Generated map settings" << std::endl;
+	std::cout << "n_octaves: " << n_octaves << std::endl;
+	std::cout << "persistence: " << persistence << std::endl;
+	std::cout << "prime_index: " << prime_index << std::endl;
+	std::cout << std::endl;
+
+	// Used for normalizing noise
+	double min_z = 0;
+	double max_z = 0;
+
+	// Get noise array
+	int xi = 0;
+	for (float x = 0; x < width; x += texture_resolution) {
+		for (float y = 0; y < height; y += texture_resolution) {
+			double z = perlin_noise(x+offset_x, y+offset_y, n_octaves, persistence, prime_index);
+			noise2d[xi].push_back(z);
+			min_z = z < min_z ? z : min_z;
+			max_z = z > max_z ? z : max_z;
 		}
+		xi++;
 	}
-	for (auto i : sort_indexes(noise)) {
-		std::cout << noise[i] << std::endl;
+
+	// Normalize noise from 0 to 1
+	for (int xi = 0; xi < (int)noise2d.size(); xi++)
+		for (int yi = 0; yi < (int)noise2d[xi].size(); yi++)
+			noise2d[xi][yi] = (noise2d[xi][yi] - min_z) / (max_z - min_z);
+
+
+	// void* mPixels = NULL;
+	// int mPitch = 0;
+	// int mWidth = 0;
+	// int mHeight = 0;
+
+	// loaded_surface = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
+	// formatted_surface = SDL_ConvertSurfaceFormat(loaded_surface, SDL_GetWindowPixelFormat(RenderingEngine::gWindow), 0);
+	// texture = SDL_CreateTexture(RenderingEngine::gRenderer, SDL_GetWindowPixelFormat(RenderingEngine::gWindow), SDL_TEXTUREACCESS_STREAMING, formatted_surface->w, formatted_surface->h);
+	// SDL_LockTexture(texture, NULL, &mPixels, &mPitch);
+	// memcpy(mPixels, formatted_surface->pixels, formatted_surface->pitch * formatted_surface->h);
+	// SDL_UnlockTexture(texture);
+	// mPixels = NULL;
+	// mWidth = formatted_surface->w;
+	// mHeight = formatted_surface->h;
+
+	// // Lock
+	// SDL_LockTexture(texture, NULL, &mPixels, &mPitch);
+	// //Allocate format from window
+	// Uint32 format = SDL_GetWindowPixelFormat( gWindow );
+	// SDL_PixelFormat* mappingFormat = SDL_AllocFormat( format );
+	// //Get pixel data
+	// Uint32* pixels = (Uint32*)gFooTexture.getPixels();
+	// int pixelCount = ( gFooTexture.getPitch() / 4 ) * gFooTexture.getHeight();
+	// //Map colors
+	// Uint32 colorKey = SDL_MapRGB( mappingFormat, 0, 0xFF, 0xFF );
+	// Uint32 transparent = SDL_MapRGBA( mappingFormat, 255, 0, 0, 255);
+	// // Unlock
+	// SDL_UnlockTexture(texture);
+
+	// SDL_FreeSurface(formatted_surface);
+	// SDL_FreeSurface(loaded_surface);
+}
+
+void MapLevel::render_texture(SDL_Renderer* renderer) {
+	float width = tile_width * tiles_x;
+	float height = tile_height * tiles_y;
+
+	if (noise2d.size() == 0)
+		return;
+	// Normalize noise from 0 to 1 and draw
+	int xi = 0;
+	for (float x = 0; x < width; x += texture_resolution) {
+		int yi = 0;
+		for (float y = 0; y < height; y += texture_resolution) {
+			// Choose color according to Z
+			double z = noise2d[xi][yi++];
+			// Draw overlapping squares
+			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(x-texture_resolution, y-texture_resolution));
+			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(x+texture_resolution*2, y+texture_resolution*2));
+			SDL_Rect box = {
+				(int)(sp1.x()),
+				(int)(sp1.y()),
+				(int)(sp2.x()-sp1.x())+1,
+				(int)(sp2.y()-sp1.y())+1
+			};
+			float f = ((float)SDL_GetTicks()/400.0f+(x+y+1)/10);
+			SDL_SetRenderDrawColor(renderer, 40, 90*z+40, 30, 150+60*sin(f));
+			// SDL_SetRenderDrawColor(renderer, 60, 90*z+40, 30, 150);
+			SDL_RenderFillRect(renderer, &box);
+		}
+		xi++;
 	}
-	return tex;
 }
 
 void MapLevel::render(SDL_Renderer* renderer) {
 	// Draw tiles
-	const float X_MIN = 0;
-	const float Y_MIN = 0;
 	const float X_MAX = tile_width * tiles_x;
 	const float Y_MAX = tile_height * tiles_y;
-	Vector2f world1 = RenderingEngine::world_to_screen(Vector2f(X_MIN, Y_MIN));
+	Vector2f world1 = RenderingEngine::world_to_screen(Vector2f(0, 0));
 	Vector2f world2 = RenderingEngine::world_to_screen(Vector2f(X_MAX, Y_MAX));
 	SDL_Rect world_box = {
 		(int)(world1.x()),
@@ -295,93 +380,30 @@ void MapLevel::render(SDL_Renderer* renderer) {
 	}*/
 
 	// Draw perlin noise
-	const float RESOLUTION = 5.0f;
-	if (noise2d.size() == 0 || Input::is_key_pressed(SDLK_SPACE)) {
-		noise2d.clear();
-		noise2d.resize(ceil((X_MAX-X_MIN)/RESOLUTION));
+	if (Input::is_key_pressed(SDLK_SPACE))
+		generate_texture();
+	render_texture(renderer);
 
-		// Noise settings
-		int n_octaves = (int)Util::uniform_random(4, 6);  // More octaves generates bigger structures
-		float persistence = Util::uniform_random(0.7, 1);  // Between 0 to 1
-		int prime_index = (int)Util::uniform_random(0, 10);  // Between 0 to 9
-		float offset_x = Util::uniform_random(0, 100000);
-		float offset_y = Util::uniform_random(0, 100000);
-
-		// Print generated map settings
-		std::cout << std::endl;
-		std::cout << "Generated map settings" << std::endl;
-		std::cout << "n_octaves: " << n_octaves << std::endl;
-		std::cout << "persistence: " << persistence << std::endl;
-		std::cout << "prime_index: " << prime_index << std::endl;
-		std::cout << std::endl;
-
-		// Used for normalizing noise
-		double min_z = 0;
-		double max_z = 0;
-
-		// Get noise array
-		int xi = 0;
-		for (float x = X_MIN; x < X_MAX; x += RESOLUTION) {
-			for (float y = Y_MIN; y < Y_MAX; y += RESOLUTION) {
-				double z = perlin_noise(x+offset_x, y+offset_y, n_octaves, persistence, prime_index);
-				noise2d[xi].push_back(z);
-				min_z = z < min_z ? z : min_z;
-				max_z = z > max_z ? z : max_z;
-			}
-			xi++;
-		}
-
-		// Normalize noise from 0 to 1
-		for (int xi = 0; xi < (int)noise2d.size(); xi++)
-			for (int yi = 0; yi < (int)noise2d[xi].size(); yi++)
-				noise2d[xi][yi] = (noise2d[xi][yi] - min_z) / (max_z - min_z);
-	}
-	if (noise2d.size() > 0) {
-		// Normalize noise from 0 to 1 and draw
-		int xi = 0;
-		for (float x = X_MIN; x < X_MAX; x += RESOLUTION) {
-			int yi = 0;
-			for (float y = Y_MIN; y < Y_MAX; y += RESOLUTION) {
-				// Choose color according to Z
-				double z = noise2d[xi][yi++];
-				// Draw overlapping squares
-				Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(x-RESOLUTION, y-RESOLUTION));
-				Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(x+RESOLUTION*2, y+RESOLUTION*2));
-				SDL_Rect box = {
-					(int)(sp1.x()),
-					(int)(sp1.y()),
-					(int)(sp2.x()-sp1.x())+1,
-					(int)(sp2.y()-sp1.y())+1
-				};
-				float f = ((float)SDL_GetTicks()/400.0f+(x+y+1)/10);
-				SDL_SetRenderDrawColor(renderer, 40, 90*z+40, 30, 150+60*sin(f));
-				// SDL_SetRenderDrawColor(renderer, 60, 90*z+40, 30, 150);
-				SDL_RenderFillRect(renderer, &box);
-			}
-			xi++;
-		}
-	}
-
-	// Draw obstacles
-	for (auto& o : obstructions) {
-		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(o.first*tile_width, o.second*tile_height));
-		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((o.first+1)*tile_width, (o.second+1)*tile_height));
-		SDL_Rect box = {
-			(int)(sp1.x()),
-			(int)(sp1.y()),
-			(int)(sp2.x()-sp1.x())+1,
-			(int)(sp2.y()-sp1.y())+1
-		};
-		// Fill
-		float f = ((float)SDL_GetTicks()/1000.0f+(o.first+o.second+1)/4);
-		SDL_SetRenderDrawColor(renderer, 40, 40, 190+50*sin(f), 255);
-		// SDL_SetRenderDrawColor(renderer, 32, 32, 190, 255);
-		SDL_RenderFillRect(renderer, &box);
-	}
+	// // Draw obstacles
+	// for (auto& o : obstructions) {
+	// 	Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(o.first*tile_width, o.second*tile_height));
+	// 	Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((o.first+1)*tile_width, (o.second+1)*tile_height));
+	// 	SDL_Rect box = {
+	// 		(int)(sp1.x()),
+	// 		(int)(sp1.y()),
+	// 		(int)(sp2.x()-sp1.x())+1,
+	// 		(int)(sp2.y()-sp1.y())+1
+	// 	};
+	// 	// Fill
+	// 	float f = ((float)SDL_GetTicks()/1000.0f+(o.first+o.second+1)/4);
+	// 	SDL_SetRenderDrawColor(renderer, 40, 40, 190+50*sin(f), 255);
+	// 	// SDL_SetRenderDrawColor(renderer, 32, 32, 190, 255);
+	// 	SDL_RenderFillRect(renderer, &box);
+	// }
 
 	// Draw rectangles
 	for(auto& r : rectcover){
-		SDL_SetRenderDrawColor(renderer, 255, 0, 255, 127);
+		SDL_SetRenderDrawColor(renderer, 127, 255, 255, 127);
 		auto lows = RenderingEngine::world_to_screen(Vector2f(r.xl * tile_width, r.yl * tile_height));
 		auto highs = RenderingEngine::world_to_screen(Vector2f(r.xh * tile_width, r.yh * tile_height));
 		SDL_Rect box = {

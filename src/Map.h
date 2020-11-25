@@ -42,7 +42,11 @@ typedef std::pair<int, int> ip;
 class MapLevel: public GameObject {
 	private:
 		unsigned long seed = time(NULL);
+		float texture_resolution = 5.0f;
 		std::vector<std::vector<double>> noise2d;
+		SDL_Surface* loaded_surface;
+		SDL_Surface* formatted_surface;
+		SDL_Texture* texture;
 		int min_octave;
 		int max_octave;
 		int tiles_x;
@@ -80,6 +84,8 @@ class MapLevel: public GameObject {
 		const std::vector<std::shared_ptr<GameObject>>& get_units() {return units;}
 		std::vector<std::shared_ptr<GameObject>>& get_objects();
 		size_t get_unitcap() {return unitcap;}
+		void generate_texture();
+		void render_texture(SDL_Renderer* renderer);
 		void render(SDL_Renderer* renderer);
 		void update(float elapsed_time);
 		static std::string static_class() {return "MapLevel";};
@@ -89,7 +95,7 @@ class MapLevel: public GameObject {
 		std::pair<int, int> to_tile_space(std::pair<float, float> p){
 			int x = (int)p.first;
 			int y = (int)p.second;
-			
+
 			return std::make_pair(x/(int)tile_width, y/(int)tile_height);
 		}
 
@@ -100,7 +106,7 @@ class MapLevel: public GameObject {
 		Vector2f to_world_space(std::pair<int, int> p){
 			float x = (float)p.first;
 			float y = (float)p.second;
-			
+
 			return Vector2f(tile_width*x + (float)tile_width/2, tile_height*y + (float)tile_height/2);
 		}
 
@@ -152,7 +158,7 @@ class MapLevel: public GameObject {
 				y += dy;
 				return crawl(grid, value, x, y, dx, dy, --len, turn);
 			}
-			
+
 			if(!turn) return std::make_pair(x, y);
 
 			// perpendicular
@@ -259,7 +265,7 @@ class MapLevel: public GameObject {
 		bool intersects(const rect& l, const rect& r, int orient = 2){
 			bool ix = l.xh > r.xl && l.xl < r.xh;
 			bool iy = l.yh > r.yl && l.yl < r.yh;
-			
+
 			switch(orient){
 				case 0: return ix;
 				case 1: return iy;
@@ -287,7 +293,7 @@ class MapLevel: public GameObject {
 
 			return ax || ay;
 		}
-		
+
 		rect shrink(const rect& r, int amt){
 			rect nr(r.xl + amt, r.yl + amt, r.xh - amt, r.yh - amt);
 			if(nr.xl > nr.xh || nr.yl > nr.yh) nr = r.center();
@@ -350,7 +356,7 @@ class MapLevel: public GameObject {
 							uncovered[i][j] = 0;
 							n_uncovered--;
 							r = rect(i, j, i+1, j+1);
-							goto break2;	
+							goto break2;
 						}
 					}
 				}
@@ -511,7 +517,7 @@ class MapLevel: public GameObject {
 				auto p = crawl(grid, -1, x, y, 1, 0, pathlen, 0);
 				x = p.first;
 				y = p.second;
-				std::cout << "at1 " << x << ", " << y << std::endl; 
+				std::cout << "at1 " << x << ", " << y << std::endl;
 				p = crawl(grid, -1, x, y, 0, (rand()%2)*2-1, pathlen, 0);
 				x = p.first;
 				y = p.second;
@@ -546,7 +552,7 @@ class MapLevel: public GameObject {
 				int area = rand()%(maxarea - minarea + 1) + minarea;
 				int wp = rand()%(maxwormpad-minwormpad + 1) + minwormpad;
 				int l = area/(1 + 2*wp);
-				
+
 				worm(grid, i + 2, tile.first, tile.second, 4, l, wp, wormspacing);
 			}
 
@@ -644,7 +650,7 @@ class MapLevel: public GameObject {
 		}
 
 		// p is in world space, a is in tile space
-		// transforms 
+		// transforms
 		Vector2f closest_point(Vector2f p, const rect& _a){
 			auto lows = to_world_space(std::make_pair(_a.xl, _a.yl));
 			auto highs = to_world_space(std::make_pair(_a.xh, _a.yh));

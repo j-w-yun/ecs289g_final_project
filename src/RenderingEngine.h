@@ -123,6 +123,15 @@ std::vector<Vector2f> bspline_interpolate(const std::vector<Vector2f>& vs, const
 	return ps;
 }
 
+std::vector<Vector2f> weighted_average(std::vector<Vector2f> vs1, std::vector<Vector2f> vs2, float w1, float w2) {
+	std::vector<Vector2f> ps;
+	ps.resize(vs1.size());
+	for (int j = 0; j < (int)vs1.size(); j++) {
+		ps[j] = (vs1[j]*w1+vs2[j]*w2) / (w1+w2);
+	}
+	return ps;
+}
+
 namespace RenderingEngine {
 
 	// Default window dimensions
@@ -181,7 +190,8 @@ namespace RenderingEngine {
 	/**
 	Set the world to render.
 	*/
-	std::vector<std::vector<Vector2f>> vertices;
+	std::vector<std::vector<Vector2f>> obstruction_vertices;
+
 	void set_world(const  World& world) {
 		gWorld = world;
 
@@ -418,7 +428,7 @@ namespace RenderingEngine {
 		for (int x = 0; x < grid_x; x++)
 			for (int y = 0; y < grid_y; y++)
 				if (grid[x][y] == process_group && process_group <= group)
-					vertices.push_back(group_vertices(x, y, process_group++));
+					obstruction_vertices.push_back(group_vertices(x, y, process_group++));
 	}
 
 	/**
@@ -638,7 +648,7 @@ namespace RenderingEngine {
 		}
 
 		// Draw obstruction vertices
-		for (auto& vs : vertices) {
+		for (auto& vs : obstruction_vertices) {
 			if (vs.size() == 0)
 				continue;
 
@@ -646,14 +656,35 @@ namespace RenderingEngine {
 			std::vector<Vector2f> ps;
 			Vector2f last_p;
 
-			// Hermite
-			ps = hermite_interpolate(vs, 4, 0.5, 0);
+			// // Bspline
+			// ps = bspline_interpolate(vs, 4);
+			// last_p = world_to_screen(ps.at(ps.size()-1));
+			// // Interpolate vertices
+			// for (auto& p : ps)
+			// 	p = world_to_screen(p);
+			// // Fill poly
+			// SDL_SetRenderDrawColor(gRenderer, 0, 8, 127, 127);
+			// fill_poly(ps);
+
+			// // Hermite
+			// ps = hermite_interpolate(vs, 4, 0.5, 0);
+			// last_p = world_to_screen(ps.at(ps.size()-1));
+			// for (auto& p : ps)
+			// 	p = world_to_screen(p);
+			// // Fill poly
+			// SDL_SetRenderDrawColor(gRenderer, 32, 32, 127, 127);
+			// fill_poly(ps);
+
+			// Bspline
+			std::vector<Vector2f> ps1 = bspline_interpolate(vs, 4);
+			std::vector<Vector2f> ps2 = hermite_interpolate(vs, 4, 0.5, 0);
+			ps = weighted_average(ps1, ps2, 3, 1);
 			last_p = world_to_screen(ps.at(ps.size()-1));
+			// Interpolate vertices
 			for (auto& p : ps)
 				p = world_to_screen(p);
 			// Fill poly
-			// SDL_SetRenderDrawColor(gRenderer, 64, 64, 127, 200);
-			SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 90);
+			SDL_SetRenderDrawColor(gRenderer, 0, 8, 127, 127);
 			fill_poly(ps);
 
 			// const int N_ITER = 10;
@@ -669,18 +700,6 @@ namespace RenderingEngine {
 			// 	fill_poly(ps);
 			// }
 
-			// for (int j = 0; j < N_ITER; j++) {
-			// 	float t = ((float)j/N_ITER)-1;
-			// 	// Hermite 2
-			// 	ps = hermite_interpolate(vs, 4, t, 0);
-			// 	last_p = world_to_screen(ps.at(ps.size()-1));
-			// 	for (auto& p : ps)
-			// 		p = world_to_screen(p);
-			// 	// Fill poly
-			// SDL_SetRenderDrawColor(gRenderer, 0, 8, 100, 127);
-			// 	fill_poly(ps);
-			// }
-
 			// // Cubic
 			// ps = cubic_interpolate(vs, 4);
 			// last_p = world_to_screen(ps.at(ps.size()-1));
@@ -690,76 +709,15 @@ namespace RenderingEngine {
 			// SDL_SetRenderDrawColor(gRenderer, 16, 32, 127, 64);
 			// fill_poly(ps);
 
-			// Bspline
-			ps = bspline_interpolate(vs, 4);
-			last_p = world_to_screen(ps.at(ps.size()-1));
-			// Interpolate vertices
-			for (auto& p : ps)
-				p = world_to_screen(p);
-			// Fill poly
-			// SDL_SetRenderDrawColor(gRenderer, 0, 8, 127, 90);
-			SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 90);
-			fill_poly(ps);
-
-			// Grid vertices
-			last_p = world_to_screen(vs[(int)vs.size()-1]);
-			for (auto& v : vs) {
-				Vector2f p = world_to_screen(v);
-				SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 255);
-				SDL_RenderDrawLine(gRenderer, last_p.x(), last_p.y(), p.x(), p.y());
-				last_p = p;
-			}
+			// // Grid vertices
+			// last_p = world_to_screen(vs[(int)vs.size()-1]);
+			// for (auto& v : vs) {
+			// 	Vector2f p = world_to_screen(v);
+			// 	SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 255);
+			// 	SDL_RenderDrawLine(gRenderer, last_p.x(), last_p.y(), p.x(), p.y());
+			// 	last_p = p;
+			// }
 		}
-
-		// // Interpolate and fillpoly demo
-		// float cx = width/2;
-		// float cy = height/2;
-		// const float DX = 100;
-		// const float DY = 100;
-		// // Make test vertices
-		// std::vector<Vector2f> vs;
-		// vs.push_back(Vector2f(cx-DX, cy+DY));
-		// vs.push_back(Vector2f(cx-DX, cy-DY));
-		// vs.push_back(Vector2f(cx+DX, cy-DY));
-		// vs.push_back(Vector2f(cx+DX*2, cy+DY*2));
-		// vs.push_back(Vector2f(cx+DX*3, cy+DY));
-		// // Draw original vertices as polygon
-		// Vector2f last_v = vs.at(vs.size()-1);
-		// for (auto& v : vs) {
-		// 	SDL_SetRenderDrawColor(gRenderer, 0, 255, 255, 255);
-		// 	SDL_RenderDrawLine(gRenderer, v.x(), v.y(), last_v.x(), last_v.y());
-		// 	last_v = v;
-		// }
-		// // Draw interpolated vertices as polygon
-		// std::vector<Vector2f> ps;
-		// Vector2f last_p;
-		// // Cubic
-		// ps = cubic_interpolate(vs, 100);
-		// last_p = ps.at(ps.size()-1);
-		// for (auto& p : ps) {
-		// 	SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 200);
-		// 	SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
-		// 	last_p = p;
-		// }
-		// // Hermite
-		// ps = hermite_interpolate(vs, 100, 0.5, 0);
-		// last_p = ps.at(ps.size()-1);
-		// for (auto& p : ps) {
-		// 	SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 200);
-		// 	SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
-		// 	last_p = p;
-		// }
-		// // Bspline
-		// ps = bspline_interpolate(vs, 100);
-		// last_p = ps.at(ps.size()-1);
-		// for (auto& p : ps) {
-		// 	SDL_SetRenderDrawColor(gRenderer, 0, 0, 255, 200);
-		// 	SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
-		// 	last_p = p;
-		// }
-		// // Fill interpolated vertices as polygon
-		// SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 64);
-		// fill_poly(ps);
 	}
 
 	void show() {
@@ -808,7 +766,7 @@ namespace RenderingEngine {
 		gRenderer = SDL_CreateRenderer(
 			gWindow,
 			-1,
-			SDL_RENDERER_ACCELERATED
+			SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
 		);
 		if (gRenderer == NULL) {
 			printf("Renderer could not be created: %s\n", SDL_GetError());
