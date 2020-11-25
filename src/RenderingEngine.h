@@ -455,6 +455,8 @@ namespace RenderingEngine {
 	}
 
 	void clear() {
+		glClearColor(16.0/255.0, 16.0/255.0, 16.0/255.0, 1);
+		glClear(GL_COLOR_BUFFER_BIT);
 #ifdef USE_SDL2_RENDERER
 		// Get current window size
 		SDL_GetWindowSize(gWindow, &width, &height);
@@ -734,10 +736,12 @@ namespace RenderingEngine {
 	void show() {
 		// Render stats
 		Stat::render(gRenderer, gFont);
-
+#ifdef USE_SDL2_RENDERER
 		// Update screen
 		SDL_RenderPresent(gRenderer);
-
+#else
+		SDL_GL_SwapWindow(gWindow);
+#endif
 		// Free stat rendering resources
 		Stat::free();
 	}
