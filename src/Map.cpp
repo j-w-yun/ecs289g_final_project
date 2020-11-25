@@ -403,7 +403,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 
 	// Draw rectangles
 	for(auto& r : rectcover){
-		SDL_SetRenderDrawColor(renderer, 127, 255, 255, 127);
+		SDL_SetRenderDrawColor(renderer, 127, 255, 255, 64);
 		auto lows = RenderingEngine::world_to_screen(Vector2f(r.xl * tile_width, r.yl * tile_height));
 		auto highs = RenderingEngine::world_to_screen(Vector2f(r.xh * tile_width, r.yh * tile_height));
 		SDL_Rect box = {
