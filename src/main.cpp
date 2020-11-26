@@ -308,7 +308,7 @@ void render(float delta_time) {
 
 int main(int argc, char* args[]) {
 	#ifdef __linux__
-	signal(SIGSEGV, stacktrace_handler);
+		signal(SIGSEGV, stacktrace_handler);
 	#endif
 
 	// Start up SDL and create window

@@ -42,11 +42,15 @@ typedef std::pair<int, int> ip;
 class MapLevel: public GameObject {
 	private:
 		unsigned long seed = time(NULL);
+		const int N_SAND = 10;
+		const int N_WATER = 10;
 		float texture_resolution = 5.0f;
 		std::vector<std::vector<double>> noise2d;
+		std::vector<std::vector<std::vector<Vector2f>>> obstruction_vertices;
 		SDL_Surface* loaded_surface;
 		SDL_Surface* formatted_surface;
 		SDL_Texture* texture;
+
 		int min_octave;
 		int max_octave;
 		int tiles_x;
@@ -89,6 +93,8 @@ class MapLevel: public GameObject {
 		void render(SDL_Renderer* renderer);
 		void update(float elapsed_time);
 		static std::string static_class() {return "MapLevel";};
+
+		void compute_obstruction_vertices();
 		std::vector<Vector2f> find_rect_path(Vector2f s, Vector2f d);
 		std::vector<Vector2f> reconstruct_path(std::vector<int>& from, std::vector<Vector2f>& points, int src, int dest, Vector2f v2fdest);
 		std::vector<Vector2f> reconstruct_better_path(std::vector<int>& from, std::vector<Vector2f>& points, int src, int dest, Vector2f v2fsrc, Vector2f v2fdest);
@@ -585,6 +591,8 @@ class MapLevel: public GameObject {
 			// for(auto& v2f : path){
 			// 	std::cout << v2f << std::endl;
 			// }
+
+			compute_obstruction_vertices();
 		}
 
 		float dist(Vector2f l, Vector2f r){

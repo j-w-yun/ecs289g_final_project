@@ -346,6 +346,261 @@ void MapLevel::render_texture(SDL_Renderer* renderer) {
 	}
 }
 
+void MapLevel::compute_obstruction_vertices() {
+	// Create obstruction group grid
+	int grid_x = (int)obgrid.size();
+	int grid_y = (int)obgrid[0].size();
+	std::vector<std::vector<int>> grid;
+	grid.resize(grid_x);
+	for (int x = 0; x < grid_x; x++)
+		for (int y = 0; y < grid_y; y++)
+			grid[x].push_back(obgrid[x][y] ? 1 : 0);
+
+	std::cout << "grid.size(): " << grid.size() << std::endl;
+
+	// Define grid value check
+	auto grid_contains = [&grid, grid_x, grid_y](int value) -> bool {
+		for (int x = 0; x < grid_x; x++)
+			for (int y = 0; y < grid_y; y++)
+				if (grid[x][y] == value)
+					return true;
+		return false;
+	};
+
+	// Define recursive assignment for a group
+	std::function<void(int, int, int)> neighbor_assign;
+	neighbor_assign = [&grid, grid_x, grid_y, &neighbor_assign](int x, int y, int group) -> void {
+		grid[x][y] = group;
+		if (x-1 >= 0 && grid[x-1][y] == 1)
+			neighbor_assign(x-1, y, group);
+		if (x+1 < grid_x && grid[x+1][y] == 1)
+			neighbor_assign(x+1, y, group);
+		if (y-1 >= 0 && grid[x][y-1] == 1)
+			neighbor_assign(x, y-1, group);
+		if (y+1 < grid_y && grid[x][y+1] == 1)
+			neighbor_assign(x, y+1, group);
+	};
+
+	// Define search and group assignment
+	auto group_assign = [&grid, grid_x, grid_y, &neighbor_assign](int group) -> void {
+		for (int x = 0; x < grid_x; x++)
+			for (int y = 0; y < grid_y; y++)
+				if (grid[x][y] == 1)
+					return neighbor_assign(x, y, group);
+	};
+
+	// Assign groups
+	int group = 2;
+	while (grid_contains(1))
+		group_assign(group++);
+
+	// Define safe grid value getter
+	auto get_value = [&grid, grid_x, grid_y](int x, int y) -> int {
+		if (x >= 0 && x < grid_x && y >= 0 && y < grid_y)
+			return grid[x][y];
+		return 0;
+	};
+
+	// Define neighbor count
+	auto n_neighbors = [&grid, grid_x, grid_y, &get_value](int x, int y) -> int {
+		int ns = 0;
+		if (get_value(x, y-1) != 0)
+			ns++;
+		if (get_value(x+1, y) != 0)
+			ns++;
+		if (get_value(x, y+1) != 0)
+			ns++;
+		if (get_value(x-1, y) != 0)
+			ns++;
+		return ns;
+	};
+
+	// Define next perimeter
+	auto next_perimeter = [&grid, grid_x, grid_y, &get_value, &n_neighbors](int x, int y, int& direction) -> std::pair<int, int> {
+		int nn = n_neighbors(x, y);
+		// Solo obstruction
+		if (nn == 0)
+			return std::make_pair(x, y);
+
+		for (int j = 0; j < 4; j++) {
+			if (direction == 0) {
+				// Up
+				if (get_value(x, y-1) != 0) {
+					if (get_value(x-1, y-1) != 0)  // Something to the left
+						direction = 3;
+					return std::make_pair(x, y-1);
+				}
+			}
+			else if (direction == 1) {
+				// Right
+				if (get_value(x+1, y) != 0) {
+					if (get_value(x+1, y-1) != 0)  // Something to the top
+						direction = 0;
+					return std::make_pair(x+1, y);
+				}
+			}
+			else if (direction == 2) {
+				// Down
+				if (get_value(x, y+1) != 0) {
+					if (get_value(x+1, y+1) != 0)  // Something to the right
+						direction = 1;
+					return std::make_pair(x, y+1);
+				}
+			}
+			else if (direction == 3) {
+				// Left
+				if (get_value(x-1, y) != 0) {
+					if (get_value(x-1, y+1) != 0)  // Something to the bottom
+						direction = 2;
+					return std::make_pair(x-1, y);
+				}
+			}
+			direction = (direction+1)%4;
+		}
+		std::cout << "Error: no perimeter found" << std::endl;
+		return std::make_pair(x, y);
+	};
+
+	// Define vertex search for group starting at x and y
+	float grid_w = get_tile_width();
+	float grid_h = get_tile_height();
+	auto group_vertices = [&grid, grid_x, grid_y, grid_w, grid_h, &next_perimeter](int x, int y, int group) -> std::vector<Vector2f> {
+		std::vector<Vector2f> vs;
+		std::pair<int, int> next_grid = {-1, -1};
+		std::pair<int, int> last_grid = {x, y};
+		int direction = 0;
+		int last_direction = 0;
+
+		auto add_grid = [&vs, grid_w, grid_h](std::pair<int, int> grid, int last_direction, int direction) -> void {
+			// Initial point is always top left. No need to offset.
+			if (vs.size() == 0) {
+				vs.push_back(Vector2f(grid.first*grid_w, grid.second*grid_h));
+				return;
+			}
+
+			float x = grid.first*grid_w;
+			float y = grid.second*grid_h;
+			if (last_direction == 0) {
+				if (direction == 0)
+					return;
+				vs.push_back(Vector2f(x, y));
+				if (direction == 2)
+					vs.push_back(Vector2f(x+grid_w, y));
+			}
+			else if (last_direction == 1) {
+				if (direction == 1)
+					return;
+				vs.push_back(Vector2f(x+grid_w, y));
+				if (direction == 3)
+					vs.push_back(Vector2f(x+grid_w, y+grid_h));
+			}
+			else if (last_direction == 2) {
+				if (direction == 2)
+					return;
+				vs.push_back(Vector2f(x+grid_w, y+grid_h));
+				if (direction == 0)
+					vs.push_back(Vector2f(x, y+grid_h));
+			}
+			else if (last_direction == 3) {
+				if (direction == 3)
+					return;
+				vs.push_back(Vector2f(x, y+grid_h));
+				if (direction == 1)
+					vs.push_back(Vector2f(x, y));
+			}
+		};
+
+		bool rewind = false;
+		while (true) {
+			if (next_grid.first == x && next_grid.second == y) {
+				if (!rewind)
+					rewind = true;
+				else
+					break;
+			}
+
+			// Compute next grid
+			next_grid = next_perimeter(last_grid.first, last_grid.second, direction);
+			if (last_direction != direction)
+				add_grid(last_grid, last_direction, direction);
+			last_direction = direction;
+			last_grid = next_grid;
+		}
+
+		// Remove duplicates
+		std::set<std::pair<float, float>> set;
+		for (auto i = vs.begin(); i != vs.end();) {
+			std::pair<float, float> v = std::make_pair((*i).x(), (*i).y());
+			if (set.find(v) != set.end()) {
+				i = vs.erase(i);
+			}
+			else {
+				set.insert(v);
+				++i;
+			}
+		}
+		return vs;
+	};
+
+	// Build final vector
+	std::vector<std::vector<Vector2f>> ovs;
+	int process_group = 2;
+	for (int x = 0; x < grid_x; x++)
+		for (int y = 0; y < grid_y; y++)
+			if (grid[x][y] == process_group && process_group <= group)
+				ovs.push_back(group_vertices(x, y, process_group++));
+
+	// Draw obstruction vertices
+	// std::cout << "ovs.size(): " << ovs.size() << std::endl;
+	std::vector<Vector2f> _ps1;
+	std::vector<Vector2f> _ps2;
+	// Interpolate
+	for (auto& vs : ovs) {
+		// std::cout << "vs.size(): " << vs.size() << std::endl;
+		if (vs.size() == 0)
+			continue;
+
+		std::vector<std::vector<Vector2f>> vertices;
+		const int N_INTERPOLATE = 8;
+
+		// Sand
+		for (int j = 0; j < N_SAND/2; j++) {
+			float tension = -(float)j / (N_SAND/2);
+			// _ps1 = cubic_interpolate(vs, N_INTERPOLATE);
+			// _ps2 = hermite_interpolate(vs, N_INTERPOLATE, tension, 0);
+			// vertices.push_back(weighted_average(_ps1, _ps2, 1, 3));
+			vertices.push_back(hermite_interpolate(vs, N_INTERPOLATE, tension, 0));
+		}
+		for (int j = 0; j < N_SAND/2; j++) {
+			float tension = (float)j / (N_SAND/2) / 2;
+			_ps1 = bspline_interpolate(vs, N_INTERPOLATE);
+			_ps2 = hermite_interpolate(vs, N_INTERPOLATE, tension, 0);
+			vertices.push_back(weighted_average(_ps1, _ps2, 1, 3));
+		}
+
+		// Sand + 1
+		_ps1 = bspline_interpolate(vs, N_INTERPOLATE);
+		_ps2 = hermite_interpolate(vs, N_INTERPOLATE, 0.5, 0);
+		vertices.push_back(weighted_average(_ps1, _ps2, 2, 1));
+
+		// Water
+		for (int j = 0; j < N_WATER/2; j++) {
+			float tension = (float)j / (N_WATER/2) / 2 + 0.5;
+			_ps1 = bspline_interpolate(vs, N_INTERPOLATE);
+			_ps2 = hermite_interpolate(vs, N_INTERPOLATE, tension, 0);
+			vertices.push_back(weighted_average(_ps1, _ps2, 1, 2));
+		}
+		for (int j = 0; j < N_WATER/2; j++) {
+			float tension = (float)j / (N_WATER/2) / 2 + 0.5;
+			_ps1 = bspline_interpolate(vs, N_INTERPOLATE);
+			_ps2 = hermite_interpolate(vs, N_INTERPOLATE, tension, 0);
+			vertices.push_back(weighted_average(_ps1, _ps2, 2, 1));
+		}
+
+		obstruction_vertices.push_back(vertices);
+	}
+}
+
 void MapLevel::render(SDL_Renderer* renderer) {
 	// Draw tiles
 	const float X_MAX = tile_width * tiles_x;
@@ -385,7 +640,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		generate_texture();
 	render_texture(renderer);
 
-	// // Draw obstacles
+	// // Draw raw obstructions
 	// for (auto& o : obstructions) {
 	// 	Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(o.first*tile_width, o.second*tile_height));
 	// 	Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((o.first+1)*tile_width, (o.second+1)*tile_height));
@@ -402,6 +657,41 @@ void MapLevel::render(SDL_Renderer* renderer) {
 	// 	SDL_RenderFillRect(renderer, &box);
 	// }
 
+	// Draw obstructions
+	for (auto& ovs : obstruction_vertices) {
+		std::vector<Vector2f> ps;
+		// Sand
+		for (int j = 0; j < N_SAND; j++) {
+			ps = ovs.at(j);
+			if (ps.size() > 0) {
+				SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 194, 178, 128, 32);
+				for (auto& p : ps)
+					p = RenderingEngine::world_to_screen(p);
+				RenderingEngine::fill_poly(ps);
+			}
+		}
+
+		// Sand + 1
+		ps = ovs.at(N_SAND);
+		if (ps.size() > 0) {
+			SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 97, 69, 64, 255);
+			for (auto& p : ps)
+				p = RenderingEngine::world_to_screen(p);
+			RenderingEngine::fill_poly(ps);
+		}
+
+		// Water
+		for (int j = 0; j < N_WATER; j++) {
+			ps = ovs.at(N_SAND+j+1);
+			if (ps.size() > 0) {
+				SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 0, 8, 64, 32);
+				for (auto& p : ps)
+					p = RenderingEngine::world_to_screen(p);
+				RenderingEngine::fill_poly(ps);
+			}
+		}
+	}
+
 	// Draw rectangles
 	for(auto& r : rectcover){
 		SDL_SetRenderDrawColor(renderer, 127, 255, 255, 64);
@@ -416,6 +706,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		SDL_RenderDrawRect(renderer, &box);
 	}
 
+	// Draw units
 	for (auto unit : units)
 		if (unit.get())
 			unit->render(renderer);
