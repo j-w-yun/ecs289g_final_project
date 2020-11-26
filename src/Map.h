@@ -26,8 +26,8 @@ struct rect{
 	}
 
 	rect center() const{
-		int x = (xh - xl)/2;
-		int y = (yh - yl)/2;
+		int x = xl + (xh - xl)/2;
+		int y = yl + (yh - yl)/2;
 		return rect(x, y, x, y);
 	}
 };
@@ -91,6 +91,7 @@ class MapLevel: public GameObject {
 		static std::string static_class() {return "MapLevel";};
 		std::vector<Vector2f> find_rect_path(Vector2f s, Vector2f d);
 		std::vector<Vector2f> reconstruct_path(std::vector<int>& from, std::vector<Vector2f>& points, int src, int dest, Vector2f v2fdest);
+		std::vector<Vector2f> reconstruct_better_path(std::vector<int>& from, std::vector<Vector2f>& points, int src, int dest, Vector2f v2fsrc, Vector2f v2fdest);
 
 		std::pair<int, int> to_tile_space(std::pair<float, float> p){
 			int x = (int)p.first;
@@ -262,9 +263,10 @@ class MapLevel: public GameObject {
 		}
 
 		// orient 0 x 1 y 2 both
+		// considers touching to be intersection
 		bool intersects(const rect& l, const rect& r, int orient = 2){
-			bool ix = l.xh > r.xl && l.xl < r.xh;
-			bool iy = l.yh > r.yl && l.yl < r.yh;
+			bool ix = l.xh >= r.xl && l.xl <= r.xh;
+			bool iy = l.yh >= r.yl && l.yl <= r.yh;
 
 			switch(orient){
 				case 0: return ix;
@@ -634,8 +636,8 @@ class MapLevel: public GameObject {
 			}
 
 			world_rect center(){
-				float x = (xh - xl)/2;
-				float y = (yh - yl)/2;
+				float x = xl + (xh - xl)/2;
+				float y = yl + (yh - yl)/2;
 				return world_rect(x, y, x, y);
 			}
 		};
@@ -679,3 +681,8 @@ class MapLevel: public GameObject {
 
 		}
 };
+
+std::ostream& operator<<(std::ostream& os, MapLevel::world_rect r){
+	os << "r(" << r.xl << ", " << r.yl << ", " << r.xh << ", " << r.yh << ")";
+	return os;
+}

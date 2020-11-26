@@ -141,7 +141,7 @@ void run_test() {
 	// Test RTS units
 	float WORLD_WIDTH = TILE_WIDTH*X_TILES;
 	float WORLD_HEIGHT = TILE_HEIGHT*Y_TILES;
-	for(int i = 0; i < 200; i++){
+	for(int i = 0; i < 100; i++){
 		auto position = Vector2f(bases.at(0).first * TILE_WIDTH, rand()%(int)WORLD_HEIGHT);
 		auto velocity = Vector2f(0, 0);
 		auto rts_ptr = std::make_shared<rts_unit>(

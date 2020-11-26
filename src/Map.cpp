@@ -8,6 +8,7 @@
 #include <set>
 #include <time.h>
 #include <vector>
+#include <algorithm>
 
 #include "algorithms.h"
 #include "AStar.hpp"
@@ -536,6 +537,80 @@ std::vector<Vector2f> MapLevel::reconstruct_path(std::vector<int>& from, std::ve
 	return path;
 }
 
+std::vector<Vector2f> MapLevel::reconstruct_better_path(std::vector<int>& from, std::vector<Vector2f>& points, int src, int dest, Vector2f v2fsrc, Vector2f v2fdest) {
+	auto curr = dest;
+
+	std::vector<world_rect> interfaces;
+	std::vector<Vector2f> path;
+	interfaces.push_back(world_rect(v2fdest));
+	path.push_back(v2fdest);
+
+	// first pass
+	while (curr != src && curr != -1) {
+		interfaces.push_back(to_world_rect(intersection(rectcover[curr], rectcover[from[curr]])));
+		path.push_back(points[curr]);
+		curr = from[curr];
+	}
+	interfaces.push_back(world_rect(v2fsrc));
+	path.push_back(v2fsrc);
+
+	/*std::cout << "\tconstructing path" << std::endl;
+	path.push_back(v2fdest);
+	for(size_t i = 1; i < interfaces.size(); i++){
+		std::cout << "\tadding " << interfaces[i] << " center: " << interfaces[i].center() << std::endl;
+
+		auto c = interfaces[i].center();
+		path.push_back(Vector2f(c.xl, c.yl));
+	}*/
+
+	// pad is specified in terms of tile_width
+	auto smooth = [](Vector2f a, world_rect b, Vector2f c, float pad = 0) -> Vector2f {
+		bool vert = b.xl == b.xh;
+
+		auto cen = b.center();
+
+		// vertical edge
+		if(vert){
+			if(a.x() == b.xl || a.x() == c.x() || b.xl == c.x()) return Vector2f(cen.xl, cen.yl);
+
+			float m = (c.y() - a.y()) / (c.x() - a.x());
+			float yatb = a.y() + m*(b.xl - a.x());
+
+			pad = std::min(pad, (b.yh - b.yl)/2);
+			float yfinal = std::clamp(yatb, b.yl + pad, b.yh - pad);
+
+			return Vector2f(b.xl, yfinal);
+		}
+		// horizontal edge
+		if(a.y() == b.yl || a.y() == c.y() || b.yl == c.y()) return Vector2f(cen.xl, cen.yl);
+
+		float m = (c.x() - a.x()) / (c.y() - a.y());
+		float xatb = a.x() + m*(b.yl - a.y());
+
+		pad = std::min(pad, (b.xh - b.xl)/2);
+		float xfinal = std::clamp(xatb, b.xl + pad, b.xh - pad);
+
+		return Vector2f(xfinal, b.yl);
+	};
+
+	// smoothing
+	for(size_t i = 1; i < path.size() - 1; i++){
+		path[i] = smooth(path[i - 1], interfaces[i], path[i + 1], 2*tile_width);
+	}
+
+	// do not want starting point in path
+	path.pop_back();
+
+	/*std::cout << "path:";
+	for(auto& v : path){
+		std::cout << " (" << v.x() << ", " << v.y() << ")";
+	}
+	std::cout << std::endl;*/
+
+
+	return path;
+}
+
 std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 	//std::cout << "In find_rect_path" << std::endl;
 
@@ -590,7 +665,8 @@ std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 
 		if (current == d_ind){
 			//std::cout << "done" << std::endl;
-			return reconstruct_path(from, point_in_r, s_ind, d_ind, d);
+			//return reconstruct_path(from, point_in_r, s_ind, d_ind, d);
+			return reconstruct_better_path(from, point_in_r, s_ind, d_ind, s, d);
 		}
 
 		// rectangle neighbors
@@ -599,11 +675,12 @@ std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 
 			Vector2f tentative_npoint = dv(current, nind);
 			float tentative_gscore = gscore[current] + (tentative_npoint - point_in_r[current]).len();
+			float tentative_fscore = (tentative_npoint - d).len();
 
 			//std::cout << "tentative gscore vs current: " << tentative_gscore << " vs " << gscore[nind] << std::endl;
 
 			// update if closer
-			if (tentative_gscore < gscore[nind]) {
+			if (tentative_gscore + tentative_fscore < gscore[nind] + fscore[nind]) {
 				// update point
 				point_in_r[nind] = tentative_npoint;
 
@@ -611,7 +688,8 @@ std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 				gscore[nind] = tentative_gscore;
 
 				// update fscore
-				fscore[nind] = h(nind);
+				//fscore[nind] = h(nind);
+				fscore[nind] = tentative_fscore;
 
 				// update from
 				from[nind] = current;
