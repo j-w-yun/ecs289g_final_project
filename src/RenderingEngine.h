@@ -178,6 +178,101 @@ namespace RenderingEngine {
 	TTF_Font* gFont;
 	World gWorld;
 
+#ifndef USE_SDL2_RENDERER
+	GLuint gGeneric2DShaderProgramID[2] = { 0, 0 };
+
+	// OpenGL shaders
+	int ogl_prepare_generic_2d_shaders(int withTexture) {
+		//Generate program
+		gGeneric2DShaderProgramID[withTexture] = glCreateProgram();
+
+		//Create vertex shader
+		GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+
+		//Get vertex source. TODO: We should provide vertex stream during rendering.
+		const GLchar* vertexShaderSource[] =
+		{
+			"#version 140\n"
+			"in vec2 LVertexPos2D; "
+			"void main() {"
+			"	gl_Position = vec4( LVertexPos2D.x, LVertexPos2D.y, 0, 1 );"
+			"}"
+		};
+
+		//Set vertex source
+		glShaderSource(vertexShader, 1, vertexShaderSource, NULL);
+
+		//Compile vertex source
+		glCompileShader(vertexShader);
+
+		//Check vertex shader for errors
+		GLint vShaderCompiled = GL_FALSE;
+		glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &vShaderCompiled);
+		if (vShaderCompiled != GL_TRUE)
+		{
+			printf("Unable to compile vertex shader %d!\n", vertexShader);
+			return -1;
+		}
+
+		//Attach vertex shader to program
+		glAttachShader(gGeneric2DShaderProgramID[withTexture], vertexShader);
+
+		//Create fragment shader
+		GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+		//Get fragment source, TODO: reference a texture object later
+		const GLchar* fragmentShaderSource[] =
+		{
+			"#version 140\n"
+			"out vec4 LFragment;"
+			"void main() {"
+			"	LFragment = vec4( 1.0, 1.0, 1.0, 1.0 );"
+			"}"
+		};
+
+		//Set fragment source
+		glShaderSource(fragmentShader, 1, fragmentShaderSource, NULL);
+
+		//Compile fragment source
+		glCompileShader(fragmentShader);
+
+		//Check fragment shader for errors
+		GLint fShaderCompiled = GL_FALSE;
+		glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &fShaderCompiled);
+		if (fShaderCompiled != GL_TRUE)
+		{
+			printf("Unable to compile fragment shader %d!\n", fragmentShader);
+			return -2;
+		}
+
+		//Attach fragment shader to program
+		glAttachShader(gGeneric2DShaderProgramID[withTexture], fragmentShader);
+
+		//Link program
+		glLinkProgram(gGeneric2DShaderProgramID[withTexture]);
+
+		//Check for errors
+		GLint programSuccess = GL_TRUE;
+		glGetProgramiv(gGeneric2DShaderProgramID[withTexture], GL_LINK_STATUS, &programSuccess);
+		if (programSuccess != GL_TRUE)
+		{
+			printf("Error linking program %d!\n", gGeneric2DShaderProgramID[withTexture]);
+			return -3;
+		}
+	}
+
+	void ogl_draw_line(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2) {
+		GLfloat line[4] = {
+			2 * (x1 / width - 0.5f), 
+			2 * (x2 / height - 0.5f), 
+			2 * (y1 / width - 0.5f), 
+			2 * (y2 / height - 0.5f)
+		}
+
+
+	}
+#endif
+
 	/**
 	Set the world to render.
 	*/
@@ -455,15 +550,15 @@ namespace RenderingEngine {
 	}
 
 	void clear() {
-		glClearColor(16.0/255.0, 16.0/255.0, 16.0/255.0, 1);
-		glClear(GL_COLOR_BUFFER_BIT);
-#ifdef USE_SDL2_RENDERER
 		// Get current window size
 		SDL_GetWindowSize(gWindow, &width, &height);
-
+#ifdef USE_SDL2_RENDERER
 		// Clear screen
 		SDL_SetRenderDrawColor(gRenderer, 16, 16, 16, 255);
 		SDL_RenderClear(gRenderer);
+#else
+		glClearColor(16.0 / 255.0, 16.0 / 255.0, 16.0 / 255.0, 1);
+		glClear(GL_COLOR_BUFFER_BIT);
 #endif
 	}
 
