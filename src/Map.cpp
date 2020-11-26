@@ -289,7 +289,7 @@ void MapLevel::generate_texture() {
 
 	// loaded_surface = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
 	// formatted_surface = SDL_ConvertSurfaceFormat(loaded_surface, SDL_GetWindowPixelFormat(RenderingEngine::gWindow), 0);
-	// texture = SDL_CreateTexture(RenderingEngine::gRenderer, SDL_GetWindowPixelFormat(RenderingEngine::gWindow), SDL_TEXTUREACCESS_STREAMING, formatted_surface->w, formatted_surface->h);
+	// texture = SDL_CreateTexture(renderer, SDL_GetWindowPixelFormat(RenderingEngine::gWindow), SDL_TEXTUREACCESS_STREAMING, formatted_surface->w, formatted_surface->h);
 	// SDL_LockTexture(texture, NULL, &mPixels, &mPitch);
 	// memcpy(mPixels, formatted_surface->pixels, formatted_surface->pitch * formatted_surface->h);
 	// SDL_UnlockTexture(texture);
@@ -664,7 +664,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		for (int j = 0; j < N_SAND; j++) {
 			ps = ovs.at(j);
 			if (ps.size() > 0) {
-				SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 194, 178, 128, 32);
+				SDL_SetRenderDrawColor(renderer, 194, 178, 128, 32);
 				for (auto& p : ps)
 					p = RenderingEngine::world_to_screen(p);
 				RenderingEngine::fill_poly(ps);
@@ -674,7 +674,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		// Sand + 1
 		ps = ovs.at(N_SAND);
 		if (ps.size() > 0) {
-			SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 97, 69, 64, 255);
+			SDL_SetRenderDrawColor(renderer, 97, 69, 64, 255);
 			for (auto& p : ps)
 				p = RenderingEngine::world_to_screen(p);
 			RenderingEngine::fill_poly(ps);
@@ -684,13 +684,58 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		for (int j = 0; j < N_WATER; j++) {
 			ps = ovs.at(N_SAND+j+1);
 			if (ps.size() > 0) {
-				SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 0, 8, 64, 32);
+				SDL_SetRenderDrawColor(renderer, 0, 8, 64, 32);
 				for (auto& p : ps)
 					p = RenderingEngine::world_to_screen(p);
 				RenderingEngine::fill_poly(ps);
 			}
 		}
 	}
+	// Clip map
+	Vector2f p1;
+	Vector2f p2;
+	SDL_Rect box;
+	SDL_SetRenderDrawColor(renderer, 2, 2, 4, 255);
+	// Top
+	p1 = RenderingEngine::world_to_screen(Vector2f(X_MAX*3, 0));
+	p2 = RenderingEngine::world_to_screen(Vector2f(-X_MAX*2, -Y_MAX*2));
+	box = {
+		(int)p1.x(),
+		(int)p1.y(),
+		(int)(p2.x() - p1.x()),
+		(int)(p2.y() - p1.y())
+	};
+	SDL_RenderFillRect(renderer, &box);
+	// Right
+	p1 = RenderingEngine::world_to_screen(Vector2f(X_MAX, -Y_MAX*2));
+	p2 = RenderingEngine::world_to_screen(Vector2f(X_MAX*3, Y_MAX*3));
+	box = {
+		(int)p1.x(),
+		(int)p1.y(),
+		(int)(p2.x() - p1.x()),
+		(int)(p2.y() - p1.y())
+	};
+	SDL_RenderFillRect(renderer, &box);
+	// Bottom
+	p1 = RenderingEngine::world_to_screen(Vector2f(X_MAX*3, Y_MAX));
+	p2 = RenderingEngine::world_to_screen(Vector2f(-X_MAX*2, Y_MAX*3));
+	box = {
+		(int)p1.x(),
+		(int)p1.y(),
+		(int)(p2.x() - p1.x()),
+		(int)(p2.y() - p1.y())
+	};
+	SDL_RenderFillRect(renderer, &box);
+	// Left
+	p1 = RenderingEngine::world_to_screen(Vector2f(0, -Y_MAX*2));
+	p2 = RenderingEngine::world_to_screen(Vector2f(-X_MAX*2, Y_MAX*3));
+	box = {
+		(int)p1.x(),
+		(int)p1.y(),
+		(int)(p2.x() - p1.x()),
+		(int)(p2.y() - p1.y())
+	};
+	SDL_RenderFillRect(renderer, &box);
 
 	// Draw rectangles
 	for(auto& r : rectcover){

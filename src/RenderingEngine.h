@@ -190,7 +190,6 @@ namespace RenderingEngine {
 	/**
 	Set the world to render.
 	*/
-	// std::vector<std::vector<Vector2f>> obstruction_vertices;
 	void set_world(const  World& world) {
 		gWorld = world;
 

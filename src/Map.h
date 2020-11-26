@@ -42,8 +42,8 @@ typedef std::pair<int, int> ip;
 class MapLevel: public GameObject {
 	private:
 		unsigned long seed = time(NULL);
-		const int N_SAND = 10;
-		const int N_WATER = 10;
+		const int N_SAND = 8;
+		const int N_WATER = 8;
 		float texture_resolution = 5.0f;
 		std::vector<std::vector<double>> noise2d;
 		std::vector<std::vector<std::vector<Vector2f>>> obstruction_vertices;
