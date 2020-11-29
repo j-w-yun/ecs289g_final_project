@@ -89,6 +89,10 @@ struct rts_unit : GameObject {
 			path.pop_back();
 			recomp = true;
 		}
+		else if(path.size() > 1 && (path[path.size() - 2] - path.back()).dot(p() - path.back()) > 0){
+			path.pop_back();
+			recomp = true;
+		}
 		if(recomp){
 			if(!path.size()){
 				set_v(v() * .95);

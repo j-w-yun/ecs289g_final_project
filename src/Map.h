@@ -26,8 +26,8 @@ struct rect{
 	}
 
 	rect center() const{
-		int x = (xh - xl)/2;
-		int y = (yh - yl)/2;
+		int x = xl + (xh - xl)/2;
+		int y = yl + (yh - yl)/2;
 		return rect(x, y, x, y);
 	}
 };
@@ -42,7 +42,15 @@ typedef std::pair<int, int> ip;
 class MapLevel: public GameObject {
 	private:
 		unsigned long seed = time(NULL);
+		const int N_SAND = 8;
+		const int N_WATER = 8;
+		float texture_resolution = 5.0f;
 		std::vector<std::vector<double>> noise2d;
+		std::vector<std::vector<std::vector<Vector2f>>> obstruction_vertices;
+		SDL_Surface* loaded_surface;
+		SDL_Surface* formatted_surface;
+		SDL_Texture* texture;
+
 		int min_octave;
 		int max_octave;
 		int tiles_x;
@@ -80,16 +88,21 @@ class MapLevel: public GameObject {
 		const std::vector<std::shared_ptr<GameObject>>& get_units() {return units;}
 		std::vector<std::shared_ptr<GameObject>>& get_objects();
 		size_t get_unitcap() {return unitcap;}
+		void generate_texture();
+		void render_texture(SDL_Renderer* renderer);
 		void render(SDL_Renderer* renderer);
 		void update(float elapsed_time);
 		static std::string static_class() {return "MapLevel";};
+
+		void compute_obstruction_vertices();
 		std::vector<Vector2f> find_rect_path(Vector2f s, Vector2f d);
 		std::vector<Vector2f> reconstruct_path(std::vector<int>& from, std::vector<Vector2f>& points, int src, int dest, Vector2f v2fdest);
+		std::vector<Vector2f> reconstruct_better_path(std::vector<int>& from, std::vector<Vector2f>& points, int src, int dest, Vector2f v2fsrc, Vector2f v2fdest);
 
 		std::pair<int, int> to_tile_space(std::pair<float, float> p){
 			int x = (int)p.first;
 			int y = (int)p.second;
-			
+
 			return std::make_pair(x/(int)tile_width, y/(int)tile_height);
 		}
 
@@ -100,7 +113,7 @@ class MapLevel: public GameObject {
 		Vector2f to_world_space(std::pair<int, int> p){
 			float x = (float)p.first;
 			float y = (float)p.second;
-			
+
 			return Vector2f(tile_width*x + (float)tile_width/2, tile_height*y + (float)tile_height/2);
 		}
 
@@ -152,7 +165,7 @@ class MapLevel: public GameObject {
 				y += dy;
 				return crawl(grid, value, x, y, dx, dy, --len, turn);
 			}
-			
+
 			if(!turn) return std::make_pair(x, y);
 
 			// perpendicular
@@ -256,10 +269,11 @@ class MapLevel: public GameObject {
 		}
 
 		// orient 0 x 1 y 2 both
+		// considers touching to be intersection
 		bool intersects(const rect& l, const rect& r, int orient = 2){
-			bool ix = l.xh > r.xl && l.xl < r.xh;
-			bool iy = l.yh > r.yl && l.yl < r.yh;
-			
+			bool ix = l.xh >= r.xl && l.xl <= r.xh;
+			bool iy = l.yh >= r.yl && l.yl <= r.yh;
+
 			switch(orient){
 				case 0: return ix;
 				case 1: return iy;
@@ -269,6 +283,17 @@ class MapLevel: public GameObject {
 			return 0;
 		}
 
+		rect intersection(const rect& l, const rect& r){
+			if(!intersects(l, r)) return rect(0, 0, 0, 0);
+
+			int xl = std::max(l.xl, r.xl);
+			int yl = std::max(l.yl, r.yl);
+			int xh = std::min(l.xh, r.xh);
+			int yh = std::min(l.yh, r.yh);
+
+			return rect(xl, yl, xh, yh);
+		}
+
 		// orient 0 x 1 y 2 both
 		bool abuts(const rect& l, const rect& r){
 			bool ax = (l.xh == r.xl || l.xl == r.xh) && intersects(l, r, 1);
@@ -276,7 +301,7 @@ class MapLevel: public GameObject {
 
 			return ax || ay;
 		}
-		
+
 		rect shrink(const rect& r, int amt){
 			rect nr(r.xl + amt, r.yl + amt, r.xh - amt, r.yh - amt);
 			if(nr.xl > nr.xh || nr.yl > nr.yh) nr = r.center();
@@ -339,7 +364,7 @@ class MapLevel: public GameObject {
 							uncovered[i][j] = 0;
 							n_uncovered--;
 							r = rect(i, j, i+1, j+1);
-							goto break2;	
+							goto break2;
 						}
 					}
 				}
@@ -500,7 +525,7 @@ class MapLevel: public GameObject {
 				auto p = crawl(grid, -1, x, y, 1, 0, pathlen, 0);
 				x = p.first;
 				y = p.second;
-				std::cout << "at1 " << x << ", " << y << std::endl; 
+				std::cout << "at1 " << x << ", " << y << std::endl;
 				p = crawl(grid, -1, x, y, 0, (rand()%2)*2-1, pathlen, 0);
 				x = p.first;
 				y = p.second;
@@ -535,7 +560,7 @@ class MapLevel: public GameObject {
 				int area = rand()%(maxarea - minarea + 1) + minarea;
 				int wp = rand()%(maxwormpad-minwormpad + 1) + minwormpad;
 				int l = area/(1 + 2*wp);
-				
+
 				worm(grid, i + 2, tile.first, tile.second, 4, l, wp, wormspacing);
 			}
 
@@ -566,6 +591,8 @@ class MapLevel: public GameObject {
 			// for(auto& v2f : path){
 			// 	std::cout << v2f << std::endl;
 			// }
+
+			compute_obstruction_vertices();
 		}
 
 		float dist(Vector2f l, Vector2f r){
@@ -617,14 +644,23 @@ class MapLevel: public GameObject {
 			}
 
 			world_rect center(){
-				float x = (xh - xl)/2;
-				float y = (yh - yl)/2;
+				float x = xl + (xh - xl)/2;
+				float y = yl + (yh - yl)/2;
 				return world_rect(x, y, x, y);
 			}
 		};
 
+		//rect get_edge(const rect& )
+
+		world_rect to_world_rect(const rect& _a){
+			auto lows = to_world_space(std::make_pair(_a.xl, _a.yl));
+			auto highs = to_world_space(std::make_pair(_a.xh, _a.yh));
+
+			return world_rect(lows.x(), lows.y(), highs.x(), highs.y());
+		}
+
 		// p is in world space, a is in tile space
-		// transforms 
+		// transforms
 		Vector2f closest_point(Vector2f p, const rect& _a){
 			auto lows = to_world_space(std::make_pair(_a.xl, _a.yl));
 			auto highs = to_world_space(std::make_pair(_a.xh, _a.yh));
@@ -653,3 +689,8 @@ class MapLevel: public GameObject {
 
 		}
 };
+
+std::ostream& operator<<(std::ostream& os, MapLevel::world_rect r){
+	os << "r(" << r.xl << ", " << r.yl << ", " << r.xh << ", " << r.yh << ")";
+	return os;
+}

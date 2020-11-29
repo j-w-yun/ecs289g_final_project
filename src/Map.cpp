@@ -8,6 +8,7 @@
 #include <set>
 #include <time.h>
 #include <vector>
+#include <algorithm>
 
 #include "algorithms.h"
 #include "AStar.hpp"
@@ -48,6 +49,9 @@ MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), 
 
 	// init obgrid
 	obgrid = std::vector<std::vector<bool>>(tx, std::vector<bool>(ty, 0));
+
+	// Generate texture
+	generate_texture();
 }
 
 bool MapLevel::add(std::shared_ptr<GameObject> o) {
@@ -234,37 +238,374 @@ std::vector<size_t> sort_indexes(const std::vector<T> &v) {
 	return idx;
 }
 
-const int n_types = 3;
-std::map<std::pair<int, int>, int> generate_texture(int width, int height) {
-	std::map<std::pair<int, int>, int> tex;
-	std::vector<std::pair<int, int>> ind;
-	float persistence = Util::uniform_random(0.5, 1.2);
-	int n_octaves = Util::uniform_random(1, 12);
-	int prime_index = (int)Util::uniform_random(0, 11);
-	int offset_x = (int)Util::uniform_random(0, 100000);
-	int offset_y = (int)Util::uniform_random(0, 100000);
-	std::vector<double> noise;
-	noise.resize(width * height);
-	for (int j = 0; j < width; j++) {
-		for (int k = 0; k < height; k++) {
-			double z = perlin_noise(j+offset_x, k+offset_y, n_octaves, persistence, prime_index);
-			noise[(j*height)+k] = z;
-			// TODO
+void MapLevel::generate_texture() {
+	float width = tile_width * tiles_x;
+	float height = tile_height * tiles_y;
+
+	noise2d.clear();
+	noise2d.resize(ceil(width/texture_resolution));
+
+	// Noise settings
+	int n_octaves = (int)Util::uniform_random(4, 6);  // More octaves generates bigger structures
+	float persistence = Util::uniform_random(0.7, 1);  // Between 0 to 1
+	int prime_index = (int)Util::uniform_random(0, 10);  // Between 0 to 9
+	float offset_x = Util::uniform_random(0, 100000);
+	float offset_y = Util::uniform_random(0, 100000);
+
+	// Print generated map settings
+	std::cout << std::endl;
+	std::cout << "Generated map settings" << std::endl;
+	std::cout << "n_octaves: " << n_octaves << std::endl;
+	std::cout << "persistence: " << persistence << std::endl;
+	std::cout << "prime_index: " << prime_index << std::endl;
+	std::cout << std::endl;
+
+	// Used for normalizing noise
+	double min_z = 0;
+	double max_z = 0;
+
+	// Get noise array
+	int xi = 0;
+	for (float x = 0; x < width; x += texture_resolution) {
+		for (float y = 0; y < height; y += texture_resolution) {
+			double z = perlin_noise(x+offset_x, y+offset_y, n_octaves, persistence, prime_index);
+			noise2d[xi].push_back(z);
+			min_z = z < min_z ? z : min_z;
+			max_z = z > max_z ? z : max_z;
 		}
+		xi++;
 	}
-	for (auto i : sort_indexes(noise)) {
-		std::cout << noise[i] << std::endl;
+
+	// Normalize noise from 0 to 1
+	for (int xi = 0; xi < (int)noise2d.size(); xi++)
+		for (int yi = 0; yi < (int)noise2d[xi].size(); yi++)
+			noise2d[xi][yi] = (noise2d[xi][yi] - min_z) / (max_z - min_z);
+
+
+	// void* mPixels = NULL;
+	// int mPitch = 0;
+	// int mWidth = 0;
+	// int mHeight = 0;
+
+	// loaded_surface = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
+	// formatted_surface = SDL_ConvertSurfaceFormat(loaded_surface, SDL_GetWindowPixelFormat(RenderingEngine::gWindow), 0);
+	// texture = SDL_CreateTexture(renderer, SDL_GetWindowPixelFormat(RenderingEngine::gWindow), SDL_TEXTUREACCESS_STREAMING, formatted_surface->w, formatted_surface->h);
+	// SDL_LockTexture(texture, NULL, &mPixels, &mPitch);
+	// memcpy(mPixels, formatted_surface->pixels, formatted_surface->pitch * formatted_surface->h);
+	// SDL_UnlockTexture(texture);
+	// mPixels = NULL;
+	// mWidth = formatted_surface->w;
+	// mHeight = formatted_surface->h;
+
+	// // Lock
+	// SDL_LockTexture(texture, NULL, &mPixels, &mPitch);
+	// //Allocate format from window
+	// Uint32 format = SDL_GetWindowPixelFormat( gWindow );
+	// SDL_PixelFormat* mappingFormat = SDL_AllocFormat( format );
+	// //Get pixel data
+	// Uint32* pixels = (Uint32*)gFooTexture.getPixels();
+	// int pixelCount = ( gFooTexture.getPitch() / 4 ) * gFooTexture.getHeight();
+	// //Map colors
+	// Uint32 colorKey = SDL_MapRGB( mappingFormat, 0, 0xFF, 0xFF );
+	// Uint32 transparent = SDL_MapRGBA( mappingFormat, 255, 0, 0, 255);
+	// // Unlock
+	// SDL_UnlockTexture(texture);
+
+	// SDL_FreeSurface(formatted_surface);
+	// SDL_FreeSurface(loaded_surface);
+}
+
+void MapLevel::render_texture(SDL_Renderer* renderer) {
+	float width = tile_width * tiles_x;
+	float height = tile_height * tiles_y;
+
+	if (noise2d.size() == 0)
+		return;
+	// Normalize noise from 0 to 1 and draw
+	int xi = 0;
+	for (float x = 0; x < width; x += texture_resolution) {
+		int yi = 0;
+		for (float y = 0; y < height; y += texture_resolution) {
+			// Choose color according to Z
+			double z = noise2d[xi][yi++];
+			// Draw overlapping squares
+			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(x-texture_resolution, y-texture_resolution));
+			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(x+texture_resolution*2, y+texture_resolution*2));
+			SDL_Rect box = {
+				(int)(sp1.x()),
+				(int)(sp1.y()),
+				(int)(sp2.x()-sp1.x())+1,
+				(int)(sp2.y()-sp1.y())+1
+			};
+			float f = ((float)SDL_GetTicks()/400.0f+(x+y+1)/10);
+			SDL_SetRenderDrawColor(renderer, 40, 90*z+40, 30, 150+60*sin(f));
+			// SDL_SetRenderDrawColor(renderer, 60, 90*z+40, 30, 150);
+			SDL_RenderFillRect(renderer, &box);
+		}
+		xi++;
 	}
-	return tex;
+}
+
+void MapLevel::compute_obstruction_vertices() {
+	// Create obstruction group grid
+	int grid_x = (int)obgrid.size();
+	int grid_y = (int)obgrid[0].size();
+	std::vector<std::vector<int>> grid;
+	grid.resize(grid_x);
+	for (int x = 0; x < grid_x; x++)
+		for (int y = 0; y < grid_y; y++)
+			grid[x].push_back(obgrid[x][y] ? 1 : 0);
+
+	std::cout << "grid.size(): " << grid.size() << std::endl;
+
+	// Define grid value check
+	auto grid_contains = [&grid, grid_x, grid_y](int value) -> bool {
+		for (int x = 0; x < grid_x; x++)
+			for (int y = 0; y < grid_y; y++)
+				if (grid[x][y] == value)
+					return true;
+		return false;
+	};
+
+	// Define recursive assignment for a group
+	std::function<void(int, int, int)> neighbor_assign;
+	neighbor_assign = [&grid, grid_x, grid_y, &neighbor_assign](int x, int y, int group) -> void {
+		grid[x][y] = group;
+		if (x-1 >= 0 && grid[x-1][y] == 1)
+			neighbor_assign(x-1, y, group);
+		if (x+1 < grid_x && grid[x+1][y] == 1)
+			neighbor_assign(x+1, y, group);
+		if (y-1 >= 0 && grid[x][y-1] == 1)
+			neighbor_assign(x, y-1, group);
+		if (y+1 < grid_y && grid[x][y+1] == 1)
+			neighbor_assign(x, y+1, group);
+	};
+
+	// Define search and group assignment
+	auto group_assign = [&grid, grid_x, grid_y, &neighbor_assign](int group) -> void {
+		for (int x = 0; x < grid_x; x++)
+			for (int y = 0; y < grid_y; y++)
+				if (grid[x][y] == 1)
+					return neighbor_assign(x, y, group);
+	};
+
+	// Assign groups
+	int group = 2;
+	while (grid_contains(1))
+		group_assign(group++);
+
+	// Define safe grid value getter
+	auto get_value = [&grid, grid_x, grid_y](int x, int y) -> int {
+		if (x >= 0 && x < grid_x && y >= 0 && y < grid_y)
+			return grid[x][y];
+		return 0;
+	};
+
+	// Define neighbor count
+	auto n_neighbors = [&grid, grid_x, grid_y, &get_value](int x, int y) -> int {
+		int ns = 0;
+		if (get_value(x, y-1) != 0)
+			ns++;
+		if (get_value(x+1, y) != 0)
+			ns++;
+		if (get_value(x, y+1) != 0)
+			ns++;
+		if (get_value(x-1, y) != 0)
+			ns++;
+		return ns;
+	};
+
+	// Define next perimeter
+	auto next_perimeter = [&grid, grid_x, grid_y, &get_value, &n_neighbors](int x, int y, int& direction) -> std::pair<int, int> {
+		int nn = n_neighbors(x, y);
+		// Solo obstruction
+		if (nn == 0)
+			return std::make_pair(x, y);
+
+		for (int j = 0; j < 4; j++) {
+			if (direction == 0) {
+				// Up
+				if (get_value(x, y-1) != 0) {
+					if (get_value(x-1, y-1) != 0)  // Something to the left
+						direction = 3;
+					return std::make_pair(x, y-1);
+				}
+			}
+			else if (direction == 1) {
+				// Right
+				if (get_value(x+1, y) != 0) {
+					if (get_value(x+1, y-1) != 0)  // Something to the top
+						direction = 0;
+					return std::make_pair(x+1, y);
+				}
+			}
+			else if (direction == 2) {
+				// Down
+				if (get_value(x, y+1) != 0) {
+					if (get_value(x+1, y+1) != 0)  // Something to the right
+						direction = 1;
+					return std::make_pair(x, y+1);
+				}
+			}
+			else if (direction == 3) {
+				// Left
+				if (get_value(x-1, y) != 0) {
+					if (get_value(x-1, y+1) != 0)  // Something to the bottom
+						direction = 2;
+					return std::make_pair(x-1, y);
+				}
+			}
+			direction = (direction+1)%4;
+		}
+		std::cout << "Error: no perimeter found" << std::endl;
+		return std::make_pair(x, y);
+	};
+
+	// Define vertex search for group starting at x and y
+	float grid_w = get_tile_width();
+	float grid_h = get_tile_height();
+	auto group_vertices = [&grid, grid_x, grid_y, grid_w, grid_h, &next_perimeter](int x, int y, int group) -> std::vector<Vector2f> {
+		std::vector<Vector2f> vs;
+		std::pair<int, int> next_grid = {-1, -1};
+		std::pair<int, int> last_grid = {x, y};
+		int direction = 0;
+		int last_direction = 0;
+
+		auto add_grid = [&vs, grid_w, grid_h](std::pair<int, int> grid, int last_direction, int direction) -> void {
+			// Initial point is always top left. No need to offset.
+			if (vs.size() == 0) {
+				vs.push_back(Vector2f(grid.first*grid_w, grid.second*grid_h));
+				return;
+			}
+
+			float x = grid.first*grid_w;
+			float y = grid.second*grid_h;
+			if (last_direction == 0) {
+				if (direction == 0)
+					return;
+				vs.push_back(Vector2f(x, y));
+				if (direction == 2)
+					vs.push_back(Vector2f(x+grid_w, y));
+			}
+			else if (last_direction == 1) {
+				if (direction == 1)
+					return;
+				vs.push_back(Vector2f(x+grid_w, y));
+				if (direction == 3)
+					vs.push_back(Vector2f(x+grid_w, y+grid_h));
+			}
+			else if (last_direction == 2) {
+				if (direction == 2)
+					return;
+				vs.push_back(Vector2f(x+grid_w, y+grid_h));
+				if (direction == 0)
+					vs.push_back(Vector2f(x, y+grid_h));
+			}
+			else if (last_direction == 3) {
+				if (direction == 3)
+					return;
+				vs.push_back(Vector2f(x, y+grid_h));
+				if (direction == 1)
+					vs.push_back(Vector2f(x, y));
+			}
+		};
+
+		bool rewind = false;
+		while (true) {
+			if (next_grid.first == x && next_grid.second == y) {
+				if (!rewind)
+					rewind = true;
+				else
+					break;
+			}
+
+			// Compute next grid
+			next_grid = next_perimeter(last_grid.first, last_grid.second, direction);
+			if (last_direction != direction)
+				add_grid(last_grid, last_direction, direction);
+			last_direction = direction;
+			last_grid = next_grid;
+		}
+
+		// Remove duplicates
+		std::set<std::pair<float, float>> set;
+		for (auto i = vs.begin(); i != vs.end();) {
+			std::pair<float, float> v = std::make_pair((*i).x(), (*i).y());
+			if (set.find(v) != set.end()) {
+				i = vs.erase(i);
+			}
+			else {
+				set.insert(v);
+				++i;
+			}
+		}
+		return vs;
+	};
+
+	// Build final vector
+	std::vector<std::vector<Vector2f>> ovs;
+	int process_group = 2;
+	for (int x = 0; x < grid_x; x++)
+		for (int y = 0; y < grid_y; y++)
+			if (grid[x][y] == process_group && process_group <= group)
+				ovs.push_back(group_vertices(x, y, process_group++));
+
+	// Draw obstruction vertices
+	// std::cout << "ovs.size(): " << ovs.size() << std::endl;
+	std::vector<Vector2f> _ps1;
+	std::vector<Vector2f> _ps2;
+	// Interpolate
+	for (auto& vs : ovs) {
+		// std::cout << "vs.size(): " << vs.size() << std::endl;
+		if (vs.size() == 0)
+			continue;
+
+		std::vector<std::vector<Vector2f>> vertices;
+		const int N_INTERPOLATE = 8;
+
+		// Sand
+		for (int j = 0; j < N_SAND/2; j++) {
+			float tension = -(float)j / (N_SAND/2);
+			// _ps1 = cubic_interpolate(vs, N_INTERPOLATE);
+			// _ps2 = hermite_interpolate(vs, N_INTERPOLATE, tension, 0);
+			// vertices.push_back(weighted_average(_ps1, _ps2, 1, 3));
+			vertices.push_back(hermite_interpolate(vs, N_INTERPOLATE, tension, 0));
+		}
+		for (int j = 0; j < N_SAND/2; j++) {
+			float tension = (float)j / (N_SAND/2) / 2;
+			_ps1 = bspline_interpolate(vs, N_INTERPOLATE);
+			_ps2 = hermite_interpolate(vs, N_INTERPOLATE, tension, 0);
+			vertices.push_back(weighted_average(_ps1, _ps2, 1, 3));
+		}
+
+		// Sand + 1
+		_ps1 = bspline_interpolate(vs, N_INTERPOLATE);
+		_ps2 = hermite_interpolate(vs, N_INTERPOLATE, 0.5, 0);
+		vertices.push_back(weighted_average(_ps1, _ps2, 2, 1));
+
+		// Water
+		for (int j = 0; j < N_WATER/2; j++) {
+			float tension = (float)j / (N_WATER/2) / 2 + 0.5;
+			_ps1 = bspline_interpolate(vs, N_INTERPOLATE);
+			_ps2 = hermite_interpolate(vs, N_INTERPOLATE, tension, 0);
+			vertices.push_back(weighted_average(_ps1, _ps2, 1, 2));
+		}
+		for (int j = 0; j < N_WATER/2; j++) {
+			float tension = (float)j / (N_WATER/2) / 2 + 0.5;
+			_ps1 = bspline_interpolate(vs, N_INTERPOLATE);
+			_ps2 = hermite_interpolate(vs, N_INTERPOLATE, tension, 0);
+			vertices.push_back(weighted_average(_ps1, _ps2, 2, 1));
+		}
+
+		obstruction_vertices.push_back(vertices);
+	}
 }
 
 void MapLevel::render(SDL_Renderer* renderer) {
 	// Draw tiles
-	const float X_MIN = 0;
-	const float Y_MIN = 0;
 	const float X_MAX = tile_width * tiles_x;
 	const float Y_MAX = tile_height * tiles_y;
-	Vector2f world1 = RenderingEngine::world_to_screen(Vector2f(X_MIN, Y_MIN));
+	Vector2f world1 = RenderingEngine::world_to_screen(Vector2f(0, 0));
 	Vector2f world2 = RenderingEngine::world_to_screen(Vector2f(X_MAX, Y_MAX));
 	SDL_Rect world_box = {
 		(int)(world1.x()),
@@ -299,94 +640,122 @@ void MapLevel::render(SDL_Renderer* renderer) {
 	}*/
 
 	// Draw perlin noise
-	const float RESOLUTION = 5.0f;
-	if (noise2d.size() == 0 || Input::is_key_pressed(SDLK_SPACE)) {
-		noise2d.clear();
-		noise2d.resize(ceil((X_MAX-X_MIN)/RESOLUTION));
+	if (Input::is_key_pressed(SDLK_SPACE))
+		generate_texture();
+	render_texture(renderer);
 
-		// Noise settings
-		int n_octaves = (int)Util::uniform_random(4, 6);  // More octaves generates bigger structures
-		float persistence = Util::uniform_random(0.7, 1);  // Between 0 to 1
-		int prime_index = (int)Util::uniform_random(0, 10);  // Between 0 to 9
-		float offset_x = Util::uniform_random(0, 100000);
-		float offset_y = Util::uniform_random(0, 100000);
+	// // Draw raw obstructions
+	// for (auto& o : obstructions) {
+	// 	Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(o.first*tile_width, o.second*tile_height));
+	// 	Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((o.first+1)*tile_width, (o.second+1)*tile_height));
+	// 	SDL_Rect box = {
+	// 		(int)(sp1.x()),
+	// 		(int)(sp1.y()),
+	// 		(int)(sp2.x()-sp1.x())+1,
+	// 		(int)(sp2.y()-sp1.y())+1
+	// 	};
+	// 	// Fill
+	// 	float f = ((float)SDL_GetTicks()/1000.0f+(o.first+o.second+1)/4);
+	// 	SDL_SetRenderDrawColor(renderer, 40, 40, 190+50*sin(f), 255);
+	// 	// SDL_SetRenderDrawColor(renderer, 32, 32, 190, 255);
+	// 	SDL_RenderFillRect(renderer, &box);
+	// }
 
-		// Print generated map settings
-		std::cout << std::endl;
-		std::cout << "Generated map settings" << std::endl;
-		std::cout << "n_octaves: " << n_octaves << std::endl;
-		std::cout << "persistence: " << persistence << std::endl;
-		std::cout << "prime_index: " << prime_index << std::endl;
-		std::cout << std::endl;
-
-		// Used for normalizing noise
-		double min_z = 0;
-		double max_z = 0;
-
-		// Get noise array
-		int xi = 0;
-		for (float x = X_MIN; x < X_MAX; x += RESOLUTION) {
-			for (float y = Y_MIN; y < Y_MAX; y += RESOLUTION) {
-				double z = perlin_noise(x+offset_x, y+offset_y, n_octaves, persistence, prime_index);
-				noise2d[xi].push_back(z);
-				min_z = z < min_z ? z : min_z;
-				max_z = z > max_z ? z : max_z;
+	// Draw obstructions
+	for (auto& ovs : obstruction_vertices) {
+		std::vector<Vector2f> ps;
+		// Sand
+		for (int j = 0; j < N_SAND; j++) {
+			ps = ovs.at(j);
+			if (ps.size() > 0) {
+				SDL_SetRenderDrawColor(renderer, 194, 178, 128, 32);
+				for (auto& p : ps)
+					p = RenderingEngine::world_to_screen(p);
+				RenderingEngine::fill_poly(ps);
 			}
-			xi++;
 		}
 
-		// Normalize noise from 0 to 1
-		for (int xi = 0; xi < (int)noise2d.size(); xi++)
-			for (int yi = 0; yi < (int)noise2d[xi].size(); yi++)
-				noise2d[xi][yi] = (noise2d[xi][yi] - min_z) / (max_z - min_z);
-	}
-	if (noise2d.size() > 0) {
-		// Normalize noise from 0 to 1 and draw
-		int xi = 0;
-		for (float x = X_MIN; x < X_MAX; x += RESOLUTION) {
-			int yi = 0;
-			for (float y = Y_MIN; y < Y_MAX; y += RESOLUTION) {
-				// Choose color according to Z
-				double z = noise2d[xi][yi++];
-				// Draw overlapping squares
-				Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(x-RESOLUTION, y-RESOLUTION));
-				Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(x+RESOLUTION*2, y+RESOLUTION*2));
-				SDL_Rect box = {
-					(int)(sp1.x()),
-					(int)(sp1.y()),
-					(int)(sp2.x()-sp1.x())+1,
-					(int)(sp2.y()-sp1.y())+1
-				};
-				float f = ((float)SDL_GetTicks()/400.0f+(x+y+1)/10);
-#ifdef USE_SDL2_RENDERER
-				SDL_SetRenderDrawColor(renderer, 40, 90*z+40, 30, 150+60*sin(f));
-				// SDL_SetRenderDrawColor(renderer, 60, 90*z+40, 30, 150);
-				SDL_RenderFillRect(renderer, &box);
-#endif
+		// Sand + 1
+		ps = ovs.at(N_SAND);
+		if (ps.size() > 0) {
+			SDL_SetRenderDrawColor(renderer, 97, 69, 64, 255);
+			for (auto& p : ps)
+				p = RenderingEngine::world_to_screen(p);
+			RenderingEngine::fill_poly(ps);
+		}
+
+		// Water
+		for (int j = 0; j < N_WATER; j++) {
+			ps = ovs.at(N_SAND+j+1);
+			if (ps.size() > 0) {
+				SDL_SetRenderDrawColor(renderer, 0, 8, 64, 32);
+				for (auto& p : ps)
+					p = RenderingEngine::world_to_screen(p);
+				RenderingEngine::fill_poly(ps);
 			}
-			xi++;
 		}
 	}
+	// Clip map
+	Vector2f p1;
+	Vector2f p2;
+	SDL_Rect box;
+	SDL_SetRenderDrawColor(renderer, 2, 2, 4, 255);
+	// Top
+	p1 = RenderingEngine::world_to_screen(Vector2f(X_MAX*3, 0));
+	p2 = RenderingEngine::world_to_screen(Vector2f(-X_MAX*2, -Y_MAX*2));
+	box = {
+		(int)p1.x(),
+		(int)p1.y(),
+		(int)(p2.x() - p1.x()),
+		(int)(p2.y() - p1.y())
+	};
+	SDL_RenderFillRect(renderer, &box);
+	// Right
+	p1 = RenderingEngine::world_to_screen(Vector2f(X_MAX, -Y_MAX*2));
+	p2 = RenderingEngine::world_to_screen(Vector2f(X_MAX*3, Y_MAX*3));
+	box = {
+		(int)p1.x(),
+		(int)p1.y(),
+		(int)(p2.x() - p1.x()),
+		(int)(p2.y() - p1.y())
+	};
+	SDL_RenderFillRect(renderer, &box);
+	// Bottom
+	p1 = RenderingEngine::world_to_screen(Vector2f(X_MAX*3, Y_MAX));
+	p2 = RenderingEngine::world_to_screen(Vector2f(-X_MAX*2, Y_MAX*3));
+	box = {
+		(int)p1.x(),
+		(int)p1.y(),
+		(int)(p2.x() - p1.x()),
+		(int)(p2.y() - p1.y())
+	};
+	SDL_RenderFillRect(renderer, &box);
+	// Left
+	p1 = RenderingEngine::world_to_screen(Vector2f(0, -Y_MAX*2));
+	p2 = RenderingEngine::world_to_screen(Vector2f(-X_MAX*2, Y_MAX*3));
+	box = {
+		(int)p1.x(),
+		(int)p1.y(),
+		(int)(p2.x() - p1.x()),
+		(int)(p2.y() - p1.y())
+	};
+	SDL_RenderFillRect(renderer, &box);
 
-	// Draw obstacles
-	for (auto& o : obstructions) {
-		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(o.first*tile_width, o.second*tile_height));
-		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((o.first+1)*tile_width, (o.second+1)*tile_height));
+	// Draw rectangles
+	for(auto& r : rectcover){
+		SDL_SetRenderDrawColor(renderer, 127, 255, 255, 64);
+		auto lows = RenderingEngine::world_to_screen(Vector2f(r.xl * tile_width, r.yl * tile_height));
+		auto highs = RenderingEngine::world_to_screen(Vector2f(r.xh * tile_width, r.yh * tile_height));
 		SDL_Rect box = {
-			(int)(sp1.x()),
-			(int)(sp1.y()),
-			(int)(sp2.x()-sp1.x())+1,
-			(int)(sp2.y()-sp1.y())+1
+			(int)lows.x(),
+			(int)lows.y(),
+			(int)(highs.x() - lows.x()),
+			(int)(highs.y() - lows.y())
 		};
-		// Fill
-		float f = ((float)SDL_GetTicks()/1000.0f+(o.first+o.second+1)/4);
-#ifdef USE_SDL2_RENDERER
-		SDL_SetRenderDrawColor(renderer, 40, 40, 190+50*sin(f), 127);
-		// SDL_SetRenderDrawColor(renderer, 32, 32, 190, 255);
-		SDL_RenderFillRect(renderer, &box);
-#endif
+		SDL_RenderDrawRect(renderer, &box);
 	}
 
+	// Draw units
 	for (auto unit : units)
 		if (unit.get())
 			unit->render(renderer);
@@ -508,6 +877,80 @@ std::vector<Vector2f> MapLevel::reconstruct_path(std::vector<int>& from, std::ve
 	return path;
 }
 
+std::vector<Vector2f> MapLevel::reconstruct_better_path(std::vector<int>& from, std::vector<Vector2f>& points, int src, int dest, Vector2f v2fsrc, Vector2f v2fdest) {
+	auto curr = dest;
+
+	std::vector<world_rect> interfaces;
+	std::vector<Vector2f> path;
+	interfaces.push_back(world_rect(v2fdest));
+	path.push_back(v2fdest);
+
+	// first pass
+	while (curr != src && curr != -1) {
+		interfaces.push_back(to_world_rect(intersection(rectcover[curr], rectcover[from[curr]])));
+		path.push_back(points[curr]);
+		curr = from[curr];
+	}
+	interfaces.push_back(world_rect(v2fsrc));
+	path.push_back(v2fsrc);
+
+	/*std::cout << "\tconstructing path" << std::endl;
+	path.push_back(v2fdest);
+	for(size_t i = 1; i < interfaces.size(); i++){
+		std::cout << "\tadding " << interfaces[i] << " center: " << interfaces[i].center() << std::endl;
+
+		auto c = interfaces[i].center();
+		path.push_back(Vector2f(c.xl, c.yl));
+	}*/
+
+	// pad is specified in terms of tile_width
+	auto smooth = [](Vector2f a, world_rect b, Vector2f c, float pad = 0) -> Vector2f {
+		bool vert = b.xl == b.xh;
+
+		auto cen = b.center();
+
+		// vertical edge
+		if(vert){
+			if(a.x() == b.xl || a.x() == c.x() || b.xl == c.x()) return Vector2f(cen.xl, cen.yl);
+
+			float m = (c.y() - a.y()) / (c.x() - a.x());
+			float yatb = a.y() + m*(b.xl - a.x());
+
+			pad = std::min(pad, (b.yh - b.yl)/2);
+			float yfinal = std::clamp(yatb, b.yl + pad, b.yh - pad);
+
+			return Vector2f(b.xl, yfinal);
+		}
+		// horizontal edge
+		if(a.y() == b.yl || a.y() == c.y() || b.yl == c.y()) return Vector2f(cen.xl, cen.yl);
+
+		float m = (c.x() - a.x()) / (c.y() - a.y());
+		float xatb = a.x() + m*(b.yl - a.y());
+
+		pad = std::min(pad, (b.xh - b.xl)/2);
+		float xfinal = std::clamp(xatb, b.xl + pad, b.xh - pad);
+
+		return Vector2f(xfinal, b.yl);
+	};
+
+	// smoothing
+	for(size_t i = 1; i < path.size() - 1; i++){
+		path[i] = smooth(path[i - 1], interfaces[i], path[i + 1], 2*tile_width);
+	}
+
+	// do not want starting point in path
+	path.pop_back();
+
+	/*std::cout << "path:";
+	for(auto& v : path){
+		std::cout << " (" << v.x() << ", " << v.y() << ")";
+	}
+	std::cout << std::endl;*/
+
+
+	return path;
+}
+
 std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 	//std::cout << "In find_rect_path" << std::endl;
 
@@ -562,7 +1005,8 @@ std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 
 		if (current == d_ind){
 			//std::cout << "done" << std::endl;
-			return reconstruct_path(from, point_in_r, s_ind, d_ind, d);
+			//return reconstruct_path(from, point_in_r, s_ind, d_ind, d);
+			return reconstruct_better_path(from, point_in_r, s_ind, d_ind, s, d);
 		}
 
 		// rectangle neighbors
@@ -571,11 +1015,12 @@ std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 
 			Vector2f tentative_npoint = dv(current, nind);
 			float tentative_gscore = gscore[current] + (tentative_npoint - point_in_r[current]).len();
+			float tentative_fscore = (tentative_npoint - d).len();
 
 			//std::cout << "tentative gscore vs current: " << tentative_gscore << " vs " << gscore[nind] << std::endl;
 
 			// update if closer
-			if (tentative_gscore < gscore[nind]) {
+			if (tentative_gscore + tentative_fscore < gscore[nind] + fscore[nind]) {
 				// update point
 				point_in_r[nind] = tentative_npoint;
 
@@ -583,7 +1028,8 @@ std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 				gscore[nind] = tentative_gscore;
 
 				// update fscore
-				fscore[nind] = h(nind);
+				//fscore[nind] = h(nind);
+				fscore[nind] = tentative_fscore;
 
 				// update from
 				from[nind] = current;

@@ -123,6 +123,15 @@ std::vector<Vector2f> bspline_interpolate(const std::vector<Vector2f>& vs, const
 	return ps;
 }
 
+std::vector<Vector2f> weighted_average(std::vector<Vector2f> vs1, std::vector<Vector2f> vs2, float w1, float w2) {
+	std::vector<Vector2f> ps;
+	ps.resize(vs1.size());
+	for (int j = 0; j < (int)vs1.size(); j++) {
+		ps[j] = (vs1[j]*w1+vs2[j]*w2) / (w1+w2);
+	}
+	return ps;
+}
+
 namespace RenderingEngine {
 
 	// Default window dimensions
@@ -345,7 +354,6 @@ namespace RenderingEngine {
 	/**
 	Set the world to render.
 	*/
-	std::vector<std::vector<Vector2f>> vertices;
 	void set_world(const  World& world) {
 		gWorld = world;
 
@@ -356,196 +364,6 @@ namespace RenderingEngine {
 		MapLevel& level = gWorld.get_level(0);
 		world_width = level.get_tile_width() * level.get_width();
 		world_height = level.get_tile_height() * level.get_height();
-
-		// Get obstruction grid
-		std::vector<std::vector<bool>> bool_grid = level.get_obgrid();
-		int grid_x = (int)bool_grid.size();
-		int grid_y = (int)bool_grid[0].size();
-
-		// Create obstruction group grid
-		std::vector<std::vector<int>> grid;
-		grid.resize(grid_x);
-		for (int x = 0; x < grid_x; x++)
-			for (int y = 0; y < grid_y; y++)
-				grid[x].push_back(bool_grid[x][y] ? 1 : 0);
-
-		// Define grid value check
-		auto grid_contains = [&grid, grid_x, grid_y](int value) -> bool {
-			for (int x = 0; x < grid_x; x++)
-				for (int y = 0; y < grid_y; y++)
-					if (grid[x][y] == value)
-						return true;
-			return false;
-		};
-
-		// Define recursive assignment for a group
-		std::function<void(int, int, int)> neighbor_assign;
-		neighbor_assign = [&grid, grid_x, grid_y, &neighbor_assign](int x, int y, int group) -> void {
-			grid[x][y] = group;
-			if (x-1 >= 0 && grid[x-1][y] == 1)
-				neighbor_assign(x-1, y, group);
-			if (x+1 < grid_x && grid[x+1][y] == 1)
-				neighbor_assign(x+1, y, group);
-			if (y-1 >= 0 && grid[x][y-1] == 1)
-				neighbor_assign(x, y-1, group);
-			if (y+1 < grid_y && grid[x][y+1] == 1)
-				neighbor_assign(x, y+1, group);
-		};
-
-		// Define search and group assignment
-		auto group_assign = [&grid, grid_x, grid_y, &neighbor_assign](int group) -> void {
-			for (int x = 0; x < grid_x; x++)
-				for (int y = 0; y < grid_y; y++)
-					if (grid[x][y] == 1)
-						return neighbor_assign(x, y, group);
-		};
-
-		// Assign groups
-		int group = 2;
-		while (grid_contains(1))
-			group_assign(group++);
-
-		for (const auto& row : grid) {
-			for (const auto& v : row)
-				std::cout << v << " ";
-			std::cout << std::endl;
-		}
-
-		// Define safe grid value getter
-		auto get_value = [&grid, grid_x, grid_y](int x, int y) -> int {
-			if (x >= 0 && x < grid_x && y >= 0 && y < grid_y)
-				return grid[x][y];
-			return 0;
-		};
-
-		// Define neighbor count
-		auto n_neighbors = [&grid, grid_x, grid_y, &get_value](int x, int y) -> int {
-			int ns = 0;
-			if (get_value(x, y-1) != 0)
-				ns++;
-			if (get_value(x+1, y) != 0)
-				ns++;
-			if (get_value(x, y+1) != 0)
-				ns++;
-			if (get_value(x-1, y) != 0)
-				ns++;
-			return ns;
-		};
-
-		// Define next perimeter
-		auto next_perimeter = [&grid, grid_x, grid_y, &get_value, &n_neighbors](int x, int y, int& direction, int last_direction) -> std::pair<int, int> {
-			int nn = n_neighbors(x, y);
-			// Solo
-			if (nn == 0)
-				return std::make_pair(x, y);
-			// // Deadend
-			// if (nn == 1)
-			// 	direction = (direction+2)%4;
-
-			for (int j = 0; j < 4; j++) {
-				if (direction == 0) {
-					// Up
-					if (get_value(x, y-1) != 0) {
-						if (get_value(x-1, y-1) != 0)  // Something to the left
-							direction = 3;
-						return std::make_pair(x, y-1);
-					}
-				}
-				else if (direction == 1) {
-					// Right
-					if (get_value(x+1, y) != 0) {
-						if (get_value(x+1, y-1) != 0)  // Something to the top
-							direction = 0;
-						return std::make_pair(x+1, y);
-					}
-				}
-				else if (direction == 2) {
-					// Down
-					if (get_value(x, y+1) != 0) {
-						if (get_value(x+1, y+1) != 0)  // Something to the right
-							direction = 1;
-						return std::make_pair(x, y+1);
-					}
-				}
-				else if (direction == 3) {
-					// Left
-					if (get_value(x-1, y) != 0) {
-						if (get_value(x-1, y+1) != 0)  // Something to the bottom
-							direction = 2;
-						return std::make_pair(x-1, y);
-					}
-				}
-				direction = (direction+1)%4;
-				// if (direction == (last_direction+2)%4)
-				// 	direction = (direction+1)%4;
-			}
-			std::cout << "Error: no perimeter found" << std::endl;
-			return std::make_pair(x, y);
-		};
-
-		// Define vertex search for group starting at x and y
-		float grid_w = level.get_tile_width();
-		float grid_h = level.get_tile_height();
-		auto group_vertices = [&grid, grid_x, grid_y, grid_w, grid_h, &next_perimeter](int x, int y, int group) -> std::vector<Vector2f> {
-			std::vector<Vector2f> vs;
-			vs.push_back(Vector2f(x*grid_w + grid_w/2, y*grid_h + grid_h/2));
-
-			std::pair<int, int> next_grid = {-1, -1};
-			std::pair<int, int> last_grid = {x, y};
-			int direction = 1;
-			int last_direction = 1;
-			bool rewind = false;
-			while (true) {
-				if (next_grid.first == x && next_grid.second == y) {
-					if (!rewind)
-						rewind = true;
-					else
-						break;
-				}
-				// Compute next grid
-				next_grid = next_perimeter(last_grid.first, last_grid.second, direction, last_direction);
-
-				// std::cout << std::endl;
-				// std::cout << "group: " << group << std::endl;
-				// std::cout << "last_direction: " << last_direction << std::endl;
-				// std::cout << "direction: " << direction << std::endl;
-				// std::cout << "last_grid: " << last_grid.first << ", " << last_grid.second << std::endl;
-				// std::cout << "next_grid: " << next_grid.first << ", " << next_grid.second << std::endl;
-				// std::cout << "origin: " << x << ", " << y << std::endl;
-				// std::cout << std::endl;
-
-				if (last_direction != direction) {
-					// Vertex found
-					if (rewind)
-						vs.insert(vs.begin(), 1, Vector2f(last_grid.first*grid_w + grid_w/2, last_grid.second*grid_h + grid_h/2));
-					else
-						vs.push_back(Vector2f(last_grid.first*grid_w + grid_w/2, last_grid.second*grid_h + grid_h/2));
-				}
-				last_direction = direction;
-				last_grid = next_grid;
-			}
-
-			// Remove duplicates
-			std::set<std::pair<float, float>> set;
-			for (auto i = vs.begin(); i != vs.end();) {
-				std::pair<float, float> v = std::make_pair((*i).x(), (*i).y());
-				if (set.find(v) != set.end()) {
-					i = vs.erase(i);
-				}
-				else {
-					set.insert(v);
-					++i;
-				}
-			}
-			return vs;
-		};
-
-		// Build final vector
-		int process_group = 2;
-		for (int x = 0; x < grid_x; x++)
-			for (int y = 0; y < grid_y; y++)
-				if (grid[x][y] == process_group && process_group <= group)
-					vertices.push_back(group_vertices(x, y, process_group++));
 	}
 
 	/**
@@ -773,132 +591,6 @@ namespace RenderingEngine {
 		else {
 			rdrag_start = Vector2f(-1, -1);
 		}
-
-		// Draw obstruction vertices
-		for (auto& vs : vertices) {
-			if (vs.size() == 0)
-				continue;
-
-			// Interpolate
-			std::vector<Vector2f> ps;
-			Vector2f last_p;
-
-			// // Hermite
-			// ps = hermite_interpolate(vs, 4, -1.0, 0);
-			// last_p = world_to_screen(ps.at(ps.size()-1));
-			// for (auto& p : ps)
-			// 	p = world_to_screen(p);
-			// // Fill poly
-			// SDL_SetRenderDrawColor(gRenderer, 128, 128, 255, 255);
-			// fill_poly(ps);
-
-			const int N_ITER = 10;
-			for (int j = 0; j < N_ITER; j++) {
-				float t = ((float)j/N_ITER)-1;
-				// Hermite 2
-				ps = hermite_interpolate(vs, 4, t, 0);
-				last_p = world_to_screen(ps.at(ps.size()-1));
-				for (auto& p : ps)
-					p = world_to_screen(p);
-				// Fill poly
-				SDL_SetRenderDrawColor(gRenderer, 64, 32, 200, 64);
-				fill_poly(ps);
-			}
-
-			// Cubic
-			ps = cubic_interpolate(vs, 4);
-			last_p = world_to_screen(ps.at(ps.size()-1));
-			for (auto& p : ps)
-				p = world_to_screen(p);
-			// Fill poly
-			SDL_SetRenderDrawColor(gRenderer, 64, 32, 200, 127);
-			fill_poly(ps);
-
-			// Bspline
-			ps = bspline_interpolate(vs, 4);
-			last_p = world_to_screen(ps.at(ps.size()-1));
-			// Interpolate vertices
-			for (auto& p : ps)
-				p = world_to_screen(p);
-			// Fill poly
-			SDL_SetRenderDrawColor(gRenderer, 64, 32, 200, 127);
-			fill_poly(ps);
-
-			// Grid vertices
-			last_p = world_to_screen(vs[(int)vs.size()-1]);
-			for (auto& v : vs) {
-				Vector2f p = world_to_screen(v);
-#ifdef USE_SDL2_RENDERER
-				SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 64);
-				SDL_RenderDrawLine(gRenderer, last_p.x(), last_p.y(), p.x(), p.y());
-#else
-				ogl_draw_line(last_p.x(), last_p.y(), p.x(), p.y());
-#endif
-				last_p = p;
-			}
-		}
-
-		ogl_send_lines_to_draw();
-
-		// // Interpolate and fillpoly demo
-		// float cx = width/2;
-		// float cy = height/2;
-		// const float DX = 100;
-		// const float DY = 100;
-		// // Make test vertices
-		// std::vector<Vector2f> vs;
-		// vs.push_back(Vector2f(cx-DX, cy+DY));
-		// vs.push_back(Vector2f(cx-DX, cy-DY));
-		// vs.push_back(Vector2f(cx+DX, cy-DY));
-		// vs.push_back(Vector2f(cx+DX*2, cy+DY*2));
-		// vs.push_back(Vector2f(cx+DX*3, cy+DY));
-		// // Draw original vertices as polygon
-		// Vector2f last_v = vs.at(vs.size()-1);
-		// for (auto& v : vs) {
-#ifdef USE_SDL2_RENDERER
-		// 	SDL_SetRenderDrawColor(gRenderer, 0, 255, 255, 255);
-		// 	SDL_RenderDrawLine(gRenderer, v.x(), v.y(), last_v.x(), last_v.y());
-#endif
-		// 	last_v = v;
-		// }
-		// // Draw interpolated vertices as polygon
-		// std::vector<Vector2f> ps;
-		// Vector2f last_p;
-		// // Cubic
-		// ps = cubic_interpolate(vs, 100);
-		// last_p = ps.at(ps.size()-1);
-		// for (auto& p : ps) {
-#ifdef USE_SDL2_RENDERER
-		// 	SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 200);
-		// 	SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
-#endif
-		// 	last_p = p;
-		// }
-		// // Hermite
-		// ps = hermite_interpolate(vs, 100, 0.5, 0);
-		// last_p = ps.at(ps.size()-1);
-		// for (auto& p : ps) {
-#ifdef USE_SDL2_RENDERER
-		// 	SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 200);
-		// 	SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
-#endif
-		// 	last_p = p;
-		// }
-		// // Bspline
-		// ps = bspline_interpolate(vs, 100);
-		// last_p = ps.at(ps.size()-1);
-		// for (auto& p : ps) {
-#ifdef USE_SDL2_RENDERER
-		// 	SDL_SetRenderDrawColor(gRenderer, 0, 0, 255, 200);
-		// 	SDL_RenderDrawLine(gRenderer, p.x(), p.y(), last_p.x(), last_p.y());
-#endif
-		// 	last_p = p;
-		// }
-		// // Fill interpolated vertices as polygon
-#ifdef USE_SDL2_RENDERER
-		// SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 64);
-		// fill_poly(ps);
-#endif
 	}
 
 	void show() {
@@ -949,7 +641,7 @@ namespace RenderingEngine {
 		gRenderer = SDL_CreateRenderer(
 			gWindow,
 			-1,
-			SDL_RENDERER_ACCELERATED
+			SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
 		);
 		if (gRenderer == NULL) {
 			printf("Renderer could not be created: %s\n", SDL_GetError());

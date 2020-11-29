@@ -41,28 +41,29 @@
 
 // Print stacktrace and exit gracefully
 #ifdef __linux__
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/prctl.h>
-#include <sys/wait.h>
-void stacktrace_handler(int sig) {
-	char pid_buf[30];
-	sprintf(pid_buf, "%d", getpid());
-	char name_buf[512];
-	name_buf[readlink("/proc/self/exe", name_buf, 511)]=0;
-	prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0);
-	int child_pid = fork();
-	if (!child_pid) {
-		dup2(2,1);
-		fprintf(stdout,"stack trace for %s pid=%s\n",name_buf,pid_buf);
-		execlp("gdb", "gdb", "--batch", "-n", "-ex", "thread", "-ex", "bt", name_buf, pid_buf, NULL);
-		abort();
-	} else {
-		waitpid(child_pid,NULL,0);
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <unistd.h>
+	#include <sys/prctl.h>
+	#include <sys/wait.h>
+	void stacktrace_handler(int sig) {
+		char pid_buf[30];
+		sprintf(pid_buf, "%d", getpid());
+		char name_buf[512];
+		name_buf[readlink("/proc/self/exe", name_buf, 511)]=0;
+		prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0);
+		int child_pid = fork();
+		if (!child_pid) {
+			dup2(2,1);
+			fprintf(stdout, "stack trace for %s pid=%s\n", name_buf,pid_buf);
+			execlp("gdb", "gdb", "--batch", "-n", "-ex", "thread", "-ex", "bt", name_buf, pid_buf, NULL);
+			abort();
+		}
+		else {
+			waitpid(child_pid, NULL, 0);
+		}
+		exit(1);
 	}
-	exit(1);
-}
 #endif
 
 // Minimum delta time for update
@@ -145,7 +146,7 @@ void run_test() {
 	// Test RTS units
 	float WORLD_WIDTH = TILE_WIDTH*X_TILES;
 	float WORLD_HEIGHT = TILE_HEIGHT*Y_TILES;
-	for(int i = 0; i < 200; i++){
+	for(int i = 0; i < 100; i++){
 		auto position = Vector2f(bases.at(0).first * TILE_WIDTH, rand()%(int)WORLD_HEIGHT);
 		auto velocity = Vector2f(0, 0);
 		auto rts_ptr = std::make_shared<rts_unit>(
@@ -316,7 +317,7 @@ void render(float delta_time) {
 
 int main(int argc, char* args[]) {
 	#ifdef __linux__
-	signal(SIGSEGV, stacktrace_handler);
+		signal(SIGSEGV, stacktrace_handler);
 	#endif
 
 	// Start up SDL and create window
