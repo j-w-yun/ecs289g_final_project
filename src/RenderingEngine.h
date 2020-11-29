@@ -312,18 +312,26 @@ namespace RenderingEngine {
 		total_vertices = 0;
 	}
 
-	void ogl_draw_line(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2) {
+	void ogl_draw_line(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2, GLuint r, GLuint g, GLuint b, GLuint a) {
 		line_vertex v[2];
 
+		// y axis invert
 		v[0].location[0] = 2 * (x1 / width - 0.5f);
-		v[0].location[1] = 2 * (x2 / height - 0.5f);
+		v[0].location[1] = 2 * (1.0f - x2 / height - 0.5f);
 
-		v[0].color[0] = v[0].color[1] = v[0].color[2] = v[0].color[3] = 1.0f;
+		v[0].color[0] = r / 255.0f;
+		v[0].color[1] = g / 255.0f;
+		v[0].color[2] = b / 255.0f;
+		v[0].color[3] = a / 255.0f;
 
+		// y axis invert
 		v[1].location[0] = 2 * (y1 / width - 0.5f);
-		v[1].location[1] = 2 * (y2 / height - 0.5f);
+		v[1].location[1] = 2 * (1.0f - y2 / height - 0.5f);
 
-		v[1].color[0] = v[1].color[1] = v[1].color[2] = v[1].color[3] = 1.0f;
+		v[1].color[0] = r / 255.0f;
+		v[1].color[1] = g / 255.0f;
+		v[1].color[2] = b / 255.0f;
+		v[1].color[3] = a / 255.0f;
 
 		lines[total_vertices] = v[0];
 		lines[total_vertices + 1] = v[1];
