@@ -312,50 +312,68 @@ namespace RenderingEngine {
 		total_vertices = 0;
 	}
 
-	void ogl_draw_line(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2, GLuint r, GLuint g, GLuint b, GLuint a) {
+	GLuint ogl_primitive_color[4];
+
+	void ogl_set_color(GLuint r, GLuint g, GLuint b, GLuint a)
+	{
+		ogl_primitive_color[0] = r;
+		ogl_primitive_color[1] = g;
+		ogl_primitive_color[2] = b;
+		ogl_primitive_color[3] = a;
+	}
+
+	void ogl_send_lines_to_draw() {
+		if (total_vertices > 0) {
+			glBindVertexArray(vao_line);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_line);
+			// get pointer
+			void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+			// now copy data into memory
+			memcpy(ptr, &lines[0], sizeof(line_vertex) * total_vertices);
+			// make sure to tell OpenGL we're done with the pointer
+			glUnmapBuffer(GL_ARRAY_BUFFER);
+
+			glEnableVertexAttribArray(0);
+			glEnableVertexAttribArray(1);
+			glUseProgram(gGeneric2DShaderProgramID[0]);
+
+			glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+
+			glDrawArrays(GL_LINES, 0, total_vertices);
+
+			total_vertices = 0;
+		}
+	}
+
+	void ogl_draw_line(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2) {
 		line_vertex v[2];
 
 		// y axis invert
 		v[0].location[0] = 2 * (x1 / width - 0.5f);
 		v[0].location[1] = 2 * (1.0f - x2 / height - 0.5f);
 
-		v[0].color[0] = r / 255.0f;
-		v[0].color[1] = g / 255.0f;
-		v[0].color[2] = b / 255.0f;
-		v[0].color[3] = a / 255.0f;
+		v[0].color[0] = ogl_primitive_color[0] / 255.0f;
+		v[0].color[1] = ogl_primitive_color[1] / 255.0f;
+		v[0].color[2] = ogl_primitive_color[2] / 255.0f;
+		v[0].color[3] = ogl_primitive_color[3] / 255.0f;
 
 		// y axis invert
 		v[1].location[0] = 2 * (y1 / width - 0.5f);
 		v[1].location[1] = 2 * (1.0f - y2 / height - 0.5f);
 
-		v[1].color[0] = r / 255.0f;
-		v[1].color[1] = g / 255.0f;
-		v[1].color[2] = b / 255.0f;
-		v[1].color[3] = a / 255.0f;
+		v[1].color[0] = ogl_primitive_color[0] / 255.0f;
+		v[1].color[1] = ogl_primitive_color[1] / 255.0f;
+		v[1].color[2] = ogl_primitive_color[2] / 255.0f;
+		v[1].color[3] = ogl_primitive_color[3] / 255.0f;
 
 		lines[total_vertices] = v[0];
 		lines[total_vertices + 1] = v[1];
 
 		total_vertices += 2;
-	}
 
-	void ogl_send_lines_to_draw() {
-		glBindVertexArray(vao_line);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo_line);
-		// get pointer
-		void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-		// now copy data into memory
-		memcpy(ptr, &lines[0], sizeof(line_vertex) * total_vertices);
-		// make sure to tell OpenGL we're done with the pointer
-		glUnmapBuffer(GL_ARRAY_BUFFER);
-
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glUseProgram(gGeneric2DShaderProgramID[0]);
-
-		glDrawArrays(GL_LINES, 0, total_vertices);
-
-		total_vertices = 0;
+		if (total_vertices >= lines.size())
+			ogl_send_lines_to_draw();
 	}
 #endif
 
@@ -436,8 +454,11 @@ namespace RenderingEngine {
 						node_x[i] = dim.left;
 					if (node_x[i+1] > dim.right)
 						node_x[i+1] = dim.right;
+				// TODO: create polygon to fill. filling lines still feel not as effective.
 #ifdef USE_SDL2_RENDERER
 					SDL_RenderDrawLine(gRenderer, node_x[i], y, node_x[i+1], y);
+#else
+					ogl_draw_line(node_x[i], y, node_x[i + 1], y);
 #endif
 				}
 			}
@@ -687,7 +708,7 @@ namespace RenderingEngine {
 		SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
 #else
 		ogl_prepare_generic_2d_shaders(0);
-		ogl_reserve_line_objects(5000);
+		ogl_reserve_line_objects(15000);
 #endif
 		// Opaque blank screen
 		clear();

@@ -670,7 +670,11 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		for (int j = 0; j < N_SAND; j++) {
 			ps = ovs.at(j);
 			if (ps.size() > 0) {
+#ifdef USE_SDL2_RENDERER
 				SDL_SetRenderDrawColor(renderer, 194, 178, 128, 32);
+#else
+				RenderingEngine::ogl_set_color(194, 178, 128, 32);
+#endif
 				for (auto& p : ps)
 					p = RenderingEngine::world_to_screen(p);
 				RenderingEngine::fill_poly(ps);
@@ -680,7 +684,11 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		// Sand + 1
 		ps = ovs.at(N_SAND);
 		if (ps.size() > 0) {
+#ifdef USE_SDL2_RENDERER
 			SDL_SetRenderDrawColor(renderer, 97, 69, 64, 255);
+#else
+			RenderingEngine::ogl_set_color(97, 69, 64, 255);
+#endif
 			for (auto& p : ps)
 				p = RenderingEngine::world_to_screen(p);
 			RenderingEngine::fill_poly(ps);
@@ -690,12 +698,18 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		for (int j = 0; j < N_WATER; j++) {
 			ps = ovs.at(N_SAND+j+1);
 			if (ps.size() > 0) {
+#ifdef USE_SDL2_RENDERER
 				SDL_SetRenderDrawColor(renderer, 0, 8, 64, 32);
+#else
+				RenderingEngine::ogl_set_color(0, 8, 64, 32);
+#endif
 				for (auto& p : ps)
 					p = RenderingEngine::world_to_screen(p);
 				RenderingEngine::fill_poly(ps);
 			}
 		}
+
+		RenderingEngine::ogl_send_lines_to_draw();
 	}
 	// Clip map
 	Vector2f p1;
