@@ -298,6 +298,8 @@ namespace RenderingEngine {
 		glVertexAttribPointer(position_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(line_vertex), (const void*)offsetof(line_vertex, location));
 		glVertexAttribPointer(color_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(line_vertex), (const void*)offsetof(line_vertex, color));
 
+		glLineWidth(1.0f);
+
 		total_vertices = 0;
 	}
 
@@ -321,6 +323,7 @@ namespace RenderingEngine {
 	}
 
 	void ogl_send_lines_to_draw() {
+		glBindVertexArray(vao_line);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_line);
 		// get pointer
 		void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -328,6 +331,12 @@ namespace RenderingEngine {
 		memcpy(ptr, &lines[0], sizeof(line_vertex) * total_vertices);
 		// make sure to tell OpenGL we're done with the pointer
 		glUnmapBuffer(GL_ARRAY_BUFFER);
+
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glUseProgram(gGeneric2DShaderProgramID[0]);
+
+		glDrawArrays(GL_LINES, 0, total_vertices);
 
 		total_vertices = 0;
 	}
@@ -822,10 +831,14 @@ namespace RenderingEngine {
 #ifdef USE_SDL2_RENDERER
 				SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 64);
 				SDL_RenderDrawLine(gRenderer, last_p.x(), last_p.y(), p.x(), p.y());
+#else
+				ogl_draw_line(last_p.x(), last_p.y(), p.x(), p.y());
 #endif
 				last_p = p;
 			}
 		}
+
+		ogl_send_lines_to_draw();
 
 		// // Interpolate and fillpoly demo
 		// float cx = width/2;
@@ -942,6 +955,10 @@ namespace RenderingEngine {
 			printf("Renderer could not be created: %s\n", SDL_GetError());
 			return false;
 		}
+
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 
 		// Create a OpenGL context on SDL2
 		SDL_GLContext gl_context = SDL_GL_CreateContext(gWindow);
