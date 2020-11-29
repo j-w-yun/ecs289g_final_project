@@ -338,9 +338,11 @@ void MapLevel::render_texture(SDL_Renderer* renderer) {
 				(int)(sp2.y()-sp1.y())+1
 			};
 			float f = ((float)SDL_GetTicks()/400.0f+(x+y+1)/10);
+#ifdef USE_SDL2_RENDERER
 			SDL_SetRenderDrawColor(renderer, 40, 90*z+40, 30, 150+60*sin(f));
 			// SDL_SetRenderDrawColor(renderer, 60, 90*z+40, 30, 150);
 			SDL_RenderFillRect(renderer, &box);
+#endif
 		}
 		xi++;
 	}
@@ -709,7 +711,9 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		(int)(p2.x() - p1.x()),
 		(int)(p2.y() - p1.y())
 	};
+#ifdef USE_SDL2_RENDERER
 	SDL_RenderFillRect(renderer, &box);
+#endif
 	// Right
 	p1 = RenderingEngine::world_to_screen(Vector2f(X_MAX, -Y_MAX*2));
 	p2 = RenderingEngine::world_to_screen(Vector2f(X_MAX*3, Y_MAX*3));
@@ -719,7 +723,9 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		(int)(p2.x() - p1.x()),
 		(int)(p2.y() - p1.y())
 	};
+#ifdef USE_SDL2_RENDERER
 	SDL_RenderFillRect(renderer, &box);
+#endif
 	// Bottom
 	p1 = RenderingEngine::world_to_screen(Vector2f(X_MAX*3, Y_MAX));
 	p2 = RenderingEngine::world_to_screen(Vector2f(-X_MAX*2, Y_MAX*3));
@@ -729,7 +735,9 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		(int)(p2.x() - p1.x()),
 		(int)(p2.y() - p1.y())
 	};
+#ifdef USE_SDL2_RENDERER
 	SDL_RenderFillRect(renderer, &box);
+#endif
 	// Left
 	p1 = RenderingEngine::world_to_screen(Vector2f(0, -Y_MAX*2));
 	p2 = RenderingEngine::world_to_screen(Vector2f(-X_MAX*2, Y_MAX*3));
@@ -739,7 +747,9 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		(int)(p2.x() - p1.x()),
 		(int)(p2.y() - p1.y())
 	};
+#ifdef USE_SDL2_RENDERER
 	SDL_RenderFillRect(renderer, &box);
+#endif
 
 	// Draw rectangles
 	for(auto& r : rectcover){
@@ -752,7 +762,9 @@ void MapLevel::render(SDL_Renderer* renderer) {
 			(int)(highs.x() - lows.x()),
 			(int)(highs.y() - lows.y())
 		};
+#ifdef USE_SDL2_RENDERER
 		SDL_RenderDrawRect(renderer, &box);
+#endif
 	}
 
 	// Draw units
