@@ -325,9 +325,9 @@ namespace RenderingEngine {
 		// get pointer
 		void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		// now copy data into memory
-		memcpy(ptr, sizeof(line_vertex) * total_vertices);
+		memcpy(ptr, &lines[0], sizeof(line_vertex) * total_vertices);
 		// make sure to tell OpenGL we're done with the pointer
-		glUnmapBuffer(type);
+		glUnmapBuffer(GL_ARRAY_BUFFER);
 
 		total_vertices = 0;
 	}
