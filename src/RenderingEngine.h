@@ -192,10 +192,13 @@ namespace RenderingEngine {
 		//Get vertex source. TODO: We should provide vertex stream during rendering.
 		const GLchar* vertexShaderSource[] =
 		{
-			"#version 140\n"
-			"in vec2 LVertexPos2D; "
+			"#version 150\n"
+			"in vec4 in_Position; "
+			"in vec4 in_Color; "
+			"out vec4 ex_Color; "
 			"void main() {"
-			"	gl_Position = vec4( LVertexPos2D.x, LVertexPos2D.y, 0, 1 );"
+			"	gl_Position = vec4( in_Position.x, in_Position.y, 0, 1 );"
+			"	ex_Color = in_Color;"
 			"}"
 		};
 
@@ -223,10 +226,11 @@ namespace RenderingEngine {
 		//Get fragment source, TODO: reference a texture object later
 		const GLchar* fragmentShaderSource[] =
 		{
-			"#version 140\n"
+			"#version 150\n"
 			"out vec4 LFragment;"
+			"in vec4 ex_Color; "
 			"void main() {"
-			"	LFragment = vec4( 1.0, 1.0, 1.0, 1.0 );"
+			"	LFragment = ex_Color;"
 			"}"
 		};
 
@@ -248,6 +252,9 @@ namespace RenderingEngine {
 		//Attach fragment shader to program
 		glAttachShader(gGeneric2DShaderProgramID[withTexture], fragmentShader);
 
+		glBindAttribLocation(gGeneric2DShaderProgramID[withTexture], 0, "in_Position");
+		glBindAttribLocation(gGeneric2DShaderProgramID[withTexture], 1, "in_Color");
+
 		//Link program
 		glLinkProgram(gGeneric2DShaderProgramID[withTexture]);
 
@@ -261,15 +268,68 @@ namespace RenderingEngine {
 		}
 	}
 
+	typedef struct _line_primitive {
+		GLfloat location[4];
+		GLfloat color[4];
+	} line_vertex;
+
+	std::vector<line_vertex> lines;
+	GLuint vao_line;
+	GLuint vbo_line;
+	int total_vertices;
+
+	void ogl_reserve_line_objects(int num) {
+		int num_vertices = num * 2;
+
+		glGenVertexArrays(1, &vao_line);
+		glBindVertexArray(vao_line);
+
+		lines.resize(num_vertices);
+
+		// Create a Vector Buffer Object that will store the vertices on video memory
+		glGenBuffers(1, &vbo_line);
+
+		// Create VBO
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_line);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertex) * num_vertices, &lines[0], GL_DYNAMIC_DRAW);
+
+		GLint position_attribute = glGetAttribLocation(gGeneric2DShaderProgramID[0], "in_Position");
+		GLint color_attribute = glGetAttribLocation(gGeneric2DShaderProgramID[0], "in_Color");
+		glVertexAttribPointer(position_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(line_vertex), (const void*)offsetof(line_vertex, location));
+		glVertexAttribPointer(color_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(line_vertex), (const void*)offsetof(line_vertex, color));
+
+		total_vertices = 0;
+	}
+
 	void ogl_draw_line(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2) {
-		GLfloat line[4] = {
-			2 * (x1 / width - 0.5f), 
-			2 * (x2 / height - 0.5f), 
-			2 * (y1 / width - 0.5f), 
-			2 * (y2 / height - 0.5f)
-		}
+		line_vertex v[2];
 
+		v[0].location[0] = 2 * (x1 / width - 0.5f);
+		v[0].location[1] = 2 * (x2 / height - 0.5f);
 
+		v[0].color[0] = v[0].color[1] = v[0].color[2] = v[0].color[3] = 1.0f;
+
+		v[1].location[0] = 2 * (y1 / width - 0.5f);
+		v[1].location[1] = 2 * (y2 / height - 0.5f);
+
+		v[1].color[0] = v[1].color[1] = v[1].color[2] = v[1].color[3] = 1.0f;
+
+		lines[total_vertices] = v[0];
+		lines[total_vertices + 1] = v[1];
+
+		total_vertices += 2;
+	}
+
+	void ogl_send_lines_to_draw() {
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_line);
+		// get pointer
+		void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		// now copy data into memory
+		memcpy(ptr, sizeof(line_vertex) * total_vertices);
+		// make sure to tell OpenGL we're done with the pointer
+		glUnmapBuffer(type);
+
+		total_vertices = 0;
 	}
 #endif
 
@@ -905,9 +965,13 @@ namespace RenderingEngine {
 		// Grab mouse
 		// SDL_SetWindowGrab(gWindow, SDL_TRUE);
 
+#ifdef USE_SDL2_RENDERER
 		// Set blending
 		SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
-
+#else
+		ogl_prepare_generic_2d_shaders(0);
+		ogl_reserve_line_objects(5000);
+#endif
 		// Opaque blank screen
 		clear();
 		show();
