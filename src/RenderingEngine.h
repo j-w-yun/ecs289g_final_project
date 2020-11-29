@@ -277,12 +277,12 @@ namespace RenderingEngine {
 		}
 	}
 
-	typedef struct _line_primitive {
+	typedef struct _pure_color_vertex {
 		GLfloat location[4];
 		GLfloat color[4];
-	} line_vertex;
+	} pure_color_vertex;
 
-	std::vector<line_vertex> lines;
+	std::vector<pure_color_vertex> lines;
 	GLuint vao_line;
 	GLuint vbo_line;
 	int total_vertices;
@@ -300,26 +300,26 @@ namespace RenderingEngine {
 
 		// Create VBO
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_line);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertex) * num_vertices, &lines[0], GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(pure_color_vertex) * num_vertices, &lines[0], GL_DYNAMIC_DRAW);
 
 		GLint position_attribute = glGetAttribLocation(gGeneric2DShaderProgramID[0], "in_Position");
 		GLint color_attribute = glGetAttribLocation(gGeneric2DShaderProgramID[0], "in_Color");
-		glVertexAttribPointer(position_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(line_vertex), (const void*)offsetof(line_vertex, location));
-		glVertexAttribPointer(color_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(line_vertex), (const void*)offsetof(line_vertex, color));
+		glVertexAttribPointer(position_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(pure_color_vertex), (const void*)offsetof(pure_color_vertex, location));
+		glVertexAttribPointer(color_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(pure_color_vertex), (const void*)offsetof(pure_color_vertex, color));
 
 		glLineWidth(1.0f);
 
 		total_vertices = 0;
 	}
 
-	GLuint ogl_primitive_color[4];
+	GLfloat ogl_primitive_color[4];
 
 	void ogl_set_color(GLuint r, GLuint g, GLuint b, GLuint a)
 	{
-		ogl_primitive_color[0] = r;
-		ogl_primitive_color[1] = g;
-		ogl_primitive_color[2] = b;
-		ogl_primitive_color[3] = a;
+		ogl_primitive_color[0] = r / 255.0f;
+		ogl_primitive_color[1] = g / 255.0f;
+		ogl_primitive_color[2] = b / 255.0f;
+		ogl_primitive_color[3] = a / 255.0f;
 	}
 
 	void ogl_send_lines_to_draw() {
@@ -329,7 +329,7 @@ namespace RenderingEngine {
 			// get pointer
 			void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 			// now copy data into memory
-			memcpy(ptr, &lines[0], sizeof(line_vertex) * total_vertices);
+			memcpy(ptr, &lines[0], sizeof(pure_color_vertex) * total_vertices);
 			// make sure to tell OpenGL we're done with the pointer
 			glUnmapBuffer(GL_ARRAY_BUFFER);
 
@@ -347,25 +347,19 @@ namespace RenderingEngine {
 	}
 
 	void ogl_draw_line(GLfloat x1, GLfloat x2, GLfloat y1, GLfloat y2) {
-		line_vertex v[2];
+		pure_color_vertex v[2];
 
 		// y axis invert
 		v[0].location[0] = 2 * (x1 / width - 0.5f);
 		v[0].location[1] = 2 * (1.0f - x2 / height - 0.5f);
 
-		v[0].color[0] = ogl_primitive_color[0] / 255.0f;
-		v[0].color[1] = ogl_primitive_color[1] / 255.0f;
-		v[0].color[2] = ogl_primitive_color[2] / 255.0f;
-		v[0].color[3] = ogl_primitive_color[3] / 255.0f;
+		memcpy(v[0].color, ogl_primitive_color, sizeof(ogl_primitive_color));
 
 		// y axis invert
 		v[1].location[0] = 2 * (y1 / width - 0.5f);
 		v[1].location[1] = 2 * (1.0f - y2 / height - 0.5f);
 
-		v[1].color[0] = ogl_primitive_color[0] / 255.0f;
-		v[1].color[1] = ogl_primitive_color[1] / 255.0f;
-		v[1].color[2] = ogl_primitive_color[2] / 255.0f;
-		v[1].color[3] = ogl_primitive_color[3] / 255.0f;
+		memcpy(v[1].color, ogl_primitive_color, sizeof(ogl_primitive_color));
 
 		lines[total_vertices] = v[0];
 		lines[total_vertices + 1] = v[1];
@@ -374,6 +368,87 @@ namespace RenderingEngine {
 
 		if (total_vertices >= lines.size())
 			ogl_send_lines_to_draw();
+	}
+
+	GLuint vao_rect;
+	GLuint vbo_rect;
+	std::vector<pure_color_vertex> rects;
+	int total_rect_vertices = 0;
+
+	void ogl_reserve_rect_objects(int num) {
+		int num_vertices = num * 6;
+
+		glGenVertexArrays(1, &vao_rect);
+		glBindVertexArray(vao_rect);
+
+		rects.resize(num_vertices);
+
+		// Create a Vector Buffer Object that will store the vertices on video memory
+		glGenBuffers(1, &vbo_rect);
+
+		// Create VBO
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_rect);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(pure_color_vertex) * num_vertices, &rects[0], GL_DYNAMIC_DRAW);
+
+		GLint position_attribute = glGetAttribLocation(gGeneric2DShaderProgramID[0], "in_Position");
+		GLint color_attribute = glGetAttribLocation(gGeneric2DShaderProgramID[0], "in_Color");
+		glVertexAttribPointer(position_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(pure_color_vertex), (const void*)offsetof(pure_color_vertex, location));
+		glVertexAttribPointer(color_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(pure_color_vertex), (const void*)offsetof(pure_color_vertex, color));
+
+		total_rect_vertices = 0;
+	}
+
+	void ogl_send_rects_to_draw() {
+		if (total_rect_vertices > 0) {
+			glBindVertexArray(vao_line);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_line);
+			// get pointer
+			void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+			// now copy data into memory
+			memcpy(ptr, &rects[0], sizeof(pure_color_vertex) * total_rect_vertices);
+			// make sure to tell OpenGL we're done with the pointer
+			glUnmapBuffer(GL_ARRAY_BUFFER);
+
+			glEnableVertexAttribArray(0);
+			glEnableVertexAttribArray(1);
+			glUseProgram(gGeneric2DShaderProgramID[0]);
+
+			glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+
+			glDrawArrays(GL_TRIANGLES, 0, total_rect_vertices);
+
+			total_rect_vertices = 0;
+		}
+	}
+
+	void ogl_fill_rect(SDL_Rect& box) {
+		pure_color_vertex v[6];
+		GLfloat fWidth = (GLfloat)width;
+		GLfloat fHeight = (GLfloat)height;
+		v[0].location[0] = 2 * (box.x / fWidth - 0.5f);
+		v[0].location[1] = 2 * (1.0f - box.y / fHeight - 0.5f);
+		v[1].location[0] = v[0].location[0];
+		v[1].location[1] = 2 * (1.0f - (box.y + box.h) / fHeight - 0.5f);
+		v[2].location[0] = 2 * ((box.x + box.w) / fWidth - 0.5f);
+		v[2].location[1] = v[0].location[1];
+		v[3].location[0] = v[2].location[0];
+		v[3].location[1] = v[2].location[1];
+		v[4].location[0] = v[1].location[0];
+		v[4].location[1] = v[1].location[1];
+		v[5].location[0] = v[2].location[0];
+		v[5].location[1] = v[1].location[1];
+
+		for (int i = 0; i < 6; i++)
+		{
+			memcpy(v[i].color, ogl_primitive_color, sizeof(ogl_primitive_color));
+			rects[total_rect_vertices + i] = v[i];
+		}
+
+		total_rect_vertices += 6;
+
+		if (total_rect_vertices >= rects.size())
+			ogl_send_rects_to_draw();
 	}
 #endif
 
@@ -709,6 +784,7 @@ namespace RenderingEngine {
 #else
 		ogl_prepare_generic_2d_shaders(0);
 		ogl_reserve_line_objects(15000);
+		ogl_reserve_rect_objects(15000);
 #endif
 		// Opaque blank screen
 		clear();

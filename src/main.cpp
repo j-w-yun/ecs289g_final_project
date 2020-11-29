@@ -285,6 +285,9 @@ void render(float delta_time) {
 #ifdef USE_SDL2_RENDERER
 			SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 0x22, 0xFF, 0x22, 0x55);
 			SDL_RenderFillRect(RenderingEngine::gRenderer, &box);
+#else
+			RenderingEngine::ogl_set_color(0x22, 0xFF, 0x22, 0x55);
+			RenderingEngine::ogl_fill_rect(box);
 #endif
 		}
 	}
@@ -304,8 +307,13 @@ void render(float delta_time) {
 #ifdef USE_SDL2_RENDERER
 		SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 0x77, 0x22, 0x22, 0xFF);
 		SDL_RenderFillRect(RenderingEngine::gRenderer, &box);
+#else
+		RenderingEngine::ogl_set_color(0x77, 0x22, 0x22, 0xFF);
+		RenderingEngine::ogl_fill_rect(box);
 #endif
 	}
+
+	RenderingEngine::ogl_send_rects_to_draw();
 
 	// Update screen
 	RenderingEngine::show();
