@@ -27,9 +27,10 @@ class GameObject {
 		int y_tiles;
 		int xtwidth;
 		int ytwidth;
+		int team;
 		size_t id;
 		GameObject();
-		GameObject(const Vector2f& p, const Vector2f& v, float r, int w, int h, int xt, int yt);
+		GameObject(const Vector2f& p, const Vector2f& v, float r, int w, int h, int xt, int yt, int t);
 		Vector2f p() const;
 		Vector2f v() const;
 		float r() const;
@@ -44,7 +45,7 @@ class GameObject {
 		void set_render_callback(std::function<void(SDL_Renderer*)> callback);
 		void set_update_callback(std::function<void(float)> callback);
 		virtual void render(SDL_Renderer* renderer);
-		virtual void update(float elapsed_time, bool calc = true);
+		virtual bool update(float elapsed_time, bool calc = true);
 		std::string get_class() {return class_string;};
 		bool is_a(std::string str) {return class_string == str;};
 

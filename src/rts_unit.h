@@ -22,40 +22,41 @@ struct rts_unit : GameObject {
 	int side = layers*2 + 1;
 	int size = side * side - 1;
 
-	rts_unit(Vector2f p, Vector2f v, float r, int w, int h, int xt, int yt, float a, float ts, MapLevel& mp): GameObject(p, v, r, w, h, xt, yt), acc(a), topspeed(ts), map(mp) {}
+	rts_unit(Vector2f p, Vector2f v, float r, int w, int h, int xt, int yt, int t, float a, float ts, MapLevel& mp): GameObject(p, v, r, w, h, xt, yt, t), acc(a), topspeed(ts), map(mp) {}
 
 	virtual void render(SDL_Renderer* renderer){
 		// int padding = 4;
-		if(selected == 1){
-			// SDL_Rect box = {(int)(p().x() - r()) - padding, (int)(p().y() - r()) - padding, (int)(2 * r()) + 2*padding, (int)(2 * r()) + 2*padding};
-			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f((int)(p().x() - r()), (int)(p().y() - r())));
-			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((int)(p().x() + r()), (int)(p().y() + r())));
-			SDL_Rect box = {
-				(int)(sp1.x()),
-				(int)(sp1.y()),
-				(int)(sp2.x()-sp1.x()),
-				(int)(sp2.y()-sp1.y())
-			};
-			// Fill
-			SDL_SetRenderDrawColor(renderer, 91, 192, 222, 255);
-			SDL_RenderFillRect(renderer, &box);
-			// Outline
+		// SDL_Rect box = {(int)(p().x() - r()) - padding, (int)(p().y() - r()) - padding, (int)(2 * r()) + 2*padding, (int)(2 * r()) + 2*padding};
+		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f((int)(p().x() - r()), (int)(p().y() - r())));
+		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((int)(p().x() + r()), (int)(p().y() + r())));
+		SDL_Rect box = {
+			(int)(sp1.x()),
+			(int)(sp1.y()),
+			(int)(sp2.x()-sp1.x()),
+			(int)(sp2.y()-sp1.y())
+		};
+		// Fill
+		SDL_SetRenderDrawColor(renderer, 255*(team==1), 255*(team==2), 255*(team==0), 255);
+		SDL_RenderFillRect(renderer, &box);
+		// Outline
+		if(selected){
 			SDL_SetRenderDrawColor(renderer, 2, 117, 216, 255);
 			SDL_RenderDrawRect(renderer, &box);
-
-			if(path.size()){
-				SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-				Vector2f p1 = RenderingEngine::world_to_screen(p());
-				Vector2f p2 = RenderingEngine::world_to_screen(path.back());
-				SDL_RenderDrawLine(renderer, p1.x(), p1.y(), p2.x(), p2.y());
-				for(size_t i = path.size() - 1; i; i--){
-					SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-					Vector2f p1 = RenderingEngine::world_to_screen(path[i]);
-					Vector2f p2 = RenderingEngine::world_to_screen(path[i - 1]);
-					SDL_RenderDrawLine(renderer, p1.x(), p1.y(), p2.x(), p2.y());
-				}
-			}
 		}
+
+		// path lines
+		/*if(path.size()){
+			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+			Vector2f p1 = RenderingEngine::world_to_screen(p());
+			Vector2f p2 = RenderingEngine::world_to_screen(path.back());
+			SDL_RenderDrawLine(renderer, p1.x(), p1.y(), p2.x(), p2.y());
+			for(size_t i = path.size() - 1; i; i--){
+				SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+				Vector2f p1 = RenderingEngine::world_to_screen(path[i]);
+				Vector2f p2 = RenderingEngine::world_to_screen(path[i - 1]);
+				SDL_RenderDrawLine(renderer, p1.x(), p1.y(), p2.x(), p2.y());
+			}
+		}*/
 	}
 
 	virtual void update_path(){
@@ -158,7 +159,7 @@ struct rts_unit : GameObject {
 
 						d = p() - map.get_units()[uind]->p();
 						//auto l = d.len();
-						retval += 20.0f*d.unit()/(std::max(d.len2(), .001f));
+						retval += 10.0f*d.unit()/(std::max(d.len2(), .001f));
 					}
 				}
 			}
@@ -215,7 +216,7 @@ struct rts_unit : GameObject {
 		return retval;
 	}
 
-	virtual void update(float elapsed_time, bool calc){
+	virtual bool update(float elapsed_time, bool calc){
 		//std::cout << "unit pos before " << p() << std::endl;
 
 		auto temp = p() + v();
@@ -252,7 +253,7 @@ struct rts_unit : GameObject {
 		
 		//std::cout << "unit pos after " << p() << std::endl;
 
-		if(Input::is_mouse_pressed(SDL_BUTTON_RIGHT)){
+		if(selected && Input::is_mouse_pressed(SDL_BUTTON_RIGHT)){
 			auto temp = Input::get_mouse_pos();
 			dest = RenderingEngine::screen_to_world(Vector2f(temp.first, temp.second));
 		}
@@ -271,6 +272,11 @@ struct rts_unit : GameObject {
 		//Vector2f avoidance(0, 0);
 		auto dv = deliberate+avoidance;
 
+		if(dv.len() > acc){
+			//std::cout << "In if" << std::endl;
+			dv = (dv/dv.len())*acc;
+		}
+
 		//std::cout << "dv is " << dv << std::endl;
 		//std::cout << "v is " << v() << std::endl;
 
@@ -283,5 +289,7 @@ struct rts_unit : GameObject {
 		//std::cout << "nv is " << nv << std::endl;
 
 		set_v(nv);
+
+		return true;
 	}
 };

@@ -14,6 +14,7 @@
 #include "Vector2f.cpp"
 #include "AStar.hpp"
 #include "algorithms.h"
+#include "projectile.h"
 
 struct rect{
 	int xl, yl, xh, yh;
@@ -68,6 +69,7 @@ class MapLevel: public GameObject {
 		std::vector<std::vector<int>> grid_to_rectcover;
 		std::vector<std::vector<size_t>> rectgraph;
 		bool climb(std::vector<std::pair<int, int>>* obs, double noise[], float threshold, std::vector<std::pair<int, int>> bases, int padding);
+		std::vector<projectile> projectiles;
 
 	public:
 		MapLevel() = default;

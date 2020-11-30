@@ -152,11 +152,28 @@ void run_test() {
 			WORLD_HEIGHT,
 			X_TILES,
 			Y_TILES,
+			0, // team
 			0.05f,  // Acceleration
 			0.5f,  // Travel speed
 			map_level
 		);
 		rts_ptr->selected = 1;
+		map_level.add(rts_ptr);
+
+		auto position2 = Vector2f(X_TILES*TILE_WIDTH - position.x(), rand()%(int)WORLD_HEIGHT);
+		rts_ptr = std::make_shared<rts_unit>(
+			position2,
+			velocity,
+			3.0f,  // Radius
+			WORLD_WIDTH,
+			WORLD_HEIGHT,
+			X_TILES,
+			Y_TILES,
+			1, // team
+			0.05f,  // Acceleration
+			0.5f,  // Travel speed
+			map_level
+		);
 		map_level.add(rts_ptr);
 	}
 
