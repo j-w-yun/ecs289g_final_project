@@ -62,6 +62,7 @@ class MapLevel: public GameObject {
 		std::vector<std::vector<bool>> obgrid;
 		std::vector<std::shared_ptr<GameObject>> units;
 		std::vector<size_t> idstack;
+		std::vector<size_t> idbuffer;
 		std::vector<std::vector<std::vector<size_t>>> unitgrid;
 		size_t unitcap;
 		std::vector<rect> rectcover;
@@ -69,12 +70,17 @@ class MapLevel: public GameObject {
 		std::vector<std::vector<int>> grid_to_rectcover;
 		std::vector<std::vector<size_t>> rectgraph;
 		bool climb(std::vector<std::pair<int, int>>* obs, double noise[], float threshold, std::vector<std::pair<int, int>> bases, int padding);
-		std::vector<projectile> projectiles;
+		std::vector<std::shared_ptr<projectile>> projectiles;
+		std::vector<size_t> pstack;
+		size_t projcap;
 
 	public:
 		MapLevel() = default;
 		MapLevel(int tx, int ty, float tw, float th, size_t uc = 200);
 		bool add(std::shared_ptr<GameObject> o);
+		bool add_proj(std::shared_ptr<projectile> o);
+		void kill(int id);
+		void kill_proj(int id);
 		void set_size(int x, int y, int w, int h);
 		void set_obstructions(std::vector<std::pair<int, int>> o);
 		void set(int x, int y, int w, int h, std::vector<std::pair<int, int>> o);

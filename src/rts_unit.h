@@ -21,6 +21,20 @@ struct rts_unit : GameObject {
 	int layers = 1;
 	int side = layers*2 + 1;
 	int size = side * side - 1;
+	int target = -1;
+
+	// performance limits
+	int avoidance_limit = 10;
+	int target_limit = 10;
+
+	// shooting stuff
+	float range = 150;
+	int weapon_state = 0;
+	int weapon_cap = 200;
+	float weapon_speed = 5;
+	int weapon_life = (int)(range/weapon_speed) + 3;
+	int damage = 1;
+
 
 	rts_unit(Vector2f p, Vector2f v, float r, int w, int h, int xt, int yt, int t, float a, float ts, MapLevel& mp): GameObject(p, v, r, w, h, xt, yt, t), acc(a), topspeed(ts), map(mp) {}
 
@@ -174,6 +188,8 @@ struct rts_unit : GameObject {
 		//Vector2f l;
 		int x, y;
 
+		int checked = 0;
+
 		Vector2f vu = v().unit();
 		Vector2f pu = par_unit(v());
 
@@ -208,6 +224,11 @@ struct rts_unit : GameObject {
 					float turn = sign * fun/std::max(abs(d.x()), .001f);
 
 					retval = retval + slow*vu + turn*pu;
+
+					checked++;
+					if(checked >= avoidance_limit){
+						return retval;
+					}
 					//std::cout << "done" << std::endl;
 				}
 			}
@@ -216,8 +237,93 @@ struct rts_unit : GameObject {
 		return retval;
 	}
 
+	void find_target(){
+		//std::cout << std::endl << std::endl << "Find target" << std::endl;
+
+		if(target != -1 && map.get_units()[target] && (map.get_units()[target]->p() - p()).len() < range){
+			//std::cout << "Retaining target" << std::endl;
+			return;
+		}
+
+		int tiles = (int)(range/std::min(xtwidth, ytwidth));
+		int sd = tiles*2 + 1;
+		auto pr = to_tile_space(p());
+
+		std::vector<int> targets;
+		std::vector<float> distances;
+
+		//std::cout << "Center is " << pr.first << ", " << pr.second << std::endl;
+
+		int checked = 0;
+
+		for(int i = 0; i < sd*sd; i++){
+			int x = pr.first + i/sd - tiles;
+			int y = pr.second + i%sd - tiles;
+
+			//std::cout << "Checking block " << x << ", " << y << std::endl;
+
+			if(!inbounds(x, y))
+				continue;
+
+			//std::cout << "In bounds" << std::endl;
+
+			//std::cout << "Units here: " << map.get_unitgrid()[x][y].size() << std::endl;
+
+			for(auto& id : map.get_unitgrid()[x][y]){
+				auto& unit = map.get_units()[id];
+				if(unit->team != team){
+					auto d = (unit->p() - p()).len();
+					if(d > range)
+						continue;
+
+					targets.push_back(id);
+					distances.push_back((unit->p() - p()).len());
+
+					checked++;
+					if(checked >= target_limit){
+						goto escape;
+					}
+				}
+			}
+		}
+
+		escape: 
+		(void)distances;
+
+		if(!targets.size()){
+			target = -1;
+			//std::cout << "No targets" << std::endl;
+			return;
+		}
+
+		target = targets[rand()%targets.size()];
+		//std::cout << "Target is " << target << std::endl;
+	}
+
 	virtual bool update(float elapsed_time, bool calc){
 		//std::cout << "unit pos before " << p() << std::endl;
+
+		// load weapon
+		if(weapon_state < weapon_cap){
+			weapon_state++;
+		}
+
+		// verify target is still alive
+		if(target != -1 && !map.get_units()[target]){
+			target = -1;
+		}
+
+		// shoot at target
+		if(weapon_state == weapon_cap && target != -1){
+			auto& unit = map.get_units()[target];
+			auto dv = unit->p() - p();
+			auto d = dv.len();
+		
+			if(d < range){
+				map.add_proj(std::make_shared<projectile>(p(), (dv/d)*weapon_speed, 2, weapon_life, team, 1, map));
+				weapon_state = 0;
+			}
+		}
 
 		auto temp = p() + v();
 
@@ -260,6 +366,7 @@ struct rts_unit : GameObject {
 
 		if(calc){
 			update_path();
+			find_target();
 		}
 
 		auto deliberate = traverse_path()*acc;
