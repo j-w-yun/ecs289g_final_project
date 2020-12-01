@@ -342,10 +342,18 @@ void MapLevel::render_texture(SDL_Renderer* renderer) {
 			SDL_SetRenderDrawColor(renderer, 40, 90*z+40, 30, 150+60*sin(f));
 			// SDL_SetRenderDrawColor(renderer, 60, 90*z+40, 30, 150);
 			SDL_RenderFillRect(renderer, &box);
+#else
+			RenderingEngine::ogl_set_color(40, 90 * z + 40, 30, 150 + 60 * sin(f));
+			RenderingEngine::ogl_fill_rect(box);
 #endif
 		}
 		xi++;
 	}
+
+	// TODO: use shaders to do this, with bilinear filtering
+#ifndef USE_SDL2_RENDERER
+	RenderingEngine::ogl_send_rects_to_draw();
+#endif
 }
 
 void MapLevel::compute_obstruction_vertices() {

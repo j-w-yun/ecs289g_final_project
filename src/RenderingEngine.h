@@ -366,7 +366,7 @@ namespace RenderingEngine {
 
 		total_vertices += 2;
 
-		if (total_vertices >= lines.size())
+		if (total_vertices >= lines.size() - 2)
 			ogl_send_lines_to_draw();
 	}
 
@@ -400,8 +400,8 @@ namespace RenderingEngine {
 
 	void ogl_send_rects_to_draw() {
 		if (total_rect_vertices > 0) {
-			glBindVertexArray(vao_line);
-			glBindBuffer(GL_ARRAY_BUFFER, vbo_line);
+			glBindVertexArray(vao_rect);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo_rect);
 			// get pointer
 			void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 			// now copy data into memory
@@ -783,8 +783,8 @@ namespace RenderingEngine {
 		SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
 #else
 		ogl_prepare_generic_2d_shaders(0);
-		ogl_reserve_line_objects(15000);
-		ogl_reserve_rect_objects(15000);
+		ogl_reserve_line_objects(5000);
+		ogl_reserve_rect_objects(5000);
 #endif
 		// Opaque blank screen
 		clear();
