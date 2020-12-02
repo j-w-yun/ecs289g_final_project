@@ -112,6 +112,7 @@ xcopy /Y $(ProjectDir)..\..\lib\SDL2_ttf_VC\lib\x86\*.dll $(OutDir)</Command>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\lib\SDL2_VC\include;$(ProjectDir)..\..\lib\SDL2_ttf_VC\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
