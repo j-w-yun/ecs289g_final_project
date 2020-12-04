@@ -58,8 +58,11 @@ MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), 
 	// init objects
 	units = std::vector<std::shared_ptr<GameObject>>(unitcap);
 
-	// init unitgrid
-	unitgrid = std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y));
+	// init unitgrid (4d)
+	for(int i = 0; i < teams; i++){
+		unitgrid.push_back(std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y)));
+	}
+	
 
 	// init obgrid
 	obgrid = std::vector<std::vector<bool>>(tx, std::vector<bool>(ty, 0));
@@ -80,7 +83,9 @@ MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), 
 }
 
 bool MapLevel::add(std::shared_ptr<GameObject> o) {
-	if (!idstack.size()) return false;
+	if(o->team < 0 || o-> team >= teams) return false;
+
+	if(!idstack.size()) return false;
 
 	auto id = idstack.back();
 	idstack.pop_back();
@@ -88,7 +93,8 @@ bool MapLevel::add(std::shared_ptr<GameObject> o) {
 	units[id] = o;
 	auto tile = o->get_tile();
 
-	unitgrid[tile.first][tile.second].push_back(id);
+	// 4d
+	unitgrid[o->team][tile.first][tile.second].push_back(id);
 	o->id = id;
 
 	//std::cout << "Adding unit " << id << std::endl;
@@ -120,7 +126,8 @@ void MapLevel::kill(int id){
 	// remove from grid
 	auto tile = unit->get_tile();
 
-	auto& vec = unitgrid[tile.first][tile.second];
+	// 4d
+	auto& vec = unitgrid[units[id]->team][tile.first][tile.second];
 	remove(vec, (size_t)id);
 
 	// buffer id
@@ -156,8 +163,10 @@ void MapLevel::set_size(int x, int y, int w, int h) {
 	// init objects
 	units = std::vector<std::shared_ptr<GameObject>>(unitcap);
 
-	// init unitgrid
-	unitgrid = std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y));
+	// init unitgrid (4d)
+	for(int i = 0; i < teams; i++){
+		unitgrid.push_back(std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y)));
+	}
 
 	// init obgrid
 	obgrid = std::vector<std::vector<bool>>(tiles_x, std::vector<bool>(tiles_y, 0));
@@ -881,9 +890,11 @@ void MapLevel::update(float elapsed_time) {
 			auto ntile = unit->get_tile();
 
 			if (ntile != tile) {
-				auto& vec = unitgrid[tile.first][tile.second];
+				// make sure in team appropriate datastructure
+				auto& ug = unitgrid[unit->team];
+				auto& vec = ug[tile.first][tile.second];
 				remove(vec, unit->id);
-				unitgrid[ntile.first][ntile.second].push_back(unit->id);
+				ug[ntile.first][ntile.second].push_back(unit->id);
 			}
 
 			if(!alive){

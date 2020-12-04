@@ -153,6 +153,8 @@ struct rts_unit : GameObject {
 
 		auto pr = to_tile_space(p());
 
+		int checked = 0;
+
 		for(int i = 0; i < size; i++){
 			x = pr.first + i/side - layers;
 			y = pr.second + i%side - layers;
@@ -168,21 +170,30 @@ struct rts_unit : GameObject {
 				}
 				// units
 				else{
-					for(auto uind : map.get_unitgrid()[x][y]){
-						if(uind == id) continue;
+					for(int t = 0; t < map.get_teams(); t++){
+						for(auto uind : map.get_unitgrid()[t][x][y]){
+							if(uind == id) continue;
 
-						d = p() - map.get_units()[uind]->p();
-						//auto l = d.len();
-						retval += 10.0f*d.unit()/(std::max(d.len2(), .001f));
+							d = p() - map.get_units()[uind]->p();
+							//auto l = d.len();
+							retval += 10.0f*d.unit()/(std::max(d.len2(), .001f));
+
+							checked++;
+							if(checked >= avoidance_limit){
+								goto escape_avoid_obstacles;
+							}
+						}
 					}
 				}
 			}
 		}
 
+		escape_avoid_obstacles:
+
 		return retval;
 	}
 
-	virtual Vector2f avoid_units(){
+	/*virtual Vector2f avoid_units(){
 		Vector2f retval(0, 0);
 		Vector2f d;
 		//Vector2f l;
@@ -235,7 +246,7 @@ struct rts_unit : GameObject {
 		}
 
 		return retval;
-	}
+	}*/
 
 	void find_target(){
 		//std::cout << std::endl << std::endl << "Find target" << std::endl;
@@ -269,19 +280,23 @@ struct rts_unit : GameObject {
 
 			//std::cout << "Units here: " << map.get_unitgrid()[x][y].size() << std::endl;
 
-			for(auto& id : map.get_unitgrid()[x][y]){
-				auto& unit = map.get_units()[id];
-				if(unit->team != team){
-					auto d = (unit->p() - p()).len();
-					if(d > range)
-						continue;
+			for(int t = 0; t < map.get_teams(); t++){
+				if(t == team) continue;
 
-					targets.push_back(id);
-					distances.push_back((unit->p() - p()).len());
+				for(auto& id : map.get_unitgrid()[t][x][y]){
+					auto& unit = map.get_units()[id];
+					if(unit->team != team){
+						auto d = (unit->p() - p()).len();
+						if(d > range)
+							continue;
 
-					checked++;
-					if(checked >= target_limit){
-						goto escape;
+						targets.push_back(id);
+						distances.push_back((unit->p() - p()).len());
+
+						checked++;
+						if(checked >= target_limit){
+							goto escape;
+						}
 					}
 				}
 			}

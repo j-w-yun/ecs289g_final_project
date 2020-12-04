@@ -63,7 +63,7 @@ class MapLevel: public GameObject {
 		std::vector<std::shared_ptr<GameObject>> units;
 		std::vector<size_t> idstack;
 		std::vector<size_t> idbuffer;
-		std::vector<std::vector<std::vector<size_t>>> unitgrid;
+		std::vector<std::vector<std::vector<std::vector<size_t>>>> unitgrid;
 		size_t unitcap;
 		std::vector<rect> rectcover;
 		std::vector<rect> pathcover;
@@ -73,6 +73,8 @@ class MapLevel: public GameObject {
 		std::vector<std::shared_ptr<projectile>> projectiles;
 		std::vector<size_t> pstack;
 		size_t projcap;
+
+		int teams = 2;
 
 	public:
 		MapLevel() = default;
@@ -92,10 +94,11 @@ class MapLevel: public GameObject {
 		int get_tile_height() {return tile_height;};
 		const std::vector<ip>& get_obstructions() {return obstructions;};
 		const std::vector<std::vector<bool>>& get_obgrid() {return obgrid;};
-		const std::vector<std::vector<std::vector<size_t>>>& get_unitgrid() {return unitgrid;};
+		const std::vector<std::vector<std::vector<std::vector<size_t>>>>& get_unitgrid() {return unitgrid;};
 		const std::vector<std::shared_ptr<GameObject>>& get_units() {return units;}
 		std::vector<std::shared_ptr<GameObject>>& get_objects();
 		size_t get_unitcap() {return unitcap;}
+		int get_teams() {return teams;}
 		void generate_texture();
 		void render_texture(SDL_Renderer* renderer);
 		void render(SDL_Renderer* renderer);
