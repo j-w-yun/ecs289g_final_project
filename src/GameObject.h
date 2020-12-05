@@ -30,7 +30,7 @@ class GameObject {
 		int team;
 		size_t id;
 		GameObject();
-		GameObject(const Vector2f& p, const Vector2f& v, float r, int w, int h, int xt, int yt, int t);
+		GameObject(const Vector2f& p, const Vector2f& v, float r, int w, int h, int xt, int yt, int t, int hlt);
 		Vector2f p() const;
 		Vector2f v() const;
 		float r() const;
@@ -48,6 +48,7 @@ class GameObject {
 		virtual bool update(float elapsed_time, bool calc = true);
 		std::string get_class() {return class_string;};
 		bool is_a(std::string str) {return class_string == str;};
+		int health;
 
 		// Inheriting classes must override this static function
 		// Is there a better way to check class types?

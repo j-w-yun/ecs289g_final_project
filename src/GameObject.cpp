@@ -9,7 +9,7 @@ GameObject::GameObject() {
 	set_defaults();
 }
 
-GameObject::GameObject(const Vector2f& p, const Vector2f& v, float r, int w, int h, int xt, int yt, int t) {
+GameObject::GameObject(const Vector2f& p, const Vector2f& v, float r, int w, int h, int xt, int yt, int t, int hlt) {
 	set_defaults();
 	position = p;
 	velocity = v;
@@ -19,6 +19,7 @@ GameObject::GameObject(const Vector2f& p, const Vector2f& v, float r, int w, int
 	x_tiles = xt;
 	y_tiles = yt;
 	team = t;
+	health = hlt;
 
 	xtwidth = wwidth/x_tiles;
 	ytwidth = wheight/y_tiles;

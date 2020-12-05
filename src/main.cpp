@@ -155,6 +155,7 @@ void run_test() {
 			X_TILES,
 			Y_TILES,
 			0, // team
+			1, // health
 			0.05f,  // Acceleration
 			0.5f,  // Travel speed
 			map_level
@@ -172,6 +173,7 @@ void run_test() {
 			X_TILES,
 			Y_TILES,
 			1, // team
+			1, // health
 			0.05f,  // Acceleration
 			0.5f,  // Travel speed
 			map_level

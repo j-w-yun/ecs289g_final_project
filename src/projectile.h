@@ -1,6 +1,9 @@
 #pragma once
 
+#include <numeric>
+
 #include "Vector2f.h"
+#include "algorithms.h"
 
 class MapLevel;
 
@@ -13,7 +16,7 @@ struct projectile{
     MapLevel& map;
     size_t id;
 
-    projectile(Vector2f p, Vector2f v, float r, int l, int t, int d, MapLevel& m): p(p), v(v), r(r), life(l), damage(d), map(m){
+    projectile(Vector2f p, Vector2f v, float r, int l, int t, int d, MapLevel& m): p(p), v(v), r(r), life(l), team(t), damage(d), map(m){
 
     }
 

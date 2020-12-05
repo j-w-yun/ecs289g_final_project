@@ -36,7 +36,7 @@ struct rts_unit : GameObject {
 	int damage = 1;
 
 
-	rts_unit(Vector2f p, Vector2f v, float r, int w, int h, int xt, int yt, int t, float a, float ts, MapLevel& mp): GameObject(p, v, r, w, h, xt, yt, t), acc(a), topspeed(ts), map(mp) {}
+	rts_unit(Vector2f p, Vector2f v, float r, int w, int h, int xt, int yt, int t, int hlt, float a, float ts, MapLevel& mp): GameObject(p, v, r, w, h, xt, yt, t, hlt), acc(a), topspeed(ts), map(mp) {}
 
 	virtual void render(SDL_Renderer* renderer){
 		// int padding = 4;
@@ -169,7 +169,7 @@ struct rts_unit : GameObject {
 					retval += 40.0f*d.unit()/(d.len2());
 				}
 				// units
-				else{
+				else if(checked < avoidance_limit){
 					for(int t = 0; t < map.get_teams(); t++){
 						for(auto uind : map.get_unitgrid()[t][x][y]){
 							if(uind == id) continue;
@@ -179,16 +179,16 @@ struct rts_unit : GameObject {
 							retval += 10.0f*d.unit()/(std::max(d.len2(), .001f));
 
 							checked++;
-							if(checked >= avoidance_limit){
-								goto escape_avoid_obstacles;
-							}
+							//if(checked >= avoidance_limit){
+							//	goto escape_avoid_obstacles;
+							//}
 						}
 					}
 				}
 			}
 		}
 
-		escape_avoid_obstacles:
+		//escape_avoid_obstacles:
 
 		return retval;
 	}
@@ -317,6 +317,11 @@ struct rts_unit : GameObject {
 
 	virtual bool update(float elapsed_time, bool calc){
 		//std::cout << "unit pos before " << p() << std::endl;
+
+		// check for death
+		if(health <= 0){
+			return false;
+		}
 
 		// load weapon
 		if(weapon_state < weapon_cap){
