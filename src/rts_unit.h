@@ -155,6 +155,8 @@ struct rts_unit : GameObject {
 
 		int checked = 0;
 
+		float r2 = r() * r();
+
 		for(int i = 0; i < size; i++){
 			x = pr.first + i/side - layers;
 			y = pr.second + i%side - layers;
@@ -166,7 +168,7 @@ struct rts_unit : GameObject {
 					//auto l = d.len();
 					//float force = 40.0f/(d.len2());
 
-					retval += 40.0f*d.unit()/(d.len2());
+					retval += 40.0f*d.unit()/(d.len2()/r2);
 				}
 				// units
 				else if(checked < avoidance_limit){
@@ -176,7 +178,7 @@ struct rts_unit : GameObject {
 
 							d = p() - map.get_units()[uind]->p();
 							//auto l = d.len();
-							retval += 10.0f*d.unit()/(std::max(d.len2(), .001f));
+							retval += 10.0f*d.unit()/(std::max(d.len2()/r2, .001f));
 
 							checked++;
 							//if(checked >= avoidance_limit){
