@@ -9,7 +9,7 @@ GameObject::GameObject() {
 	set_defaults();
 }
 
-GameObject::GameObject(const Vector2f& p, const Vector2f& v, float r, int w, int h, int xt, int yt) {
+GameObject::GameObject(const Vector2f& p, const Vector2f& v, float r, int w, int h, int xt, int yt, int t, int hlt) {
 	set_defaults();
 	position = p;
 	velocity = v;
@@ -18,6 +18,8 @@ GameObject::GameObject(const Vector2f& p, const Vector2f& v, float r, int w, int
 	wheight = h;
 	x_tiles = xt;
 	y_tiles = yt;
+	team = t;
+	health = hlt;
 
 	xtwidth = wwidth/x_tiles;
 	ytwidth = wheight/y_tiles;
@@ -95,12 +97,15 @@ void GameObject::render(SDL_Renderer* renderer) {
 		_render_callback(renderer);
 }
 
-void GameObject::update(float t, bool calc) {
+// returns if still alive
+bool GameObject::update(float t, bool calc) {
 	if (!_is_movable)
-		return;
+		return true;
 
 	position = position.add(velocity.scale(t));
 
 	if (_update_callback)
 		_update_callback(t);
+
+	return true;
 }

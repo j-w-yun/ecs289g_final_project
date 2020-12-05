@@ -34,6 +34,8 @@
 #include "AStar.cpp"
 #include "Util.h"
 #include "RenderingEngine.h"
+#include "projectile.h"
+#include "projectile.cpp"
 
 #include "algorithms.h"
 #include "rts_unit.h"
@@ -146,7 +148,7 @@ void run_test() {
 	// Test RTS units
 	float WORLD_WIDTH = TILE_WIDTH*X_TILES;
 	float WORLD_HEIGHT = TILE_HEIGHT*Y_TILES;
-	for(int i = 0; i < 100; i++){
+	for(int i = 0; i < 250; i++){
 		auto position = Vector2f(bases.at(0).first * TILE_WIDTH, rand()%(int)WORLD_HEIGHT);
 		auto velocity = Vector2f(0, 0);
 		auto rts_ptr = std::make_shared<rts_unit>(
@@ -157,11 +159,30 @@ void run_test() {
 			WORLD_HEIGHT,
 			X_TILES,
 			Y_TILES,
+			0, // team
+			1, // health
 			0.05f,  // Acceleration
 			0.5f,  // Travel speed
 			map_level
 		);
 		rts_ptr->selected = 1;
+		map_level.add(rts_ptr);
+
+		auto position2 = Vector2f(X_TILES*TILE_WIDTH - position.x(), rand()%(int)WORLD_HEIGHT);
+		rts_ptr = std::make_shared<rts_unit>(
+			position2,
+			velocity,
+			3.0f,  // Radius
+			WORLD_WIDTH,
+			WORLD_HEIGHT,
+			X_TILES,
+			Y_TILES,
+			1, // team
+			1, // health
+			0.05f,  // Acceleration
+			0.5f,  // Travel speed
+			map_level
+		);
 		map_level.add(rts_ptr);
 	}
 

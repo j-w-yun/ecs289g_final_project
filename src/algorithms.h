@@ -13,6 +13,92 @@ bool in(T1 elem, T2 cont) {
 	return find(cont.begin(), cont.end(), elem) != cont.end();
 }
 
+inline void swap_p(std::pair<int, int>& p){
+	auto t = p.first;
+	p.first = p.second;
+	p.second = t;
+}
+
+void negateally(std::vector<std::pair<int, int>>& v){
+    for(auto& a : v){
+        a.second = -a.second;
+    }
+}
+
+void swapall(std::vector<std::pair<int, int>>& v){
+    for(auto& a : v){
+        swap_p(a);
+    }
+}
+
+std::vector<std::pair<int, int>> bresenham(std::pair<int, int> p1, std::pair<int, int> p2){
+    double m;
+    bool swap = 0;
+    bool negatey = 0;
+    std::vector<std::pair<int, int>> retval;
+
+    if(p1.first == p2.first){
+        if(p1.second == p2.second){
+            return { p1 };
+        }
+
+        swap = 1;
+        swap_p(p1);
+        swap_p(p2);
+    }
+
+    m = ((double)p2.second - p1.second)/((double)p2.first - p1.first);
+
+    // will not collide with previous condition
+    if(abs(m) > 1){
+        swap = 1;
+        swap_p(p1);
+        swap_p(p2);
+        // recalculate slope
+        m = ((double)p2.second - p1.second)/((double)p2.first - p1.first);
+    }
+
+    if(m < 0){
+        negatey = 1;
+        p1.second = -p1.second;
+        p2.second = -p2.second;
+        m = -m;
+    }
+
+    if(p2.first < p1.first){
+        auto t = p1;
+        p1 = p2;
+        p2 = t;
+    }
+
+    // alg
+    int dx = p2.first - p1.first;
+    int dy = p2.second - p1.second;
+    int P = 2*dy - dx;
+    int y = p1.second;
+
+    for(int i = p1.first; i <= p2.first; i++){
+        retval.push_back(std::pair<int, int>(i, y));
+        if(P > 0){
+            y++;
+            P -= 2*dx;
+        }
+        P += 2*dy;
+    }
+
+    // negate y
+    if(negatey){
+        negateally(retval);
+    }
+
+    // swap
+    if(swap){
+        swapall(retval);
+    }
+
+    return retval;
+}
+
 struct astar_node {
 	ip pos;
 	ip prev;

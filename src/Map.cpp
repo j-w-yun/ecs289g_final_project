@@ -23,8 +23,20 @@ const float MIN_DENSITY = 0.05;
 const float MAX_DENSITY = 0.25;
 const int update_groups = 100;
 
+template<class T>
+void remove(std::vector<T>& vec, T val) {
+	for (size_t i = 0; i < vec.size(); i++) {
+		if (vec[i] == val) {
+			vec.erase(vec.begin() + i);
+			return;
+		}
+	}
+}
+
 MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), tiles_y(ty), tile_width(tw), tile_height(th), unitcap(uc) {
 	class_string = MapLevel::static_class();
+
+
 
 	// const int MIN_L = tx<ty ? tx : ty;
 	// const int MAX_L = tx>=ty ? tx : ty;
@@ -36,6 +48,8 @@ MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), 
 		max_octave = 3;
 	// std::cout << "min_octave: " << min_octave << " max_octave: " << max_octave << std::endl;
 
+	// === unit stuff ===
+
 	// init stack
 	for (size_t i = 0; i < uc; i++) {
 		idstack.push_back(i);
@@ -44,18 +58,34 @@ MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), 
 	// init objects
 	units = std::vector<std::shared_ptr<GameObject>>(unitcap);
 
-	// init unitgrid
-	unitgrid = std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y));
+	// init unitgrid (4d)
+	for(int i = 0; i < teams; i++){
+		unitgrid.push_back(std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y)));
+	}
+	
 
 	// init obgrid
 	obgrid = std::vector<std::vector<bool>>(tx, std::vector<bool>(ty, 0));
 
-	// Generate texture
+	// === projectile stuff ===
+	projcap = 2*unitcap;
+
+	// init proj stack
+	for (size_t i = 0; i < projcap; i++) {
+		pstack.push_back(i);
+	}
+
+	// init projectiles
+	projectiles = std::vector<std::shared_ptr<projectile>>(projcap);
+
+	// === Generate texture ===
 	generate_texture();
 }
 
 bool MapLevel::add(std::shared_ptr<GameObject> o) {
-	if (!idstack.size()) return false;
+	if(o->team < 0 || o-> team >= teams) return false;
+
+	if(!idstack.size()) return false;
 
 	auto id = idstack.back();
 	idstack.pop_back();
@@ -63,12 +93,60 @@ bool MapLevel::add(std::shared_ptr<GameObject> o) {
 	units[id] = o;
 	auto tile = o->get_tile();
 
-	unitgrid[tile.first][tile.second].push_back(id);
+	// 4d
+	unitgrid[o->team][tile.first][tile.second].push_back(id);
 	o->id = id;
 
-	std::cout << "Adding unit " << id << std::endl;
+	//std::cout << "Adding unit " << id << std::endl;
 
 	return true;
+}
+
+bool MapLevel::add_proj(std::shared_ptr<projectile> o){
+	if(!pstack.size()) return false;
+
+	auto id = pstack.back();
+	pstack.pop_back();
+
+	projectiles[id] = o;
+	o->id = id;
+
+	return true;
+}
+
+void MapLevel::kill(int id){
+	if(id < 0 || id >= (int)unitcap)
+		return;
+
+	auto unit = units[id];
+
+	if(!unit)
+		return;
+
+	// remove from grid
+	auto tile = unit->get_tile();
+
+	// 4d
+	auto& vec = unitgrid[units[id]->team][tile.first][tile.second];
+	remove(vec, (size_t)id);
+
+	// buffer id
+	idbuffer.push_back(id);
+
+	// clear space
+	units[id].reset();
+}
+
+void MapLevel::kill_proj(int id){
+	if(id < 0 || id >= (int)projcap)
+		return;
+
+	if(!projectiles[id])
+		return;
+
+	projectiles[id].reset();
+
+	pstack.push_back(id);
 }
 
 void MapLevel::set_size(int x, int y, int w, int h) {
@@ -85,11 +163,22 @@ void MapLevel::set_size(int x, int y, int w, int h) {
 	// init objects
 	units = std::vector<std::shared_ptr<GameObject>>(unitcap);
 
-	// init unitgrid
-	unitgrid = std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y));
+	// init unitgrid (4d)
+	for(int i = 0; i < teams; i++){
+		unitgrid.push_back(std::vector<std::vector<std::vector<size_t>>>(tiles_x, std::vector<std::vector<size_t>>(tiles_y)));
+	}
 
 	// init obgrid
 	obgrid = std::vector<std::vector<bool>>(tiles_x, std::vector<bool>(tiles_y, 0));
+
+	// init proj stack
+	pstack = {};
+	for (size_t i = 0; i < projcap; i++) {
+		pstack.push_back(i);
+	}
+
+	// init projectiles
+	projectiles = std::vector<std::shared_ptr<projectile>>(projcap);
 }
 
 void MapLevel::set_obstructions(std::vector<std::pair<int, int>> o) {
@@ -793,66 +882,63 @@ void MapLevel::render(SDL_Renderer* renderer) {
 	for (auto unit : units)
 		if (unit.get())
 			unit->render(renderer);
-}
 
-template<class T>
-void remove(std::vector<T>& vec, T val) {
-	for (size_t i = 0; i < vec.size(); i++) {
-		if (vec[i] == val) {
-			vec.erase(vec.begin() + i);
-			return;
-		}
-	}
+	// draw projectiles
+	for (auto p : projectiles)
+		if (p.get())
+			p->render(renderer);
 }
 
 void MapLevel::update(float elapsed_time) {
-	//static int ctr = 0;
+	// Make buffered ids available for use
+	for(int i = 0; i < (int)idbuffer.size(); i++){
+		idstack.push_back(idbuffer.back());
+		idbuffer.pop_back();
+	}
 
-	/*if(Input::is_mouse_pressed(SDL_BUTTON_RIGHT)){
-		auto temp = Input::get_mouse_pos();
-		auto path = find_rect_path(Vector2f(10, 10), Vector2f(temp.first, temp.second));
-
-		std::cout << "path from 10, 10 to " << temp.first << ", " << temp.second << ": " << std::endl;
-		for(auto& a : path){
-			std::cout << "\t" << a << std::endl;
-		}
-	}*/
+	//if(!(rand() % 100)){
+	//	std::cout << "Adding projectile" << std::endl;
+	//	add_proj(std::make_shared<projectile>(Vector2f(100, 100), Vector2f(10, 0), 2, 200, 0, 1, *this));
+	//}
 
 	static int ctr = 0;
 	ctr = (ctr+1)%update_groups;
 
+	bool alive;
+
+	// update projectiles
+	for(auto& p : projectiles){
+		if(!p)
+			continue;
+
+		alive = p->update();
+
+		if(!alive){
+			kill_proj(p->id);
+		}
+	}
+
+	// update units
 	for (int i = 0; i < (int)units.size(); i++) {
 		auto& unit = units[i];
 		if (unit.get()) {
 			// FIXME CANNOT BE PARALLELIZED
 			auto tile = unit->get_tile();
-			unit->update(elapsed_time, i % update_groups == ctr);
+			alive = unit->update(elapsed_time, i % update_groups == ctr);
 			auto ntile = unit->get_tile();
 
-			//std::cout << "pos " << unit->p() << std::endl;
-			//std::cout << "ntile " << ntile.first << ", " << ntile.second << std::endl;
-
 			if (ntile != tile) {
-				auto& vec = unitgrid[tile.first][tile.second];
+				// make sure in team appropriate datastructure
+				auto& ug = unitgrid[unit->team];
+				auto& vec = ug[tile.first][tile.second];
 				remove(vec, unit->id);
-				unitgrid[ntile.first][ntile.second].push_back(unit->id);
+				ug[ntile.first][ntile.second].push_back(unit->id);
 			}
-		}
 
-		/*if(!ctr){
-			for(int i = 0; i < (int)unitgrid.size(); i++){
-				for(int j = 0; j < (int)unitgrid[0].size(); j++){
-					if(unitgrid[i][j].size()){
-						std::cout << i << ", " << j << ": ";
-						for(auto& a : unitgrid[i][j]){
-							std::cout << a << " ";
-						}
-						std::cout << std::endl;
-					}
-				}
+			if(!alive){
+				kill(unit->id);
 			}
 		}
-		ctr = (ctr + 1)%100;*/
 	}
 }
 

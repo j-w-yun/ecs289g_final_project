@@ -14,6 +14,7 @@
 #include "Vector2f.cpp"
 #include "AStar.hpp"
 #include "algorithms.h"
+#include "projectile.h"
 
 struct rect{
 	int xl, yl, xh, yh;
@@ -61,18 +62,27 @@ class MapLevel: public GameObject {
 		std::vector<std::vector<bool>> obgrid;
 		std::vector<std::shared_ptr<GameObject>> units;
 		std::vector<size_t> idstack;
-		std::vector<std::vector<std::vector<size_t>>> unitgrid;
+		std::vector<size_t> idbuffer;
+		std::vector<std::vector<std::vector<std::vector<size_t>>>> unitgrid;
 		size_t unitcap;
 		std::vector<rect> rectcover;
 		std::vector<rect> pathcover;
 		std::vector<std::vector<int>> grid_to_rectcover;
 		std::vector<std::vector<size_t>> rectgraph;
 		bool climb(std::vector<std::pair<int, int>>* obs, double noise[], float threshold, std::vector<std::pair<int, int>> bases, int padding);
+		std::vector<std::shared_ptr<projectile>> projectiles;
+		std::vector<size_t> pstack;
+		size_t projcap;
+
+		int teams = 2;
 
 	public:
 		MapLevel() = default;
 		MapLevel(int tx, int ty, float tw, float th, size_t uc = 200);
 		bool add(std::shared_ptr<GameObject> o);
+		bool add_proj(std::shared_ptr<projectile> o);
+		void kill(int id);
+		void kill_proj(int id);
 		void set_size(int x, int y, int w, int h);
 		void set_obstructions(std::vector<std::pair<int, int>> o);
 		void set(int x, int y, int w, int h, std::vector<std::pair<int, int>> o);
@@ -84,10 +94,11 @@ class MapLevel: public GameObject {
 		int get_tile_height() {return tile_height;};
 		const std::vector<ip>& get_obstructions() {return obstructions;};
 		const std::vector<std::vector<bool>>& get_obgrid() {return obgrid;};
-		const std::vector<std::vector<std::vector<size_t>>>& get_unitgrid() {return unitgrid;};
+		const std::vector<std::vector<std::vector<std::vector<size_t>>>>& get_unitgrid() {return unitgrid;};
 		const std::vector<std::shared_ptr<GameObject>>& get_units() {return units;}
 		std::vector<std::shared_ptr<GameObject>>& get_objects();
 		size_t get_unitcap() {return unitcap;}
+		int get_teams() {return teams;}
 		void generate_texture();
 		void render_texture(SDL_Renderer* renderer);
 		void render(SDL_Renderer* renderer);

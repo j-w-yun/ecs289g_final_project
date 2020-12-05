@@ -21,41 +21,57 @@ struct rts_unit : GameObject {
 	int layers = 1;
 	int side = layers*2 + 1;
 	int size = side * side - 1;
+	int target = -1;
 
-	rts_unit(Vector2f p, Vector2f v, float r, int w, int h, int xt, int yt, float a, float ts, MapLevel& mp): GameObject(p, v, r, w, h, xt, yt), acc(a), topspeed(ts), map(mp) {}
+	// performance limits
+	int avoidance_limit = 10;
+	int target_limit = 10;
+
+	// shooting stuff
+	float range = 150;
+	int weapon_state = 0;
+	int weapon_cap = 200;
+	float weapon_speed = 5;
+	int weapon_life = (int)(range/weapon_speed) + 3;
+	int damage = 1;
+
+
+	rts_unit(Vector2f p, Vector2f v, float r, int w, int h, int xt, int yt, int t, int hlt, float a, float ts, MapLevel& mp): GameObject(p, v, r, w, h, xt, yt, t, hlt), acc(a), topspeed(ts), map(mp) {}
 
 	virtual void render(SDL_Renderer* renderer){
 		// int padding = 4;
-		if(selected == 1){
-			// SDL_Rect box = {(int)(p().x() - r()) - padding, (int)(p().y() - r()) - padding, (int)(2 * r()) + 2*padding, (int)(2 * r()) + 2*padding};
-			Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f((int)(p().x() - r()), (int)(p().y() - r())));
-			Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((int)(p().x() + r()), (int)(p().y() + r())));
-			SDL_Rect box = {
-				(int)(sp1.x()),
-				(int)(sp1.y()),
-				(int)(sp2.x()-sp1.x()),
-				(int)(sp2.y()-sp1.y())
-			};
+		// SDL_Rect box = {(int)(p().x() - r()) - padding, (int)(p().y() - r()) - padding, (int)(2 * r()) + 2*padding, (int)(2 * r()) + 2*padding};
+		Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f((int)(p().x() - r()), (int)(p().y() - r())));
+		Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f((int)(p().x() + r()), (int)(p().y() + r())));
+		SDL_Rect box = {
+			(int)(sp1.x()),
+			(int)(sp1.y()),
+			(int)(sp2.x()-sp1.x()),
+			(int)(sp2.y()-sp1.y())
+		};
 #ifdef USE_SDL2_RENDERER
-			// Fill
-			SDL_SetRenderDrawColor(renderer, 91, 192, 222, 255);
-			SDL_RenderFillRect(renderer, &box);
-			// Outline
+		// Fill
+		SDL_SetRenderDrawColor(renderer, 255*(team==1), 255*(team==2), 255*(team==0), 255);
+		SDL_RenderFillRect(renderer, &box);
+		// Outline
+		if(selected){
 			SDL_SetRenderDrawColor(renderer, 2, 117, 216, 255);
 			SDL_RenderDrawRect(renderer, &box);
+		}
 
-			if(path.size()){
+		// path lines
+		/*if(path.size()){
+			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+			Vector2f p1 = RenderingEngine::world_to_screen(p());
+			Vector2f p2 = RenderingEngine::world_to_screen(path.back());
+			SDL_RenderDrawLine(renderer, p1.x(), p1.y(), p2.x(), p2.y());
+			for(size_t i = path.size() - 1; i; i--){
 				SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-				Vector2f p1 = RenderingEngine::world_to_screen(p());
-				Vector2f p2 = RenderingEngine::world_to_screen(path.back());
+				Vector2f p1 = RenderingEngine::world_to_screen(path[i]);
+				Vector2f p2 = RenderingEngine::world_to_screen(path[i - 1]);
 				SDL_RenderDrawLine(renderer, p1.x(), p1.y(), p2.x(), p2.y());
-				for(size_t i = path.size() - 1; i; i--){
-					SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-					Vector2f p1 = RenderingEngine::world_to_screen(path[i]);
-					Vector2f p2 = RenderingEngine::world_to_screen(path[i - 1]);
-					SDL_RenderDrawLine(renderer, p1.x(), p1.y(), p2.x(), p2.y());
-				}
 			}
+		}*/
 #else
 			RenderingEngine::ogl_set_color(91, 192, 222, 255);
 			RenderingEngine::ogl_fill_rect(box);
@@ -80,7 +96,6 @@ struct rts_unit : GameObject {
 				RenderingEngine::ogl_send_lines_to_draw();
 			}
 #endif
-		}
 	}
 
 	virtual void update_path(){
@@ -163,6 +178,8 @@ struct rts_unit : GameObject {
 
 		auto pr = to_tile_space(p());
 
+		int checked = 0;
+
 		for(int i = 0; i < size; i++){
 			x = pr.first + i/side - layers;
 			y = pr.second + i%side - layers;
@@ -177,26 +194,37 @@ struct rts_unit : GameObject {
 					retval += 40.0f*d.unit()/(d.len2());
 				}
 				// units
-				else{
-					for(auto uind : map.get_unitgrid()[x][y]){
-						if(uind == id) continue;
+				else if(checked < avoidance_limit){
+					for(int t = 0; t < map.get_teams(); t++){
+						for(auto uind : map.get_unitgrid()[t][x][y]){
+							if(uind == id) continue;
 
-						d = p() - map.get_units()[uind]->p();
-						//auto l = d.len();
-						retval += 20.0f*d.unit()/(std::max(d.len2(), .001f));
+							d = p() - map.get_units()[uind]->p();
+							//auto l = d.len();
+							retval += 10.0f*d.unit()/(std::max(d.len2(), .001f));
+
+							checked++;
+							//if(checked >= avoidance_limit){
+							//	goto escape_avoid_obstacles;
+							//}
+						}
 					}
 				}
 			}
 		}
 
+		//escape_avoid_obstacles:
+
 		return retval;
 	}
 
-	virtual Vector2f avoid_units(){
+	/*virtual Vector2f avoid_units(){
 		Vector2f retval(0, 0);
 		Vector2f d;
 		//Vector2f l;
 		int x, y;
+
+		int checked = 0;
 
 		Vector2f vu = v().unit();
 		Vector2f pu = par_unit(v());
@@ -232,16 +260,115 @@ struct rts_unit : GameObject {
 					float turn = sign * fun/std::max(abs(d.x()), .001f);
 
 					retval = retval + slow*vu + turn*pu;
+
+					checked++;
+					if(checked >= avoidance_limit){
+						return retval;
+					}
 					//std::cout << "done" << std::endl;
 				}
 			}
 		}
 
 		return retval;
+	}*/
+
+	void find_target(){
+		//std::cout << std::endl << std::endl << "Find target" << std::endl;
+
+		if(target != -1 && map.get_units()[target] && (map.get_units()[target]->p() - p()).len() < range){
+			//std::cout << "Retaining target" << std::endl;
+			return;
+		}
+
+		int tiles = (int)(range/std::min(xtwidth, ytwidth));
+		int sd = tiles*2 + 1;
+		auto pr = to_tile_space(p());
+
+		std::vector<int> targets;
+		std::vector<float> distances;
+
+		//std::cout << "Center is " << pr.first << ", " << pr.second << std::endl;
+
+		int checked = 0;
+
+		for(int i = 0; i < sd*sd; i++){
+			int x = pr.first + i/sd - tiles;
+			int y = pr.second + i%sd - tiles;
+
+			//std::cout << "Checking block " << x << ", " << y << std::endl;
+
+			if(!inbounds(x, y))
+				continue;
+
+			//std::cout << "In bounds" << std::endl;
+
+			//std::cout << "Units here: " << map.get_unitgrid()[x][y].size() << std::endl;
+
+			for(int t = 0; t < map.get_teams(); t++){
+				if(t == team) continue;
+
+				for(auto& id : map.get_unitgrid()[t][x][y]){
+					auto& unit = map.get_units()[id];
+					if(unit->team != team){
+						auto d = (unit->p() - p()).len();
+						if(d > range)
+							continue;
+
+						targets.push_back(id);
+						distances.push_back((unit->p() - p()).len());
+
+						checked++;
+						if(checked >= target_limit){
+							goto escape;
+						}
+					}
+				}
+			}
+		}
+
+		escape: 
+		(void)distances;
+
+		if(!targets.size()){
+			target = -1;
+			//std::cout << "No targets" << std::endl;
+			return;
+		}
+
+		target = targets[rand()%targets.size()];
+		//std::cout << "Target is " << target << std::endl;
 	}
 
-	virtual void update(float elapsed_time, bool calc){
+	virtual bool update(float elapsed_time, bool calc){
 		//std::cout << "unit pos before " << p() << std::endl;
+
+		// check for death
+		if(health <= 0){
+			return false;
+		}
+
+		// load weapon
+		if(weapon_state < weapon_cap){
+			weapon_state++;
+		}
+
+		// verify target is still alive
+		if(target != -1 && !map.get_units()[target]){
+			target = -1;
+		}
+
+		// shoot at target
+		if(weapon_state == weapon_cap && target != -1){
+			auto& unit = map.get_units()[target];
+			auto dv = unit->p() - p();
+			auto d = dv.len();
+		
+			if(d < range){
+				map.add_proj(std::make_shared<projectile>(p(), (dv/d)*weapon_speed, 2, weapon_life, team, 1, map));
+				weapon_state = 0;
+			}
+		}
 
 		auto temp = p() + v();
 
@@ -277,13 +404,14 @@ struct rts_unit : GameObject {
 		
 		//std::cout << "unit pos after " << p() << std::endl;
 
-		if(Input::is_mouse_pressed(SDL_BUTTON_RIGHT)){
+		if(selected && Input::is_mouse_pressed(SDL_BUTTON_RIGHT)){
 			auto temp = Input::get_mouse_pos();
 			dest = RenderingEngine::screen_to_world(Vector2f(temp.first, temp.second));
 		}
 
 		if(calc){
 			update_path();
+			find_target();
 		}
 
 		auto deliberate = traverse_path()*acc;
@@ -295,6 +423,11 @@ struct rts_unit : GameObject {
 		//std::cout << "group is " << group << std::endl;
 		//Vector2f avoidance(0, 0);
 		auto dv = deliberate+avoidance;
+
+		if(dv.len() > acc){
+			//std::cout << "In if" << std::endl;
+			dv = (dv/dv.len())*acc;
+		}
 
 		//std::cout << "dv is " << dv << std::endl;
 		//std::cout << "v is " << v() << std::endl;
@@ -308,5 +441,7 @@ struct rts_unit : GameObject {
 		//std::cout << "nv is " << nv << std::endl;
 
 		set_v(nv);
+
+		return true;
 	}
 };
