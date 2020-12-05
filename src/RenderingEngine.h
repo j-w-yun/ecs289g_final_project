@@ -211,8 +211,23 @@ namespace RenderingEngine {
 			"}"
 		};
 
+		const GLchar* vertexShaderWithTextureSource[] =
+		{
+			"#version 150\n"
+			"in vec4 in_Position; "
+			"in vec4 in_Color; "
+			"in vec4 in_UV; "
+			"out vec4 ex_Color; "
+			"out vec4 ex_UV; "
+			"void main() {"
+			"	gl_Position = vec4( in_Position.x, in_Position.y, 0, 1 );"
+			"	ex_Color = in_Color;"
+			"	ex_UV = in_UV;"
+			"}"
+		};
+
 		//Set vertex source
-		glShaderSource(vertexShader, 1, vertexShaderSource, NULL);
+		glShaderSource(vertexShader, 1, withTexture ? vertexShaderWithTextureSource : vertexShaderSource, NULL);
 
 		//Compile vertex source
 		glCompileShader(vertexShader);
@@ -234,6 +249,16 @@ namespace RenderingEngine {
 
 		//Get fragment source, TODO: reference a texture object later
 		const GLchar* fragmentShaderSource[] =
+		{
+			"#version 150\n"
+			"out vec4 LFragment;"
+			"in vec4 ex_Color; "
+			"void main() {"
+			"	LFragment = ex_Color;"
+			"}"
+		};
+
+		const GLchar* fragmentShaderWithTextureSource[] =
 		{
 			"#version 150\n"
 			"out vec4 LFragment;"

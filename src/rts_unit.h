@@ -73,15 +73,18 @@ struct rts_unit : GameObject {
 			}
 		}*/
 #else
-			RenderingEngine::ogl_set_color(91, 192, 222, 255);
+			RenderingEngine::ogl_set_color(255 * (team == 1), 255 * (team == 2), 255 * (team == 0), 255);
 			RenderingEngine::ogl_fill_rect(box);
 			RenderingEngine::ogl_send_rects_to_draw();
-			RenderingEngine::ogl_set_color(2, 117, 216, 255);
-			RenderingEngine::ogl_draw_line(sp1.x(), sp1.y(), sp2.x(), sp1.y());
-			RenderingEngine::ogl_draw_line(sp1.x(), sp1.y(), sp1.x(), sp2.y());
-			RenderingEngine::ogl_draw_line(sp2.x(), sp1.y(), sp2.x(), sp2.y());
-			RenderingEngine::ogl_draw_line(sp1.x(), sp2.y(), sp2.x(), sp2.y());
-			if (path.size()) {
+			// Outline
+			if (selected) {
+				RenderingEngine::ogl_set_color(2, 117, 216, 255);
+				RenderingEngine::ogl_draw_line(sp1.x(), sp1.y(), sp2.x(), sp1.y());
+				RenderingEngine::ogl_draw_line(sp1.x(), sp1.y(), sp1.x(), sp2.y());
+				RenderingEngine::ogl_draw_line(sp2.x(), sp1.y(), sp2.x(), sp2.y());
+				RenderingEngine::ogl_draw_line(sp1.x(), sp2.y(), sp2.x(), sp2.y());
+			}
+			/*if (path.size()) {
 				RenderingEngine::ogl_set_color(255, 0, 0, 255);
 				Vector2f p1 = RenderingEngine::world_to_screen(p());
 				Vector2f p2 = RenderingEngine::world_to_screen(path.back());
@@ -94,7 +97,7 @@ struct rts_unit : GameObject {
 				}
 
 				RenderingEngine::ogl_send_lines_to_draw();
-			}
+			}*/
 #endif
 	}
 
