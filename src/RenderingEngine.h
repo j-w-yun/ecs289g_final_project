@@ -362,6 +362,8 @@ namespace RenderingEngine {
 			glEnableVertexAttribArray(1);
 			glUseProgram(gGeneric2DShaderProgramID[0]);
 
+			glEnable(GL_BLEND);
+
 			glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
@@ -438,6 +440,7 @@ namespace RenderingEngine {
 			glEnableVertexAttribArray(1);
 			glUseProgram(gGeneric2DShaderProgramID[0]);
 
+			glEnable(GL_BLEND);
 			glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
