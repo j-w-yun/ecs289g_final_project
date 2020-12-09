@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utility>
+#include <fstream>
 
 #include "Stat.h"
 #include "Stat.cpp"
@@ -188,46 +189,42 @@ namespace RenderingEngine {
 	World gWorld;
 
 #ifndef USE_SDL2_RENDERER
-	GLuint gGeneric2DShaderProgramID[2] = { 0, 0 };
+	enum ShaderProgramType {
+		Generic2D = 0,
+		Generic2D_ProcTex,
+		Total
+	};
+	GLuint gShaderProgramIDs[ShaderProgramType::Total] = { 0, 0 };
+	ShaderProgramType gCurrentType;
+
+	std::string read_shader_file(const GLchar* filename)
+	{
+		std::ifstream t(filename);
+		t.seekg(0, std::ios::end);
+		size_t size = t.tellg();
+		std::string buffer(size, ' ');
+		t.seekg(0);
+		t.read(&buffer[0], size);
+		return buffer;
+	}
 
 	// OpenGL shaders
-	int ogl_prepare_generic_2d_shaders(int withTexture) {
+	int ogl_prepare_generic_2d_shaders(int shader_type) {
 		//Generate program
-		gGeneric2DShaderProgramID[withTexture] = glCreateProgram();
+		gShaderProgramIDs[shader_type] = glCreateProgram();
 
 		//Create vertex shader
 		GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
 		//Get vertex source. TODO: We should provide vertex stream during rendering.
-		const GLchar* vertexShaderSource[] =
-		{
-			"#version 150\n"
-			"in vec4 in_Position; "
-			"in vec4 in_Color; "
-			"out vec4 ex_Color; "
-			"void main() {"
-			"	gl_Position = vec4( in_Position.x, in_Position.y, 0, 1 );"
-			"	ex_Color = in_Color;"
-			"}"
-		};
+		const GLchar* vertexShaderSource[ShaderProgramType::Total];
+		vertexShaderSource[Generic2D] = vertexShaderSource[Generic2D_ProcTex] = "./res/shaders/generic2d.vs";
 
-		const GLchar* vertexShaderWithTextureSource[] =
-		{
-			"#version 150\n"
-			"in vec4 in_Position; "
-			"in vec4 in_Color; "
-			"in vec4 in_UV; "
-			"out vec4 ex_Color; "
-			"out vec4 ex_UV; "
-			"void main() {"
-			"	gl_Position = vec4( in_Position.x, in_Position.y, 0, 1 );"
-			"	ex_Color = in_Color;"
-			"	ex_UV = in_UV;"
-			"}"
-		};
+		std::string shader_content = read_shader_file(vertexShaderSource[shader_type]);
+		const GLchar* shader_content_c_str = shader_content.c_str();
 
 		//Set vertex source
-		glShaderSource(vertexShader, 1, withTexture ? vertexShaderWithTextureSource : vertexShaderSource, NULL);
+		glShaderSource(vertexShader, 1, &shader_content_c_str, NULL);
 
 		//Compile vertex source
 		glCompileShader(vertexShader);
@@ -242,34 +239,20 @@ namespace RenderingEngine {
 		}
 
 		//Attach vertex shader to program
-		glAttachShader(gGeneric2DShaderProgramID[withTexture], vertexShader);
+		glAttachShader(gShaderProgramIDs[shader_type], vertexShader);
 
 		//Create fragment shader
 		GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
 		//Get fragment source, TODO: reference a texture object later
-		const GLchar* fragmentShaderSource[] =
-		{
-			"#version 150\n"
-			"out vec4 LFragment;"
-			"in vec4 ex_Color; "
-			"void main() {"
-			"	LFragment = ex_Color;"
-			"}"
-		};
+		const GLchar* fragmentShaderSource[ShaderProgramType::Total];
+		fragmentShaderSource[Generic2D] = fragmentShaderSource[Generic2D_ProcTex] = "./res/shaders/generic2d.ps";
 
-		const GLchar* fragmentShaderWithTextureSource[] =
-		{
-			"#version 150\n"
-			"out vec4 LFragment;"
-			"in vec4 ex_Color; "
-			"void main() {"
-			"	LFragment = ex_Color;"
-			"}"
-		};
+		shader_content = read_shader_file(fragmentShaderSource[shader_type]);
+		shader_content_c_str = shader_content.c_str();
 
 		//Set fragment source
-		glShaderSource(fragmentShader, 1, fragmentShaderSource, NULL);
+		glShaderSource(fragmentShader, 1, &shader_content_c_str, NULL);
 
 		//Compile fragment source
 		glCompileShader(fragmentShader);
@@ -284,22 +267,30 @@ namespace RenderingEngine {
 		}
 
 		//Attach fragment shader to program
-		glAttachShader(gGeneric2DShaderProgramID[withTexture], fragmentShader);
+		glAttachShader(gShaderProgramIDs[shader_type], fragmentShader);
 
-		glBindAttribLocation(gGeneric2DShaderProgramID[withTexture], 0, "in_Position");
-		glBindAttribLocation(gGeneric2DShaderProgramID[withTexture], 1, "in_Color");
+		glBindAttribLocation(gShaderProgramIDs[shader_type], 0, "in_Position");
+		glBindAttribLocation(gShaderProgramIDs[shader_type], 1, "in_Color");
 
 		//Link program
-		glLinkProgram(gGeneric2DShaderProgramID[withTexture]);
+		glLinkProgram(gShaderProgramIDs[shader_type]);
 
 		//Check for errors
 		GLint programSuccess = GL_TRUE;
-		glGetProgramiv(gGeneric2DShaderProgramID[withTexture], GL_LINK_STATUS, &programSuccess);
+		glGetProgramiv(gShaderProgramIDs[shader_type], GL_LINK_STATUS, &programSuccess);
 		if (programSuccess != GL_TRUE)
 		{
-			printf("Error linking program %d!\n", gGeneric2DShaderProgramID[withTexture]);
+			printf("Error linking program %d!\n", gShaderProgramIDs[shader_type]);
 			return -3;
 		}
+	}
+
+	void set_shader(int type) {
+		gCurrentType = (ShaderProgramType)type;
+	}
+
+	GLuint get_current_shader() {
+		return gShaderProgramIDs[gCurrentType];
 	}
 
 	typedef struct _pure_color_vertex {
@@ -327,8 +318,8 @@ namespace RenderingEngine {
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_line);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(pure_color_vertex) * num_vertices, &lines[0], GL_DYNAMIC_DRAW);
 
-		GLint position_attribute = glGetAttribLocation(gGeneric2DShaderProgramID[0], "in_Position");
-		GLint color_attribute = glGetAttribLocation(gGeneric2DShaderProgramID[0], "in_Color");
+		GLint position_attribute = glGetAttribLocation(gShaderProgramIDs[ShaderProgramType::Generic2D], "in_Position");
+		GLint color_attribute = glGetAttribLocation(gShaderProgramIDs[ShaderProgramType::Generic2D], "in_Color");
 		glVertexAttribPointer(position_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(pure_color_vertex), (const void*)offsetof(pure_color_vertex, location));
 		glVertexAttribPointer(color_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(pure_color_vertex), (const void*)offsetof(pure_color_vertex, color));
 
@@ -360,7 +351,7 @@ namespace RenderingEngine {
 
 			glEnableVertexAttribArray(0);
 			glEnableVertexAttribArray(1);
-			glUseProgram(gGeneric2DShaderProgramID[0]);
+			glUseProgram(gShaderProgramIDs[0]);
 
 			glEnable(GL_BLEND);
 
@@ -417,8 +408,8 @@ namespace RenderingEngine {
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_rect);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(pure_color_vertex) * num_vertices, &rects[0], GL_DYNAMIC_DRAW);
 
-		GLint position_attribute = glGetAttribLocation(gGeneric2DShaderProgramID[0], "in_Position");
-		GLint color_attribute = glGetAttribLocation(gGeneric2DShaderProgramID[0], "in_Color");
+		GLint position_attribute = glGetAttribLocation(gShaderProgramIDs[ShaderProgramType::Generic2D], "in_Position");
+		GLint color_attribute = glGetAttribLocation(gShaderProgramIDs[ShaderProgramType::Generic2D], "in_Color");
 		glVertexAttribPointer(position_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(pure_color_vertex), (const void*)offsetof(pure_color_vertex, location));
 		glVertexAttribPointer(color_attribute, 4, GL_FLOAT, GL_FALSE, sizeof(pure_color_vertex), (const void*)offsetof(pure_color_vertex, color));
 
@@ -438,7 +429,7 @@ namespace RenderingEngine {
 
 			glEnableVertexAttribArray(0);
 			glEnableVertexAttribArray(1);
-			glUseProgram(gGeneric2DShaderProgramID[0]);
+			glUseProgram(gShaderProgramIDs[0]);
 
 			glEnable(GL_BLEND);
 			glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
