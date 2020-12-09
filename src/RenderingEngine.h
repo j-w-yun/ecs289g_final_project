@@ -197,6 +197,32 @@ namespace RenderingEngine {
 	GLuint gShaderProgramIDs[ShaderProgramType::Total] = { 0, 0 };
 	ShaderProgramType gCurrentType;
 
+	struct GlobalBuffer {
+		float ScreenSize[4];
+		float time;
+	};
+	GlobalBuffer* gUniformBuffer;
+	int gUniformBufferSize; 
+	
+	GLuint gUboBlockIndex;
+	GLuint gPerlinNoiseUboHandle;
+
+	void update_uniform_buffer() {
+		gUniformBuffer->ScreenSize[0] = width;
+		gUniformBuffer->ScreenSize[1] = height;
+		gUniformBuffer->ScreenSize[2] = 1.0f / width;
+		gUniformBuffer->ScreenSize[3] = 1.0f / height;
+		gUniformBuffer->time = SDL_GetTicks() / 1000.0f;
+
+		glBindBuffer(GL_UNIFORM_BUFFER, gPerlinNoiseUboHandle);
+		// get pointer
+		void* ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+		// now copy data into memory
+		memcpy(ptr, gUniformBuffer, gUniformBufferSize);
+		// make sure to tell OpenGL we're done with the pointer
+		glUnmapBuffer(GL_UNIFORM_BUFFER);
+	}
+
 	std::string read_shader_file(const GLchar* filename)
 	{
 		std::ifstream t(filename);
@@ -264,6 +290,12 @@ namespace RenderingEngine {
 		if (fShaderCompiled != GL_TRUE)
 		{
 			printf("Unable to compile fragment shader %d!\n", fragmentShader);
+			GLint log_length;
+			glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &log_length);
+			std::vector<char> v(log_length);
+			glGetShaderInfoLog(fragmentShader, log_length, NULL, v.data());
+			std::string s(begin(v), end(v));
+			printf("%s\n", s.c_str());
 			return -2;
 		}
 
@@ -288,12 +320,17 @@ namespace RenderingEngine {
 		//Additional processing
 		if (shader_type == ShaderProgramType::Generic2D_PerlinNoise)
 		{
-			GLuint blockIndex = glGetUniformBlockIndex(gShaderProgramIDs[shader_type], "in_GlobalBuffer");
-			GLint blockSize;
+			gUboBlockIndex = glGetUniformBlockIndex(gShaderProgramIDs[shader_type], "in_GlobalBuffer");
 
-			glGetActiveUniformBlockiv(gShaderProgramIDs[shader_type], blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+			glGetActiveUniformBlockiv(gShaderProgramIDs[shader_type], gUboBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &gUniformBufferSize);
 
-			GLubyte* blockBuffer = (GLubyte*)malloc(blockSize);
+			gUniformBuffer = (GlobalBuffer*)malloc(gUniformBufferSize);
+
+			//update_uniform_buffer();
+
+			glGenBuffers(1, &gPerlinNoiseUboHandle);
+			glBindBuffer(GL_UNIFORM_BUFFER, gPerlinNoiseUboHandle);
+			glBufferData(GL_UNIFORM_BUFFER, gUniformBufferSize, gUniformBuffer, GL_DYNAMIC_DRAW);
 		}
 	}
 
@@ -350,7 +387,7 @@ namespace RenderingEngine {
 		ogl_primitive_color[3] = a / 255.0f;
 	}
 
-	void ogl_send_lines_to_draw() {
+	void ogl_send_lines_to_draw(int shader_type = (int)ShaderProgramType::Generic2D) {
 		if (total_vertices > 0) {
 			glBindVertexArray(vao_line);
 			glBindBuffer(GL_ARRAY_BUFFER, vbo_line);
@@ -363,7 +400,7 @@ namespace RenderingEngine {
 
 			glEnableVertexAttribArray(0);
 			glEnableVertexAttribArray(1);
-			glUseProgram(gShaderProgramIDs[0]);
+			glUseProgram(gShaderProgramIDs[shader_type]);
 
 			glEnable(GL_BLEND);
 
@@ -428,7 +465,7 @@ namespace RenderingEngine {
 		total_rect_vertices = 0;
 	}
 
-	void ogl_send_rects_to_draw() {
+	void ogl_send_rects_to_draw(int shader_type = (int)ShaderProgramType::Generic2D_PerlinNoise) {
 		if (total_rect_vertices > 0) {
 			glBindVertexArray(vao_rect);
 			glBindBuffer(GL_ARRAY_BUFFER, vbo_rect);
@@ -441,7 +478,7 @@ namespace RenderingEngine {
 
 			glEnableVertexAttribArray(0);
 			glEnableVertexAttribArray(1);
-			glUseProgram(gShaderProgramIDs[0]);
+			glUseProgram(gShaderProgramIDs[shader_type]);
 
 			glEnable(GL_BLEND);
 			glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
@@ -581,6 +618,7 @@ namespace RenderingEngine {
 #else
 		glClearColor(16.0 / 255.0, 16.0 / 255.0, 16.0 / 255.0, 1);
 		glClear(GL_COLOR_BUFFER_BIT);
+		update_uniform_buffer();
 #endif
 	}
 
@@ -813,7 +851,8 @@ namespace RenderingEngine {
 		// Set blending
 		SDL_SetRenderDrawBlendMode(gRenderer, SDL_BLENDMODE_BLEND);
 #else
-		ogl_prepare_generic_2d_shaders(0);
+		ogl_prepare_generic_2d_shaders(ShaderProgramType::Generic2D);
+		ogl_prepare_generic_2d_shaders(ShaderProgramType::Generic2D_PerlinNoise);
 		ogl_reserve_line_objects(5000);
 		ogl_reserve_rect_objects(5000);
 #endif

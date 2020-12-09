@@ -3,7 +3,7 @@
 out vec4 LFragment;
 in vec4 ex_Color;
 
-uniform in_GlobalBuffer {
+layout(std140) uniform in_GlobalBuffer {
 	vec4 ScreenSize;	// w, h, 1/w, 1/h
 	float time;
 };
@@ -68,6 +68,6 @@ float perlin(vec2 p, float dim) {
 }
 
 void main() {
-	vec2 screenCoord = clamp(gl_fragCoord.xy * ScreenSize.zw, 0, 1);
-	LFragment = vec4(ex_Color.xyz * (0.9f + 0.2f * perlin(screenCoord, 1)), ex_Color.w);
+	vec2 screenCoord = clamp(gl_FragCoord.xy * ScreenSize.zw, 0, 1);
+	LFragment = vec4(ex_Color.xyz * (0.5f + 1.0f * perlin(screenCoord, 1)), ex_Color.w);
 }
