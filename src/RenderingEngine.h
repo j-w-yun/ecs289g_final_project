@@ -191,7 +191,7 @@ namespace RenderingEngine {
 #ifndef USE_SDL2_RENDERER
 	enum ShaderProgramType {
 		Generic2D = 0,
-		Generic2D_ProcTex,
+		Generic2D_PerlinNoise,
 		Total
 	};
 	GLuint gShaderProgramIDs[ShaderProgramType::Total] = { 0, 0 };
@@ -218,7 +218,7 @@ namespace RenderingEngine {
 
 		//Get vertex source. TODO: We should provide vertex stream during rendering.
 		const GLchar* vertexShaderSource[ShaderProgramType::Total];
-		vertexShaderSource[Generic2D] = vertexShaderSource[Generic2D_ProcTex] = "./res/shaders/generic2d.vs";
+		vertexShaderSource[Generic2D] = vertexShaderSource[Generic2D_PerlinNoise] = "./res/shaders/generic2d.vs";
 
 		std::string shader_content = read_shader_file(vertexShaderSource[shader_type]);
 		const GLchar* shader_content_c_str = shader_content.c_str();
@@ -246,7 +246,8 @@ namespace RenderingEngine {
 
 		//Get fragment source, TODO: reference a texture object later
 		const GLchar* fragmentShaderSource[ShaderProgramType::Total];
-		fragmentShaderSource[Generic2D] = fragmentShaderSource[Generic2D_ProcTex] = "./res/shaders/generic2d.ps";
+		fragmentShaderSource[Generic2D] = "./res/shaders/generic2d.ps";;
+		fragmentShaderSource[Generic2D_PerlinNoise] = "./res/shaders/generic2d_perlinnoise.ps";
 
 		shader_content = read_shader_file(fragmentShaderSource[shader_type]);
 		shader_content_c_str = shader_content.c_str();
@@ -282,6 +283,17 @@ namespace RenderingEngine {
 		{
 			printf("Error linking program %d!\n", gShaderProgramIDs[shader_type]);
 			return -3;
+		}
+
+		//Additional processing
+		if (shader_type == ShaderProgramType::Generic2D_PerlinNoise)
+		{
+			GLuint blockIndex = glGetUniformBlockIndex(gShaderProgramIDs[shader_type], "in_GlobalBuffer");
+			GLint blockSize;
+
+			glGetActiveUniformBlockiv(gShaderProgramIDs[shader_type], blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+
+			GLubyte* blockBuffer = (GLubyte*)malloc(blockSize);
 		}
 	}
 
