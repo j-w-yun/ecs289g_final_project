@@ -36,6 +36,7 @@
 #include "RenderingEngine.h"
 #include "projectile.h"
 #include "projectile.cpp"
+#include "land_factory.h"
 
 #include "algorithms.h"
 #include "rts_unit.h"
@@ -129,7 +130,7 @@ void run_test() {
 
 	// Worms
 	// map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 4, BASE_PADDING, 4, 10, 30, 1, 2);
-	map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 4, BASE_PADDING, 6, 10, 30, 1, 2);
+	map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 4, BASE_PADDING + 2, 6, 10, 30, 1, 2);
 	// map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 20, 5, 4, 30, 70, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 5, 4, 30, 70, 1, 2);
 	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 2, 1, 1, 5, 10, 0, 1);
@@ -148,6 +149,7 @@ void run_test() {
 	// Test RTS units
 	float WORLD_WIDTH = TILE_WIDTH*X_TILES;
 	float WORLD_HEIGHT = TILE_HEIGHT*Y_TILES;
+	// units
 	for(int i = 0; i < 250; i++){
 		auto position = Vector2f(bases.at(0).first * TILE_WIDTH, rand()%(int)WORLD_HEIGHT);
 		auto velocity = Vector2f(0, 0);
@@ -184,6 +186,38 @@ void run_test() {
 			map_level
 		);
 		map_level.add(rts_ptr);
+	}
+	// factories
+	for(int i = 0; i < 3; i++){
+		auto position = Vector2f(2 * TILE_WIDTH, rand()%(int)WORLD_HEIGHT);
+		auto factory_ptr = std::make_shared<land_factory>(
+			position,
+			25.0f,  // Radius
+			WORLD_WIDTH,
+			WORLD_HEIGHT,
+			X_TILES,
+			Y_TILES,
+			0, // team
+			15, // health
+			100, // spawn time
+			map_level
+		);
+		map_level.add(factory_ptr);
+
+		auto position2 = Vector2f(X_TILES*TILE_WIDTH - position.x(), rand()%(int)WORLD_HEIGHT);
+		factory_ptr = std::make_shared<land_factory>(
+			position2,
+			25.0f,  // Radius
+			WORLD_WIDTH,
+			WORLD_HEIGHT,
+			X_TILES,
+			Y_TILES,
+			1, // team
+			15, // health
+			100, // spawn time
+			map_level
+		);
+		map_level.add(factory_ptr);
 	}
 
 	// // Test ball
