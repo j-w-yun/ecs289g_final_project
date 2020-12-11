@@ -367,9 +367,9 @@ void render(float delta_time) {
 		RenderingEngine::ogl_fill_rect(box);
 #endif
 	}
-
+#ifndef USE_SDL2_RENDERER
 	RenderingEngine::ogl_send_rects_to_draw();
-
+#endif
 	// Update screen
 	RenderingEngine::show();
 }

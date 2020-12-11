@@ -805,8 +805,9 @@ void MapLevel::render(SDL_Renderer* renderer) {
 				RenderingEngine::fill_poly(ps);
 			}
 		}
-
+#ifndef USE_SDL2_RENDERER
 		RenderingEngine::ogl_send_lines_to_draw();
+#endif
 	}
 	// Clip map
 	Vector2f p1;

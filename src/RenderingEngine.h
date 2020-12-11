@@ -853,8 +853,8 @@ namespace RenderingEngine {
 #else
 		ogl_prepare_generic_2d_shaders(ShaderProgramType::Generic2D);
 		ogl_prepare_generic_2d_shaders(ShaderProgramType::Generic2D_PerlinNoise);
-		ogl_reserve_line_objects(5000);
-		ogl_reserve_rect_objects(5000);
+		ogl_reserve_line_objects(15000);
+		ogl_reserve_rect_objects(15000);
 #endif
 		// Opaque blank screen
 		clear();
