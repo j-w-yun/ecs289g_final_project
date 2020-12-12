@@ -35,6 +35,7 @@
 
 #include "algorithms.h"
 #include "rts_unit.h"
+#include "group.cpp"
 // #include "level.h"
 
 // Print stacktrace and exit gracefully
@@ -141,6 +142,9 @@ void run_test() {
 	// 	}
 	// }
 
+	// initialize managers
+	map_level.init_managers();
+
 	// Test RTS units
 	float WORLD_WIDTH = TILE_WIDTH*X_TILES;
 	float WORLD_HEIGHT = TILE_HEIGHT*Y_TILES;
@@ -162,7 +166,7 @@ void run_test() {
 			0.5f,  // Travel speed
 			map_level
 		);
-		rts_ptr->selected = 1;
+		//rts_ptr->selected = 1;
 		map_level.add(rts_ptr);
 
 		auto position2 = Vector2f(X_TILES*TILE_WIDTH - position.x(), rand()%(int)WORLD_HEIGHT);

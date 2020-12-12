@@ -35,6 +35,10 @@ struct rts_unit : GameObject {
 	int weapon_life = (int)(range/weapon_speed) + 3;
 	int damage = 1;
 
+	// group stuff
+	int current_group = -1; // -1 means idle
+	int role = -1;
+
 
 	rts_unit(Vector2f p, Vector2f v, float r, int w, int h, int xt, int yt, int t, int hlt, float a, float ts, MapLevel& mp): GameObject(p, v, r, w, h, xt, yt, t, hlt), acc(a), topspeed(ts), map(mp) {}
 
@@ -51,6 +55,9 @@ struct rts_unit : GameObject {
 		};
 		// Fill
 		SDL_SetRenderDrawColor(renderer, 255*(team==1), 255*(team==2), 255*(team==0), 255);
+		if(current_group != -1){
+			SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+		}
 		SDL_RenderFillRect(renderer, &box);
 		// Outline
 		if(selected){
@@ -176,9 +183,16 @@ struct rts_unit : GameObject {
 						for(auto uind : map.get_unitgrid()[t][x][y]){
 							if(uind == id) continue;
 
+							auto casted = std::dynamic_pointer_cast<rts_unit>(map.get_units()[uind]);
+
+							// don't avoid idling units
+							if(casted && current_group != -1 && casted->current_group == -1){
+								continue;
+							}
+
 							d = p() - map.get_units()[uind]->p();
 							//auto l = d.len();
-							retval += 10.0f*d.unit()/(std::max(d.len2()/r2, .001f));
+							retval += 5.0f*d.unit()/(std::max(d.len2()/r2, .001f));
 
 							checked++;
 							//if(checked >= avoidance_limit){
@@ -320,8 +334,38 @@ struct rts_unit : GameObject {
 	virtual bool update(float elapsed_time, bool calc){
 		//std::cout << "unit pos before " << p() << std::endl;
 
+		// try to join group
+		// TODO join fairly somehow
+		if(current_group == -1){
+			auto mg = map.get_managers()[team];
+			for(int g = 0; g < (int)mg.groups.size(); g++){
+				auto& gp = *(mg.groups[g]);
+				if(gp.recruiting && gp.members < gp.capacity){
+					current_group = g;
+					role = gp.join();
+					//std::cout << "Unit " << id << " joining" << std::endl;
+					break;
+				}
+			}
+		}
+
+		if(current_group != -1){
+			// destination for current group/role
+			dest = map.get_managers()[team].groups[current_group]->role_dest(role);
+		}
+		else{
+			dest = map.get_managers()[team].rally_point;
+		}
+
+		//if(current_group != -1 && !(rand() % 50)){
+        //	std::cout << "group: " << current_group << ", dest " << dest << std::endl;
+    	//}
+
 		// check for death
 		if(health <= 0){
+			if(current_group != -1){
+				map.get_managers()[team].groups[current_group] -> leave(role);
+			}
 			return false;
 		}
 

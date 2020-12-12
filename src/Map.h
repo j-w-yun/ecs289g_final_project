@@ -15,6 +15,7 @@
 #include "AStar.hpp"
 #include "algorithms.h"
 #include "projectile.h"
+#include "manager.h"
 
 struct rect{
 	int xl, yl, xh, yh;
@@ -73,12 +74,14 @@ class MapLevel: public GameObject {
 		std::vector<std::shared_ptr<projectile>> projectiles;
 		std::vector<size_t> pstack;
 		size_t projcap;
+		std::vector<manager> managers;
 
 		int teams = 2;
 
 	public:
 		MapLevel() = default;
 		MapLevel(int tx, int ty, float tw, float th, size_t uc = 200);
+		void init_managers();
 		bool add(std::shared_ptr<GameObject> o);
 		bool add_proj(std::shared_ptr<projectile> o);
 		void kill(int id);
@@ -104,6 +107,7 @@ class MapLevel: public GameObject {
 		void render(SDL_Renderer* renderer);
 		void update(float elapsed_time);
 		static std::string static_class() {return "MapLevel";};
+		std::vector<manager>& get_managers() { return managers;}
 
 		void compute_obstruction_vertices();
 		std::vector<Vector2f> find_rect_path(Vector2f s, Vector2f d);

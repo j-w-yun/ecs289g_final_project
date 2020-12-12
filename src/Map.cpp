@@ -82,6 +82,43 @@ MapLevel::MapLevel(int tx, int ty, float tw, float th, size_t uc): tiles_x(tx), 
 	generate_texture();
 }
 
+void MapLevel::init_managers(){
+	// manager stuff
+
+	std::vector<float> x_vals = {.1, .9};
+
+	for(int t = 0; t < teams; t++){
+		// find rally point
+		std::pair<int, int> point = {(int)(tiles_x * x_vals[t]), (int)(tiles_y * .5)};
+		Vector2f pointf = to_world_space(point);
+		bool init = false;
+		Vector2f closest;
+
+		for(auto& r : rectcover){
+			if(!init){
+				closest = closest_point(pointf, r);
+				std::cout << "Closest point between " << pointf << " and " << r << " is " << closest << std::endl;
+				init = true;
+			}
+			else{
+				auto p = closest_point(pointf, r);
+				std::cout << "Closest point between " << pointf << " and " << r << " is " << p << std::endl;
+
+				if((closest - pointf).len() > (p - pointf).len()){
+					closest = p;
+				}
+			}
+		}
+
+		managers.push_back(manager(t, closest));
+		std::cout << "Manager " << t << " rally: " << closest << std::endl;
+	}
+
+	// test attack group
+	managers[0].groups = {};
+	managers[0].groups.push_back(std::make_shared<attack_group>(50, managers[1].rally_point, managers[0].rally_point, std::shared_ptr<MapLevel>(this)));
+}
+
 bool MapLevel::add(std::shared_ptr<GameObject> o) {
 	if(o->team < 0 || o-> team >= teams) return false;
 
@@ -878,6 +915,11 @@ void MapLevel::update(float elapsed_time) {
 		if(!alive){
 			kill_proj(p->id);
 		}
+	}
+
+	// update groups
+	for(auto& m : managers){
+		m.update();
 	}
 
 	// update units
