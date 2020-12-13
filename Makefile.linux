@@ -1,0 +1,16 @@
+CXX = g++
+# Update these paths as necessary to match your installation
+SDL_LIB = -lSDL2 -lSDL2main
+SDL_TTF_LIB = -lSDL2_ttf
+# If your compiler is a bit older you may need to change -std=c++11 to -std=c++0x
+CXXFLAGS = -Wall -g -c -O3 -std=c++17
+LDFLAGS = $(SDL_LIB) $(SDL_TTF_LIB)
+OUTPUT_FILE = run
+
+all: ./bin/$(OUTPUT_FILE)
+
+./bin/$(OUTPUT_FILE): ./bin/main.o ; $(CXX) $< $(LDFLAGS) -o $@
+
+./bin/main.o: ./src/main.cpp ; mkdir bin && $(CXX) $(CXXFLAGS) $< -o $@
+
+clean: ; rm -rf ./bin/*.o && rm -rf ./bin/*.dll && rm -rf ./bin/$(OUTPUT_FILE) && rmdir bin
