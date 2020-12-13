@@ -797,6 +797,17 @@ namespace RenderingEngine {
 #endif
 	}
 
+	int custom_stricmp(const char* a, const char* b) {
+		int ca, cb;
+		do {
+			ca = (unsigned char)*a++;
+			cb = (unsigned char)*b++;
+			ca = tolower(toupper(ca));
+			cb = tolower(toupper(cb));
+		} while (ca == cb && ca != '\0');
+		return ca - cb;
+	}
+
 	void show() {
 		// Render stats
 		Stat::render(gRenderer, gFont);
@@ -834,30 +845,48 @@ namespace RenderingEngine {
 			SDL_WINDOWPOS_UNDEFINED,
 			width,
 			height,
-			SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
+			SDL_WINDOW_SHOWN
+#ifndef USE_SDL2_RENDERER
+			| SDL_WINDOW_OPENGL
+#endif
 		);
 		if (gWindow == NULL) {
 			printf("Window could not be created: %s\n", SDL_GetError());
 			return false;
 		}
 
+		
+
+#ifdef USE_SDL2_RENDERER
+		int num_drivers = SDL_GetNumRenderDrivers();
+		int opengl_driver_index = -1;
+
+		for (int i = 0; i < num_drivers; i++) {
+			SDL_RendererInfo info;
+			SDL_GetRenderDriverInfo(i, &info);
+			if (custom_stricmp(info.name, "opengl") == 0) {
+				opengl_driver_index = i;
+				break;
+			}
+		}
+
 		// Create renderer for window
 		gRenderer = SDL_CreateRenderer(
 			gWindow,
-			-1,
-			SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
+			opengl_driver_index,
+			opengl_driver_index == -1 ? 0 : SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
 		);
 		if (gRenderer == NULL) {
 			printf("Renderer could not be created: %s\n", SDL_GetError());
 			return false;
 		}
-
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+#endif
 
 		// Create a OpenGL context on SDL2
 #ifndef USE_SDL2_RENDERER
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 		gGlContext = SDL_GL_CreateContext(gWindow);
 
 		// Load GL extensions using glad
