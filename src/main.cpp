@@ -6,7 +6,11 @@
 #include <SDL2/SDL_ttf.h>
 #endif
 
+#ifdef __linux__
 #define USE_SDL2_RENDERER
+#else
+//#define USE_SDL2_RENDERER
+#endif
 
 #include <stdio.h>
 #include <string>
