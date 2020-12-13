@@ -10,8 +10,13 @@ void projectile::render(SDL_Renderer* renderer){
         (int)(sp2.y()-sp1.y())
     };
     // Fill
+#ifdef USE_SDL2_RENDERER
     SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
     SDL_RenderFillRect(renderer, &box);
+#else
+    RenderingEngine::ogl_set_color(255, 0, 255, 255);
+    RenderingEngine::ogl_fill_rect(box);
+#endif
 }
 
 // return true if still alive

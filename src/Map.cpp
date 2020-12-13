@@ -953,16 +953,15 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		if (unit.get())
 			unit->render(renderer);
 
-#ifndef USE_SDL2_RENDERER
-	RenderingEngine::ogl_send_rects_to_draw();
-	RenderingEngine::ogl_send_lines_to_draw();
-#endif
-
-
 	// draw projectiles
 	for (auto p : projectiles)
 		if (p.get())
 			p->render(renderer);
+
+#ifndef USE_SDL2_RENDERER
+	RenderingEngine::ogl_send_rects_to_draw();
+	RenderingEngine::ogl_send_lines_to_draw();
+#endif
 }
 
 void MapLevel::update(float elapsed_time) {
