@@ -159,12 +159,19 @@ xcopy /Y $(ProjectDir)..\..\lib\SDL2_ttf_VC\lib\x86\*.dll $(OutDir)</Command>
     <ClInclude Include="..\..\src\algorithms.h" />
     <ClInclude Include="..\..\src\AStar.hpp" />
     <ClInclude Include="..\..\src\GameObject.h" />
+    <ClInclude Include="..\..\src\glad.h" />
+    <ClInclude Include="..\..\src\group.h" />
     <ClInclude Include="..\..\src\Input.h" />
+    <ClInclude Include="..\..\src\khrplatform.h" />
+    <ClInclude Include="..\..\src\land_factory.h" />
     <ClInclude Include="..\..\src\level.h" />
+    <ClInclude Include="..\..\src\manager.h" />
     <ClInclude Include="..\..\src\Map.h" />
+    <ClInclude Include="..\..\src\projectile.h" />
     <ClInclude Include="..\..\src\RenderingEngine.h" />
     <ClInclude Include="..\..\src\rts_unit.h" />
     <ClInclude Include="..\..\src\Stat.h" />
+    <ClInclude Include="..\..\src\Util.h" />
     <ClInclude Include="..\..\src\v2f.h" />
     <ClInclude Include="..\..\src\Vector2f.h" />
     <ClInclude Include="..\..\src\World.h" />
@@ -178,6 +185,14 @@ xcopy /Y $(ProjectDir)..\..\lib\SDL2_ttf_VC\lib\x86\*.dll $(OutDir)</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\src\glad.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\src\group.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\src\Input.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -190,6 +205,10 @@ xcopy /Y $(ProjectDir)..\..\lib\SDL2_ttf_VC\lib\x86\*.dll $(OutDir)</Command>
     <ClCompile Include="..\..\src\Noise.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\src\projectile.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\src\Stat.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
