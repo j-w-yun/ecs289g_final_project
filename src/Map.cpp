@@ -940,7 +940,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		SDL_RenderDrawRect(renderer, &box);
 #else
 		RenderingEngine::ogl_set_color(127, 255, 255, 64);
-		RenderingEngine::ogl_fill_rect(box);
+		RenderingEngine::ogl_draw_rect(box);
 #endif
 	}
 

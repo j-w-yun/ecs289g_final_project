@@ -411,7 +411,7 @@ namespace RenderingEngine {
 			glEnable(GL_BLEND);
 
 			glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 			glDrawArrays(GL_LINES, 0, total_vertices);
 
@@ -495,7 +495,7 @@ namespace RenderingEngine {
 
 			glEnable(GL_BLEND);
 			glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 			glDrawArrays(GL_TRIANGLES, 0, total_rect_vertices);
 
