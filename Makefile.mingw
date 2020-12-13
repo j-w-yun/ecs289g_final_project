@@ -6,7 +6,7 @@ SDL_TTF_LIB = -L.\lib\SDL2_ttf_mingw\i686-w64-mingw32\lib -llibSDL2_ttf
 SDL_INCLUDE = -I.\lib\SDL2_mingw\i686-w64-mingw32\include -I.\lib\SDL2_mingw\i686-w64-mingw32\include\SDL2
 SDL_TTF_INCLUDE = -I.\lib\SDL2_ttf_mingw\i686-w64-mingw32\include
 # If your compiler is a bit older you may need to change -std=c++11 to -std=c++0x
-CXXFLAGS = -Wall -g -c -std=c++17 $(SDL_INCLUDE) $(SDL_TTF_INCLUDE)
+CXXFLAGS = -Wall -g -c -O3 -std=c++17 $(SDL_INCLUDE) $(SDL_TTF_INCLUDE)
 LDFLAGS = -lmingw32 -mwindows -mconsole $(SDL_LIB) $(SDL_TTF_LIB)
 EXE = RTS.exe
 

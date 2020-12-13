@@ -189,6 +189,8 @@ namespace RenderingEngine {
 	World gWorld;
 
 #ifndef USE_SDL2_RENDERER
+	SDL_GLContext gGlContext;
+
 	enum ShaderProgramType {
 		Generic2D = 0,
 		Generic2D_PerlinNoise,
@@ -301,7 +303,7 @@ namespace RenderingEngine {
 			glGetShaderInfoLog(fragmentShader, log_length, NULL, v.data());
 			std::string s(begin(v), end(v));
 			printf("%s\n", s.c_str());
-			printf("Shader content:\n%s\n", shader_content);
+			printf("Shader content:\n%s\n", shader_content_c_str);
 			return -2;
 		}
 
@@ -338,6 +340,8 @@ namespace RenderingEngine {
 			glBindBuffer(GL_UNIFORM_BUFFER, gPerlinNoiseUboHandle);
 			glBufferData(GL_UNIFORM_BUFFER, gUniformBufferSize, gUniformBuffer, GL_DYNAMIC_DRAW);
 		}
+
+		return 0;
 	}
 
 	void set_shader(int type) {
@@ -356,7 +360,7 @@ namespace RenderingEngine {
 	std::vector<pure_color_vertex> lines;
 	GLuint vao_line;
 	GLuint vbo_line;
-	int total_vertices;
+	GLuint total_vertices;
 
 	void ogl_reserve_line_objects(int num) {
 		int num_vertices = num * 2;
@@ -453,7 +457,7 @@ namespace RenderingEngine {
 	GLuint vao_rect;
 	GLuint vbo_rect;
 	std::vector<pure_color_vertex> rects;
-	int total_rect_vertices = 0;
+	GLuint total_rect_vertices = 0;
 
 	void ogl_reserve_rect_objects(int num) {
 		int num_vertices = num * 6;
@@ -853,7 +857,7 @@ namespace RenderingEngine {
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 
 		// Create a OpenGL context on SDL2
-		SDL_GLContext gl_context = SDL_GL_CreateContext(gWindow);
+		gGlContext = SDL_GL_CreateContext(gWindow);
 
 		// Load GL extensions using glad
 		if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
@@ -894,6 +898,8 @@ namespace RenderingEngine {
 		// Free global font
 		TTF_CloseFont(gFont);
 		gFont = NULL;
+
+		SDL_GL_DeleteContext(gGlContext);
 
 		// Destroy renderer
 		SDL_DestroyRenderer(gRenderer);
