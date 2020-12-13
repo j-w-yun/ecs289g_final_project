@@ -6,7 +6,7 @@
 #include <SDL2/SDL_ttf.h>
 #endif
 
-//#define USE_SDL2_RENDERER
+#define USE_SDL2_RENDERER
 
 #include <stdio.h>
 #include <string>
@@ -329,6 +329,8 @@ void render(float delta_time) {
 	// Draw world
 	RenderingEngine::render(delta_time);
 
+	std::vector<SDL_Rect> rects;
+
 	// Draw path
 	for (auto& path : paths) {
 		for (auto& p : path) {
@@ -343,13 +345,18 @@ void render(float delta_time) {
 			};
 #ifdef USE_SDL2_RENDERER
 			SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 0x22, 0xFF, 0x22, 0x55);
-			SDL_RenderFillRect(RenderingEngine::gRenderer, &box);
+			rects.push_back(box);// SDL_RenderFillRect(RenderingEngine::gRenderer, &box);
 #else
 			RenderingEngine::ogl_set_color(0x22, 0xFF, 0x22, 0x55);
 			RenderingEngine::ogl_fill_rect(box);
 #endif
 		}
 	}
+
+#ifdef USE_SDL2_RENDERER
+	if (rects.size() > 0) SDL_RenderFillRects(RenderingEngine::gRenderer, &rects[0], rects.size());
+	rects.clear();
+#endif
 
 	// Draw bases
 	for (int i = 0; i < (int)bases.size(); i++) {
@@ -365,7 +372,7 @@ void render(float delta_time) {
 		};
 #ifdef USE_SDL2_RENDERER
 		SDL_SetRenderDrawColor(RenderingEngine::gRenderer, 0x77, 0x22, 0x22, 0xFF);
-		SDL_RenderFillRect(RenderingEngine::gRenderer, &box);
+		rects.push_back(box); // SDL_RenderFillRect(RenderingEngine::gRenderer, &box);
 #else
 		RenderingEngine::ogl_set_color(0x77, 0x22, 0x22, 0xFF);
 		RenderingEngine::ogl_fill_rect(box);
@@ -373,6 +380,8 @@ void render(float delta_time) {
 	}
 #ifndef USE_SDL2_RENDERER
 	RenderingEngine::ogl_send_rects_to_draw();
+#else
+	if (rects.size() > 0) SDL_RenderFillRects(RenderingEngine::gRenderer, &rects[0], rects.size());
 #endif
 	// Update screen
 	RenderingEngine::show();
