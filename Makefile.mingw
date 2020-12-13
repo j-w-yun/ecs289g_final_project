@@ -1,0 +1,32 @@
+CXX = g++
+# Update these paths as necessary to match your installation
+SDL_LIB = -L.\lib\SDL2_mingw\i686-w64-mingw32\lib -lSDL2main -lSDL2
+SDL_TTF_LIB = -L.\lib\SDL2_ttf_mingw\i686-w64-mingw32\lib -llibSDL2_ttf
+#SDL_LIB = -LC:\SDL\SDL2-devel-2.0.12-VC\SDL2-2.0.12\lib\x86 -LSDL2main.lib -LSDL2.lib
+SDL_INCLUDE = -I.\lib\SDL2_mingw\i686-w64-mingw32\include -I.\lib\SDL2_mingw\i686-w64-mingw32\include\SDL2
+SDL_TTF_INCLUDE = -I.\lib\SDL2_ttf_mingw\i686-w64-mingw32\include
+# If your compiler is a bit older you may need to change -std=c++11 to -std=c++0x
+CXXFLAGS = -Wall -g -c -std=c++17 $(SDL_INCLUDE) $(SDL_TTF_INCLUDE)
+LDFLAGS = -lmingw32 -mwindows -mconsole $(SDL_LIB) $(SDL_TTF_LIB)
+EXE = RTS.exe
+
+#all: $(EXE)
+
+#$(EXE): main.o
+#    $(CXX) $< $(LDFLAGS) -o $@
+
+#main.o: src\main.cpp
+#    $(CXX) $(CXXFLAGS) $< -o $@
+
+#clean:
+#    del *.o && del $(EXE)
+
+OUTPUT_FILE = run.exe
+
+all: .\bin\$(OUTPUT_FILE) ; xcopy .\lib\SDL2_mingw\i686-w64-mingw32\bin\SDL2.dll .\bin /y && xcopy .\lib\SDL2_ttf_mingw\i686-w64-mingw32\bin\*.dll .\bin /y
+
+.\bin\$(OUTPUT_FILE): .\bin\main.o ; $(CXX) $< $(LDFLAGS) -o $@
+
+.\bin\main.o: .\src\main.cpp ; mkdir bin && $(CXX) $(CXXFLAGS) $< -o $@
+
+clean: ; del .\bin\*.o && del .\bin\*.dll && del .\bin\$(OUTPUT_FILE) && rmdir bin

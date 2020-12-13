@@ -439,6 +439,19 @@ void MapLevel::render_texture(SDL_Renderer* renderer) {
 		xi++;
 	}
 
+#if 0//ndef USE_SDL2_RENDERER
+	Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(0, 0));
+	Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(width, height));
+	SDL_Rect box = {
+		(int)(sp1.x()),
+		(int)(sp1.y()),
+		(int)(sp2.x() - sp1.x()) + 1,
+		(int)(sp2.y() - sp1.y()) + 1
+	};
+	RenderingEngine::ogl_set_color(40, 110, 30, 150 + 60);
+	RenderingEngine::ogl_fill_rect(box);
+#endif
+
 	// TODO: use shaders to do this, with bilinear filtering
 #ifndef USE_SDL2_RENDERER
 	RenderingEngine::ogl_send_rects_to_draw();
@@ -715,6 +728,9 @@ void MapLevel::render(SDL_Renderer* renderer) {
 #ifdef USE_SDL2_RENDERER
 	SDL_SetRenderDrawColor(renderer, 239, 196, 121, 255);
 	SDL_RenderFillRect(renderer, &world_box);
+#else
+	RenderingEngine::ogl_set_color(239, 196, 121, 255);
+	RenderingEngine::ogl_fill_rect(world_box);
 #endif
 
 	/*for (int j = 0; j < tiles_x; j++) {
@@ -825,6 +841,9 @@ void MapLevel::render(SDL_Renderer* renderer) {
 	};
 #ifdef USE_SDL2_RENDERER
 	SDL_RenderFillRect(renderer, &box);
+#else
+	RenderingEngine::ogl_set_color(2, 2, 4, 255);
+	RenderingEngine::ogl_fill_rect(box);
 #endif
 	// Right
 	p1 = RenderingEngine::world_to_screen(Vector2f(X_MAX, -Y_MAX*2));
@@ -837,6 +856,8 @@ void MapLevel::render(SDL_Renderer* renderer) {
 	};
 #ifdef USE_SDL2_RENDERER
 	SDL_RenderFillRect(renderer, &box);
+#else
+	RenderingEngine::ogl_fill_rect(box);
 #endif
 	// Bottom
 	p1 = RenderingEngine::world_to_screen(Vector2f(X_MAX*3, Y_MAX));
@@ -849,6 +870,8 @@ void MapLevel::render(SDL_Renderer* renderer) {
 	};
 #ifdef USE_SDL2_RENDERER
 	SDL_RenderFillRect(renderer, &box);
+#else
+	RenderingEngine::ogl_fill_rect(box);
 #endif
 	// Left
 	p1 = RenderingEngine::world_to_screen(Vector2f(0, -Y_MAX*2));
@@ -861,6 +884,8 @@ void MapLevel::render(SDL_Renderer* renderer) {
 	};
 #ifdef USE_SDL2_RENDERER
 	SDL_RenderFillRect(renderer, &box);
+#else
+	RenderingEngine::ogl_fill_rect(box);
 #endif
 
 	// Draw rectangles
@@ -876,8 +901,15 @@ void MapLevel::render(SDL_Renderer* renderer) {
 		};
 #ifdef USE_SDL2_RENDERER
 		SDL_RenderDrawRect(renderer, &box);
+#else
+		RenderingEngine::ogl_set_color(127, 255, 255, 64);
+		RenderingEngine::ogl_fill_rect(box);
 #endif
 	}
+
+#ifndef USE_SDL2_RENDERER
+	RenderingEngine::ogl_send_rects_to_draw();
+#endif
 
 	// Draw units
 	for (auto unit : units)

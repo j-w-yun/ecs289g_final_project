@@ -78,10 +78,7 @@ struct rts_unit : GameObject {
 			// Outline
 			if (selected) {
 				RenderingEngine::ogl_set_color(2, 117, 216, 255);
-				RenderingEngine::ogl_draw_line(sp1.x(), sp1.y(), sp2.x(), sp1.y());
-				RenderingEngine::ogl_draw_line(sp1.x(), sp1.y(), sp1.x(), sp2.y());
-				RenderingEngine::ogl_draw_line(sp2.x(), sp1.y(), sp2.x(), sp2.y());
-				RenderingEngine::ogl_draw_line(sp1.x(), sp2.y(), sp2.x(), sp2.y());
+				RenderingEngine::ogl_draw_rect(box);
 			}
 			/*if (path.size()) {
 				RenderingEngine::ogl_set_color(255, 0, 0, 255);

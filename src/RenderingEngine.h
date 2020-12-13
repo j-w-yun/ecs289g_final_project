@@ -226,12 +226,10 @@ namespace RenderingEngine {
 	std::string read_shader_file(const GLchar* filename)
 	{
 		std::ifstream t(filename);
-		t.seekg(0, std::ios::end);
-		size_t size = t.tellg();
-		std::string buffer(size, ' ');
-		t.seekg(0);
-		t.read(&buffer[0], size);
-		return buffer;
+		std::string content((std::istreambuf_iterator<char>(t)),
+			(std::istreambuf_iterator<char>()));
+		t.close();
+		return content;
 	}
 
 	// OpenGL shaders
@@ -260,7 +258,14 @@ namespace RenderingEngine {
 		glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &vShaderCompiled);
 		if (vShaderCompiled != GL_TRUE)
 		{
-			printf("Unable to compile vertex shader %d!\n", vertexShader);
+			printf("Unable to compile vertex shader %s!\n", vertexShaderSource[shader_type]);
+			GLint log_length;
+			glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &log_length);
+			std::vector<char> v(log_length);
+			glGetShaderInfoLog(vertexShader, log_length, NULL, v.data());
+			std::string s(begin(v), end(v));
+			printf("%s\n", s.c_str());
+			printf("Shader content:\n%s\n", shader_content_c_str);
 			return -1;
 		}
 
@@ -289,13 +294,14 @@ namespace RenderingEngine {
 		glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &fShaderCompiled);
 		if (fShaderCompiled != GL_TRUE)
 		{
-			printf("Unable to compile fragment shader %d!\n", fragmentShader);
+			printf("Unable to compile fragment shader %s!\n", fragmentShaderSource[shader_type]);
 			GLint log_length;
 			glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &log_length);
 			std::vector<char> v(log_length);
 			glGetShaderInfoLog(fragmentShader, log_length, NULL, v.data());
 			std::string s(begin(v), end(v));
 			printf("%s\n", s.c_str());
+			printf("Shader content:\n%s\n", shader_content);
 			return -2;
 		}
 
@@ -437,6 +443,13 @@ namespace RenderingEngine {
 			ogl_send_lines_to_draw();
 	}
 
+	void ogl_draw_rect(SDL_Rect& box) {
+		ogl_draw_line(box.x, box.y, box.x + box.w, box.y);
+		ogl_draw_line(box.x, box.y, box.x, box.y + box.h);
+		ogl_draw_line(box.x + box.w, box.y, box.x + box.w, box.y + box.h);
+		ogl_draw_line(box.x, box.y + box.h, box.x + box.w, box.y + box.h);
+	}
+
 	GLuint vao_rect;
 	GLuint vbo_rect;
 	std::vector<pure_color_vertex> rects;
@@ -465,7 +478,7 @@ namespace RenderingEngine {
 		total_rect_vertices = 0;
 	}
 
-	void ogl_send_rects_to_draw(int shader_type = (int)ShaderProgramType::Generic2D_PerlinNoise) {
+	void ogl_send_rects_to_draw(int shader_type = (int)ShaderProgramType::Generic2D) {
 		if (total_rect_vertices > 0) {
 			glBindVertexArray(vao_rect);
 			glBindBuffer(GL_ARRAY_BUFFER, vbo_rect);
@@ -730,6 +743,11 @@ namespace RenderingEngine {
 			// Render outline quad
 			SDL_SetRenderDrawColor(gRenderer, 0x99, 0xFF, 0x99, 0xFF);
 			SDL_RenderDrawRect(gRenderer, &dragbox);
+#else
+			RenderingEngine::ogl_set_color(0x99, 0xFF, 0x99, 0x55);
+			RenderingEngine::ogl_fill_rect(dragbox);
+			RenderingEngine::ogl_set_color(0x99, 0xFF, 0x99, 0xFF);
+			RenderingEngine::ogl_draw_rect(dragbox);
 #endif
 		}
 		else {
@@ -759,11 +777,20 @@ namespace RenderingEngine {
 			// Render outline quad
 			SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0xFF);
 			SDL_RenderDrawRect(gRenderer, &dragbox);
+#else
+			RenderingEngine::ogl_set_color(0x77, 0xAA, 0xFF, 0x55);
+			RenderingEngine::ogl_fill_rect(dragbox);
+			RenderingEngine::ogl_set_color(0x77, 0xAA, 0xFF, 0xFF);
+			RenderingEngine::ogl_draw_rect(dragbox);
 #endif
 		}
 		else {
 			rdrag_start = Vector2f(-1, -1);
 		}
+#ifndef USE_SDL2_RENDERER
+		RenderingEngine::ogl_send_rects_to_draw();
+		RenderingEngine::ogl_send_lines_to_draw();
+#endif
 	}
 
 	void show() {
