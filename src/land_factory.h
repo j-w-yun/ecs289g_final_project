@@ -40,9 +40,9 @@ struct land_factory : rts_unit{
 		    );
 
             // FIXME
-            if(!team){
-                rts_ptr->selected = 1;
-            }
+            //if(!team){
+            //    rts_ptr->selected = 1;
+            //}
 
             map.add(rts_ptr);
         }
