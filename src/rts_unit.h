@@ -80,27 +80,13 @@ struct rts_unit : GameObject {
 			}
 		}*/
 #else
-			RenderingEngine::ogl_set_color(255 * (team == 1), 255 * (team == 2), 255 * (team == 0), 255);
-			RenderingEngine::ogl_fill_rect(box);
-			// Outline
-			if (selected) {
-				RenderingEngine::ogl_set_color(2, 117, 216, 255);
-				RenderingEngine::ogl_draw_rect(box);
-			}
-			/*if (path.size()) {
-				RenderingEngine::ogl_set_color(255, 0, 0, 255);
-				Vector2f p1 = RenderingEngine::world_to_screen(p());
-				Vector2f p2 = RenderingEngine::world_to_screen(path.back());
-				RenderingEngine::ogl_draw_line(p1.x(), p1.y(), p2.x(), p2.y());
-				for (size_t i = path.size() - 1; i; i--) {
-					SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-					Vector2f p1 = RenderingEngine::world_to_screen(path[i]);
-					Vector2f p2 = RenderingEngine::world_to_screen(path[i - 1]);
-					RenderingEngine::ogl_draw_line(p1.x(), p1.y(), p2.x(), p2.y());
-				}
-
-				RenderingEngine::ogl_send_lines_to_draw();
-			}*/
+		RenderingEngine::ogl_set_color(255 * (team == 1), 255 * (team == 2), 255 * (team == 0), 255);
+		RenderingEngine::ogl_fill_rect(box);
+		// Outline
+		if (selected) {
+			RenderingEngine::ogl_set_color(2, 117, 216, 255);
+			RenderingEngine::ogl_draw_rect(box);
+		}
 #endif
 	}
 

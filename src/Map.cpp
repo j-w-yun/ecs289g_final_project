@@ -926,6 +926,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 #endif
 
 	// Draw rectangles
+	std::vector<SDL_Rect> rects;
 	for(auto& r : rectcover){
 		SDL_SetRenderDrawColor(renderer, 127, 255, 255, 64);
 		auto lows = RenderingEngine::world_to_screen(Vector2f(r.xl * tile_width, r.yl * tile_height));
@@ -937,14 +938,16 @@ void MapLevel::render(SDL_Renderer* renderer) {
 			(int)(highs.y() - lows.y())
 		};
 #ifdef USE_SDL2_RENDERER
-		SDL_RenderDrawRect(renderer, &box);
+		rects.push_back(box); //SDL_RenderDrawRect(renderer, &box);
 #else
 		RenderingEngine::ogl_set_color(127, 255, 255, 64);
 		RenderingEngine::ogl_draw_rect(box);
 #endif
 	}
 
-#ifndef USE_SDL2_RENDERER
+#ifdef USE_SDL2_RENDERER
+	if (rects.size() > 0) SDL_RenderDrawRects(renderer, &rects[0], rects.size());
+#else
 	RenderingEngine::ogl_send_rects_to_draw();
 #endif
 
@@ -959,8 +962,8 @@ void MapLevel::render(SDL_Renderer* renderer) {
 			p->render(renderer);
 
 #ifndef USE_SDL2_RENDERER
-	RenderingEngine::ogl_send_rects_to_draw();
 	RenderingEngine::ogl_send_lines_to_draw();
+	RenderingEngine::ogl_send_rects_to_draw();
 #endif
 }
 

@@ -857,6 +857,7 @@ namespace RenderingEngine {
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 
 		// Create a OpenGL context on SDL2
+#ifndef USE_SDL2_RENDERER
 		gGlContext = SDL_GL_CreateContext(gWindow);
 
 		// Load GL extensions using glad
@@ -864,6 +865,7 @@ namespace RenderingEngine {
 			std::cerr << "Failed to initialize the OpenGL context." << std::endl;
 			exit(1);
 		}
+#endif
 
 		// Create font from TrueType Font file
 		gFont = TTF_OpenFont(
@@ -899,8 +901,9 @@ namespace RenderingEngine {
 		TTF_CloseFont(gFont);
 		gFont = NULL;
 
+#ifndef USE_SDL2_RENDERER
 		SDL_GL_DeleteContext(gGlContext);
-
+#endif
 		// Destroy renderer
 		SDL_DestroyRenderer(gRenderer);
 		gRenderer = NULL;
