@@ -81,6 +81,9 @@ struct rts_unit : GameObject {
 		}*/
 #else
 			RenderingEngine::ogl_set_color(255 * (team == 1), 255 * (team == 2), 255 * (team == 0), 255);
+			if(current_group != -1){
+				RenderingEngine::ogl_set_color(0, 255, 0, 255);
+			}
 			RenderingEngine::ogl_fill_rect(box);
 			// Outline
 			if (selected) {
