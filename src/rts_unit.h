@@ -6,6 +6,7 @@
 #include "algorithms.h"
 #include<vector>
 #include<utility>
+#include <algorithm>
 
 typedef std::pair<int, int> ip;
 
@@ -185,11 +186,25 @@ struct rts_unit : GameObject {
 			if(inbounds(x, y)){
 				// wall
 				if(map.get_obgrid()[x][y]){
-					d = p() - to_world_space({x, y});
+					auto tp = to_world_space({x, y});
+					d = p() - tp;
 					//auto l = d.len();
 					//float force = 40.0f/(d.len2());
 
-					retval += 40.0f*d.unit()/(d.len2()/r2);
+					//retval += 40.0f*d.unit()/(d.len2()/r2);
+
+					bool halign = std::abs(p().x() - tp.x()) < (float)xtwidth/2;
+					bool valign = std::abs(p().y() - tp.y()) < (float)ytwidth/2;
+
+					if(valign && !halign){
+						auto off = Vector2f(p().x() - tp.x(), 0);
+						retval += 20.0f*off.unit()/(off.len2()/r2);
+					}
+					if(!valign && halign){
+						auto off = Vector2f(0, p().y() - tp.y());
+						retval += 20.0f*off.unit()/(off.len2()/r2);
+					}
+
 				}
 				// units
 				else if(checked < avoidance_limit){
@@ -467,10 +482,24 @@ struct rts_unit : GameObject {
 		//std::cout << "dv is " << dv << std::endl;
 		//std::cout << "v is " << v() << std::endl;
 
+		// calculate total path length
+		float path_length = 0;
+		for(int i = 0; i < (int)path.size() - 1; i++){
+			path_length += (path[i] - path[i + 1]).len();
+		}
+
+		float maxlen = std::max(wwidth, wheight);
+
+		path_length = std::clamp(path_length, 0.0f, maxlen);
+		
+		// speed up with distance
+		float speed_factor = .8 + .4 * (path_length / maxlen);
+		float ts = topspeed * speed_factor;
+
 		auto nv = v() + dv;
-		if(nv.len() > topspeed){
+		if(nv.len() > ts){
 			//std::cout << "In if" << std::endl;
-			nv = (nv/nv.len())*topspeed;
+			nv = (nv/nv.len())*ts;
 		}
 
 		//std::cout << "nv is " << nv << std::endl;
