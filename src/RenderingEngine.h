@@ -202,6 +202,7 @@ namespace RenderingEngine {
 	struct GlobalBuffer {
 		float ScreenSize[4];
 		float time;
+		float seed;
 	};
 	GlobalBuffer* gUniformBuffer;
 	int gUniformBufferSize; 
@@ -209,12 +210,14 @@ namespace RenderingEngine {
 	GLuint gUboBlockIndex;
 	GLuint gPerlinNoiseUboHandle;
 
-	void update_uniform_buffer() {
+	void update_uniform_buffer(bool update_seed) {
 		gUniformBuffer->ScreenSize[0] = width;
 		gUniformBuffer->ScreenSize[1] = height;
 		gUniformBuffer->ScreenSize[2] = 1.0f / width;
 		gUniformBuffer->ScreenSize[3] = 1.0f / height;
 		gUniformBuffer->time = SDL_GetTicks() / 1000.0f;
+		if (update_seed)
+			gUniformBuffer->seed = SDL_GetTicks() / 1000.0f;
 
 		glBindBuffer(GL_UNIFORM_BUFFER, gPerlinNoiseUboHandle);
 		// get pointer
@@ -334,7 +337,7 @@ namespace RenderingEngine {
 
 			gUniformBuffer = (GlobalBuffer*)malloc(gUniformBufferSize);
 
-			//update_uniform_buffer();
+			//update_uniform_buffer(true);
 
 			glGenBuffers(1, &gPerlinNoiseUboHandle);
 			glBindBuffer(GL_UNIFORM_BUFFER, gPerlinNoiseUboHandle);
@@ -497,6 +500,11 @@ namespace RenderingEngine {
 			glEnableVertexAttribArray(1);
 			glUseProgram(gShaderProgramIDs[shader_type]);
 
+			if (shader_type == (int)ShaderProgramType::Generic2D_PerlinNoise)
+			{
+				glBindBufferBase(GL_UNIFORM_BUFFER, gUboBlockIndex, gPerlinNoiseUboHandle);
+			}
+
 			glEnable(GL_BLEND);
 			glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -507,7 +515,7 @@ namespace RenderingEngine {
 		}
 	}
 
-	void ogl_fill_rect(SDL_Rect& box) {
+	void ogl_fill_rect(SDL_Rect& box, int shader_type = (int)ShaderProgramType::Generic2D) {
 		pure_color_vertex v[6];
 		GLfloat fWidth = (GLfloat)width;
 		GLfloat fHeight = (GLfloat)height;
@@ -524,11 +532,28 @@ namespace RenderingEngine {
 		v[5].location[0] = v[2].location[0];
 		v[5].location[1] = v[1].location[1];
 
-		for (int i = 0; i < 6; i++)
+		if (shader_type == (int)ShaderProgramType::Generic2D)
 		{
-			memcpy(v[i].color, ogl_primitive_color, sizeof(ogl_primitive_color));
-			rects[total_rect_vertices + i] = v[i];
+			for (int i = 0; i < 6; i++)
+			{
+				memcpy(v[i].color, ogl_primitive_color, sizeof(ogl_primitive_color));
+				rects[total_rect_vertices + i] = v[i];
+			}
 		}
+		else
+		{
+			v[0].color[0] = 0.0f; v[0].color[1] = 0.0f;
+			v[1].color[0] = 0.0f; v[1].color[1] = 1.0f;
+			v[2].color[0] = 1.0f; v[2].color[1] = 0.0f;
+			v[3].color[0] = 1.0f; v[3].color[1] = 0.0f;
+			v[4].color[0] = 0.0f; v[4].color[1] = 1.0f;
+			v[5].color[0] = 1.0f; v[5].color[1] = 1.0f;
+			for (int i = 0; i < 6; i++)
+			{
+				rects[total_rect_vertices + i] = v[i];
+			}
+		}
+
 
 		total_rect_vertices += 6;
 
@@ -635,7 +660,6 @@ namespace RenderingEngine {
 #else
 		glClearColor(16.0 / 255.0, 16.0 / 255.0, 16.0 / 255.0, 1);
 		glClear(GL_COLOR_BUFFER_BIT);
-		update_uniform_buffer();
 #endif
 	}
 
@@ -894,6 +918,7 @@ namespace RenderingEngine {
 			std::cerr << "Failed to initialize the OpenGL context." << std::endl;
 			exit(1);
 		}
+		SDL_GL_SetSwapInterval(0);
 #endif
 
 		// Create font from TrueType Font file
