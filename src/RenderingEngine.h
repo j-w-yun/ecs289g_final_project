@@ -690,33 +690,33 @@ namespace RenderingEngine {
 			if (Input::is_mouse_pressed(SDL_BUTTON_LEFT)) {
 				if (!lbutton_down) {
 					// Button down
-					std::pair<int, int> pos = Input::get_mouse_pos();
-					Vector2f world_pos = screen_to_world(pos.first, pos.second);
-					gWorld.click(world_pos, 0, 0);
+					//std::pair<int, int> pos = Input::get_mouse_pos();
+					//Vector2f world_pos = screen_to_world(pos.first, pos.second);
+					//gWorld.click(world_pos, 0, 0);
 					lbutton_down = true;
 				}
 			}
 			else if (lbutton_down) {
 				// Button released
-				std::pair<int, int> pos = Input::get_mouse_pos();
-				Vector2f world_pos = screen_to_world(pos.first, pos.second);
-				gWorld.click(world_pos, 0, 1);
+				//std::pair<int, int> pos = Input::get_mouse_pos();
+				//Vector2f world_pos = screen_to_world(pos.first, pos.second);
+				//gWorld.click(world_pos, 0, 1);
 				lbutton_down = false;
 			}
 			if (Input::is_mouse_pressed(SDL_BUTTON_RIGHT)) {
 				if (!rbutton_down) {
 					// Button down
-					std::pair<int, int> pos = Input::get_mouse_pos();
-					Vector2f world_pos = screen_to_world(pos.first, pos.second);
-					gWorld.click(world_pos, 1, 0);
+					//std::pair<int, int> pos = Input::get_mouse_pos();
+					//Vector2f world_pos = screen_to_world(pos.first, pos.second);
+					//gWorld.click(world_pos, 1, 0);
 					rbutton_down = true;
 				}
 			}
 			else if (rbutton_down) {
 				// Button released
-				std::pair<int, int> pos = Input::get_mouse_pos();
-				Vector2f world_pos = screen_to_world(pos.first, pos.second);
-				gWorld.click(world_pos, 1, 1);
+				//std::pair<int, int> pos = Input::get_mouse_pos();
+				//Vector2f world_pos = screen_to_world(pos.first, pos.second);
+				//gWorld.click(world_pos, 1, 1);
 				rbutton_down = false;
 			}
 		}
@@ -738,8 +738,8 @@ namespace RenderingEngine {
 				(int)(box.y2-start.y())
 			};
 			// Send drag world coordinates to World
-			Vector2f ldrag_end = screen_to_world(box.x2, box.y2);
-			gWorld.select(ldrag_start, ldrag_end, 0);
+			//Vector2f ldrag_end = screen_to_world(box.x2, box.y2);
+			//gWorld.select(ldrag_start, ldrag_end, 0);
 #ifdef USE_SDL2_RENDERER
 			// Render filled quad
 			SDL_SetRenderDrawColor(gRenderer, 0x99, 0xFF, 0x99, 0x55);
@@ -772,8 +772,8 @@ namespace RenderingEngine {
 				(int)(box.y2-start.y())
 			};
 			// Send drag world coordinates to World
-			Vector2f rdrag_end = screen_to_world(box.x2, box.y2);
-			gWorld.select(rdrag_start, rdrag_end, 1);
+			//Vector2f rdrag_end = screen_to_world(box.x2, box.y2);
+			//gWorld.select(rdrag_start, rdrag_end, 1);
 #ifdef USE_SDL2_RENDERER
 			// Render filled quad
 			SDL_SetRenderDrawColor(gRenderer, 0x77, 0xAA, 0xFF, 0x55);

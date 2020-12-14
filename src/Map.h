@@ -81,6 +81,9 @@ class MapLevel: public GameObject {
 		static int group_size;
 		static char group_size_keydown;
 
+		bool lbutton_down = false;
+		bool rbutton_down = false;
+
 	public:
 		MapLevel() = default;
 		MapLevel(int tx, int ty, float tw, float th, size_t uc = 200);
@@ -504,6 +507,57 @@ class MapLevel: public GameObject {
 			std::cout << "Rectangle cover: " << std::endl;
 			//printgrid(to_cover);
 
+			std::vector<rect> temp;
+			double factor = 1.5;
+
+			// divide rectangles
+			for(int i = 0; i < 3; i++){
+				temp = {};
+
+				for(auto& r : cover){
+					bool wide = (r.xh - r.xl) > factor*(r.yh - r.yl);
+					bool tall = (r.yh - r.yl) > factor*(r.xh - r.xl);
+
+					if(wide){
+						int midx = (r.xh - r.xl)/2 + r.xl;
+						temp.push_back(rect(r.xl, r.yl, midx, r.yh));
+						temp.push_back(rect(midx, r.yl, r.xh, r.yh));
+					}
+					else if(tall){
+						int midy = (r.yh - r.yl)/2 + r.yl;
+						temp.push_back(rect(r.xl, r.yl, r.xh, midy));
+						temp.push_back(rect(r.xl, midy, r.xh, r.yh));
+					}
+					else{
+						temp.push_back(r);
+					}
+				}
+
+				cover = temp;
+			}
+
+
+			// recompute to_cover
+			to_cover = std::vector<std::vector<int>>(x_tiles, std::vector<int>(y_tiles, -1));
+			for(int i = 0; i < x_tiles; i++){
+				for(int j = 0; j < y_tiles; j++){
+					if(obgrid[i][j]){
+						to_cover[i][j] = -1;
+					}
+					else{
+						for(int ri = 0; ri < (int)cover.size(); ri++){
+							auto& r = cover[ri];
+							
+							if(i >= r.xl && i < r.xh && j >= r.yl && j < r.yh){
+								to_cover[i][j] = ri;
+								break;
+							}
+						}
+					}
+				}
+			}
+
+
 			rectcover = cover;
 			grid_to_rectcover = to_cover;
 
@@ -525,6 +579,7 @@ class MapLevel: public GameObject {
 
 		void generate_worms(int x_tiles, int y_tiles, int tile_width, int tile_height, int nshapes, int basepad, int wormspacing, int minarea, int maxarea, int minwormpad, int maxwormpad){
 			srand(time(NULL));
+			//srand(0); // reasonably interesting map
 
 			set_size(x_tiles, y_tiles, tile_width, tile_height);
 

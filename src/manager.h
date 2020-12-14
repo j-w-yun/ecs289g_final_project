@@ -11,6 +11,12 @@ struct manager{
 
     }
 
+    void render(SDL_Renderer* renderer){
+        for(auto& g : groups){
+            g->render(renderer);
+        }
+    }
+
     void update(){
         for(auto& g : groups){
             g->update();
