@@ -19,6 +19,8 @@
 #include "RenderingEngine.h"
 #include "Util.h"
 
+#define USE_PERLIN_NOISE_SHADER 1
+
 const float MIN_DENSITY = 0.05;
 const float MAX_DENSITY = 0.25;
 const int update_groups = 100;
@@ -371,6 +373,12 @@ void MapLevel::generate_texture() {
 	float width = tile_width * tiles_x;
 	float height = tile_height * tiles_y;
 
+#ifndef USE_SDL2_RENDERER
+#if USE_PERLIN_NOISE_SHADER
+	RenderingEngine::update_uniform_buffer(true);
+#endif
+#endif
+
 	noise2d.clear();
 	noise2d.resize(ceil(width/texture_resolution));
 
@@ -472,14 +480,17 @@ void MapLevel::render_texture(SDL_Renderer* renderer) {
 			// SDL_SetRenderDrawColor(renderer, 60, 90*z+40, 30, 150);
 			SDL_RenderFillRect(renderer, &box);
 #else
+#if !USE_PERLIN_NOISE_SHADER
 			RenderingEngine::ogl_set_color(40, 90 * z + 40, 30, 150 + 60 * sin(f));
 			RenderingEngine::ogl_fill_rect(box);
+#endif
 #endif
 		}
 		xi++;
 	}
 
-#if 0//ndef USE_SDL2_RENDERER
+#ifndef USE_SDL2_RENDERER
+#if USE_PERLIN_NOISE_SHADER
 	Vector2f sp1 = RenderingEngine::world_to_screen(Vector2f(0, 0));
 	Vector2f sp2 = RenderingEngine::world_to_screen(Vector2f(width, height));
 	SDL_Rect box = {
@@ -488,13 +499,16 @@ void MapLevel::render_texture(SDL_Renderer* renderer) {
 		(int)(sp2.x() - sp1.x()) + 1,
 		(int)(sp2.y() - sp1.y()) + 1
 	};
+
+	RenderingEngine::update_uniform_buffer(false);
 	RenderingEngine::ogl_set_color(40, 110, 30, 150 + 60);
-	RenderingEngine::ogl_fill_rect(box);
+	RenderingEngine::ogl_fill_rect(box, USE_PERLIN_NOISE_SHADER);
+#endif
 #endif
 
 	// TODO: use shaders to do this, with bilinear filtering
 #ifndef USE_SDL2_RENDERER
-	RenderingEngine::ogl_send_rects_to_draw();
+	RenderingEngine::ogl_send_rects_to_draw(USE_PERLIN_NOISE_SHADER);
 #endif
 }
 
