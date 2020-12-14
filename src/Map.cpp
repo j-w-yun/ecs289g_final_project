@@ -996,6 +996,22 @@ void MapLevel::update(float elapsed_time) {
 	//	add_proj(std::make_shared<projectile>(Vector2f(100, 100), Vector2f(10, 0), 2, 200, 0, 1, *this));
 	//}
 
+	// left click
+	if (Input::is_mouse_pressed(SDL_BUTTON_LEFT)) {
+		if (!lbutton_down) {
+			// Button down
+			std::pair<int, int> pos = Input::get_mouse_pos();
+			Vector2f world_pos = RenderingEngine::screen_to_world(pos.first, pos.second);
+			std::cout << "Click at " << world_pos << std::endl;
+			lbutton_down = true;
+		}
+	}
+	else{
+		if(lbutton_down){
+			lbutton_down = false;
+		}
+	}
+
 	static int ctr = 0;
 	ctr = (ctr+1)%update_groups;
 
@@ -1111,12 +1127,15 @@ std::vector<Vector2f> MapLevel::reconstruct_path(std::vector<int>& from, std::ve
 }
 
 std::vector<Vector2f> MapLevel::reconstruct_better_path(std::vector<int>& from, std::vector<Vector2f>& points, int src, int dest, Vector2f v2fsrc, Vector2f v2fdest) {
+	//std::cout << "\tin reconstruct_better_path" << std::endl;
+
 	auto curr = dest;
 
 	std::vector<world_rect> interfaces;
 	std::vector<Vector2f> path;
 	interfaces.push_back(world_rect(v2fdest));
 	path.push_back(v2fdest);
+
 
 	// first pass
 	while (curr != src && curr != -1) {
@@ -1180,25 +1199,40 @@ std::vector<Vector2f> MapLevel::reconstruct_better_path(std::vector<int>& from, 
 	}
 	std::cout << std::endl;*/
 
-
+	//std::cout << "\tleaving reconstruct_better_path" << std::endl;
 	return path;
 }
 
 std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
+
 	//std::cout << "In find_rect_path" << std::endl;
 
 	//std::vector<rect>& rectcover = pathcover;
+
+	int coversize = rectcover.size();
 
 	std::vector<int> from(rectcover.size(), -1);
 	std::vector<float> gscore(rectcover.size(), std::numeric_limits<float>::infinity());
 	std::vector<float> fscore(rectcover.size(), std::numeric_limits<float>::infinity());
 	std::vector<Vector2f> point_in_r(rectcover.size());
 
-	auto dv = [&](int li, int ri){
+	for(int i = 0; i < (int)rectcover.size(); i++){
+		auto& r = rectcover[i];
+
+		auto lows = to_world_space(std::make_pair(r.xl, r.yl));
+		auto highs = to_world_space(std::make_pair(r.xh, r.yh));
+
+		float xc = lows.x() + (highs.x() - lows.x());
+		float yc = lows.y() + (highs.y() - lows.y());
+
+		point_in_r[i] = Vector2f(xc, yc);
+	}
+
+	/*auto dv = [&](int li, int ri){
 		rect& r = rectcover[ri];
 
 		return closest_point(point_in_r[li], r);
-	};
+	};*/
 
 	auto h = [&](int i){
 		return (point_in_r[i] - d).len();
@@ -1211,15 +1245,17 @@ std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 	if(!inbounds(obgrid, d_tile) || obgrid[d_tile.first][d_tile.second]) return {};
 	int d_ind = grid_to_rectcover[d_tile.first][d_tile.second];
 
+	//std::cout << "Not out of bounds" << std::endl;
 
 	//std::cout << "d_tile " << d_tile.first << ", " << d_tile.second << std::endl;
 	//std::cout << "sind/dind: " << s_ind << ", " << d_ind << std::endl;
 
 	if(s_ind == -1 || d_ind == -1){
+		//std::cout << "Return obstruction" << std::endl;
 		return {};
 	}
 
-	point_in_r[s_ind] = s;
+	//point_in_r[s_ind] = s;
 	gscore[s_ind] = 0;
 	fscore[s_ind] = h(s_ind);
 	from[s_ind] = s_ind;
@@ -1230,15 +1266,26 @@ std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 		}
 	);
 
+	int ctr = 0;
+
 	while (hp.size()) {
 
+
+		ctr++;
+
+
 		auto current = hp.pop();
+
+		if(ctr > coversize){
+			std::cout << "Iteration " << ctr << "/" << coversize << ", processing " << current << "rectcover.size() is " << rectcover.size() << std::endl;	
+		}
 
 		//std::cout << "Processing " << current << std::endl;
 
 		if (current == d_ind){
 			//std::cout << "done" << std::endl;
 			//return reconstruct_path(from, point_in_r, s_ind, d_ind, d);
+			//std::cout << "Return reconstruct" << std::endl;
 			return reconstruct_better_path(from, point_in_r, s_ind, d_ind, s, d);
 		}
 
@@ -1246,16 +1293,16 @@ std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 		for (auto& nind : rectgraph[current]) {
 			//std::cout << "neighbor " << nind << std::endl;
 
-			Vector2f tentative_npoint = dv(current, nind);
-			float tentative_gscore = gscore[current] + (tentative_npoint - point_in_r[current]).len();
-			float tentative_fscore = (tentative_npoint - d).len();
+			//Vector2f tentative_npoint = dv(current, nind);
+			float tentative_gscore = gscore[current] + (point_in_r[nind] - point_in_r[current]).len();
+			float tentative_fscore = (point_in_r[nind] - d).len();
 
 			//std::cout << "tentative gscore vs current: " << tentative_gscore << " vs " << gscore[nind] << std::endl;
 
 			// update if closer
 			if (tentative_gscore + tentative_fscore < gscore[nind] + fscore[nind]) {
 				// update point
-				point_in_r[nind] = tentative_npoint;
+				//point_in_r[nind] = tentative_npoint;
 
 				// update gscore
 				gscore[nind] = tentative_gscore;
@@ -1280,5 +1327,6 @@ std::vector<Vector2f> MapLevel::find_rect_path(Vector2f s, Vector2f d) {
 		}
 	}
 
+	//std::cout << "Return not found" << std::endl;
 	return {};
 }
