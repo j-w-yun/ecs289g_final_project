@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Util.h"
+#include "Map.h"
 #include "Vector2f.h"
 #include "Vector2f.cpp"
 
@@ -100,6 +101,10 @@ void Stat::render(SDL_Renderer* renderer, TTF_Font* font) {
 
 	// Display camera zoom
 	sprintf(text_str, "Zoom: %.0f", Stat::camera_zoom);
+	render_text(renderer, font);
+
+	// Display group size
+	sprintf(text_str, "Group Size: %d", MapLevel::get_group_size());
 	render_text(renderer, font);
 }
 

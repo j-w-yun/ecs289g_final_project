@@ -78,6 +78,9 @@ class MapLevel: public GameObject {
 
 		int teams = 2;
 
+		static int group_size;
+		static char group_size_keydown;
+
 	public:
 		MapLevel() = default;
 		MapLevel(int tx, int ty, float tw, float th, size_t uc = 200);
@@ -108,6 +111,7 @@ class MapLevel: public GameObject {
 		void update(float elapsed_time);
 		static std::string static_class() {return "MapLevel";};
 		std::vector<manager>& get_managers() { return managers;}
+		static int get_group_size() { return group_size; }
 
 		void compute_obstruction_vertices();
 		std::vector<Vector2f> find_rect_path(Vector2f s, Vector2f d);

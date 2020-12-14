@@ -23,6 +23,9 @@ const float MIN_DENSITY = 0.05;
 const float MAX_DENSITY = 0.25;
 const int update_groups = 100;
 
+int MapLevel::group_size = 100;
+char MapLevel::group_size_keydown = 0;
+
 template<class T>
 void remove(std::vector<T>& vec, T val) {
 	for (size_t i = 0; i < vec.size(); i++) {
@@ -1023,6 +1026,19 @@ void MapLevel::update(float elapsed_time) {
 			}
 		}
 	}
+
+	// update group size
+	bool n_keydown = Input::is_key_pressed(SDLK_n);
+	bool m_keydown = Input::is_key_pressed(SDLK_m);
+	if (!n_keydown && (group_size_keydown & 0x01))
+		group_size += 10;
+	if (!m_keydown && (group_size_keydown & 0x02))
+		group_size -= 10;
+
+	if (group_size < 10)
+		group_size = 10;
+
+	group_size_keydown = (n_keydown ? 0x01 : 0x00) | (m_keydown ? 0x02 : 0x00);
 }
 
 // takes operator >
