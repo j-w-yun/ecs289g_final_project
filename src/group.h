@@ -3,12 +3,14 @@
 class MapLevel;
 
 struct group{
+    int marked = 0;
     int capacity;
     int members;
     Vector2f goal, dest, rally_point;
     std::vector<int> roles;
     std::shared_ptr<MapLevel> map;
     int recruiting;
+    int move_priority = 0;
 
     group() = default;
 
@@ -38,9 +40,17 @@ struct attack_group : group{
 
     attack_group(int c, Vector2f g, Vector2f rally, std::shared_ptr<MapLevel> m, float rp = .3, int r = 1, int rt = 1000);
 
-    virtual void render(SDL_Renderer* renderer);
-
     virtual bool update();
 };
 
 // defense group
+struct defense_group : group{
+    float spacing;
+    std::vector<Vector2f> positions;
+
+    defense_group(int c, Vector2f g, Vector2f rally, std::shared_ptr<MapLevel> m, float s, int r = 1);
+
+    virtual Vector2f role_dest(int role);
+
+    virtual bool update();
+};

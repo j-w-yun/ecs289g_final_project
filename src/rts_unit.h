@@ -215,7 +215,7 @@ struct rts_unit : GameObject {
 							auto casted = std::dynamic_pointer_cast<rts_unit>(map.get_units()[uind]);
 
 							// don't avoid idling units
-							if(casted && current_group != -1 && casted->current_group == -1){
+							if(casted && current_group != -1 && (casted->current_group == -1 || map.get_managers()[casted->team].groups[casted->current_group]->move_priority < map.get_managers()[team].groups[current_group]->move_priority)){
 								continue;
 							}
 
@@ -367,20 +367,35 @@ struct rts_unit : GameObject {
 		// TODO join fairly somehow
 		if(current_group == -1){
 			auto mg = map.get_managers()[team];
+			std::vector<int> free_groups;
 			for(int g = 0; g < (int)mg.groups.size(); g++){
 				auto& gp = *(mg.groups[g]);
-				if(gp.recruiting && gp.members < gp.capacity){
-					current_group = g;
-					role = gp.join();
+				if(gp.recruiting && gp.members < gp.capacity && !gp.marked){
+					free_groups.push_back(g);
+					//current_group = g;
+					//role = gp.join();
 					//std::cout << "Unit " << id << " joining" << std::endl;
 					break;
 				}
 			}
+
+			if(free_groups.size()){
+				int to_join = rand() % free_groups.size();
+
+				current_group = free_groups[to_join];
+				role = mg.groups[current_group]->join();
+			}
 		}
 
 		if(current_group != -1){
-			// destination for current group/role
-			dest = map.get_managers()[team].groups[current_group]->role_dest(role);
+			if(map.get_managers()[team].groups[current_group]->marked){
+				dest = map.get_managers()[team].rally_point;
+				current_group = -1;
+			}
+			else{
+				// destination for current group/role
+				dest = map.get_managers()[team].groups[current_group]->role_dest(role);
+			}
 		}
 		else{
 			dest = map.get_managers()[team].rally_point;

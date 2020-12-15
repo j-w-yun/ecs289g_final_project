@@ -120,8 +120,8 @@ void MapLevel::init_managers(){
 	}
 
 	// test attack group
-	managers[0].groups = {};
-	managers[0].groups.push_back(std::make_shared<attack_group>(50, managers[1].rally_point, managers[0].rally_point, std::shared_ptr<MapLevel>(this)));
+	//managers[0].groups = {};
+	//managers[0].groups.push_back(std::make_shared<attack_group>(50, managers[1].rally_point, managers[0].rally_point, std::shared_ptr<MapLevel>(this)));
 }
 
 bool MapLevel::add(std::shared_ptr<GameObject> o) {
@@ -943,7 +943,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 #endif
 
 	// Draw rectangles
-	std::vector<SDL_Rect> rects;
+	/*std::vector<SDL_Rect> rects;
 	for(auto& r : rectcover){
 		SDL_SetRenderDrawColor(renderer, 127, 255, 255, 64);
 		auto lows = RenderingEngine::world_to_screen(Vector2f(r.xl * tile_width, r.yl * tile_height));
@@ -967,6 +967,7 @@ void MapLevel::render(SDL_Renderer* renderer) {
 #else
 	RenderingEngine::ogl_send_rects_to_draw();
 #endif
+	*/
 
 	// Draw units
 	for (auto unit : units)
@@ -1004,11 +1005,33 @@ void MapLevel::update(float elapsed_time) {
 			Vector2f world_pos = RenderingEngine::screen_to_world(pos.first, pos.second);
 			std::cout << "Click at " << world_pos << std::endl;
 			lbutton_down = true;
+
+			Vector2f rally_point(managers[0].rally_point.x(), world_pos.y());
+			managers[0].groups.push_back(std::make_shared<attack_group>(group_size, world_pos, rally_point, std::shared_ptr<MapLevel>(this)));
 		}
 	}
 	else{
 		if(lbutton_down){
 			lbutton_down = false;
+		}
+	}
+
+	// right click
+	if (Input::is_mouse_pressed(SDL_BUTTON_RIGHT)) {
+		if (!rbutton_down) {
+			// Button down
+			std::pair<int, int> pos = Input::get_mouse_pos();
+			Vector2f world_pos = RenderingEngine::screen_to_world(pos.first, pos.second);
+			std::cout << "Right Click at " << world_pos << std::endl;
+			rbutton_down = true;
+
+			//Vector2f rally_point(managers[0].rally_point.x(), world_pos.y());
+			managers[0].groups.push_back(std::make_shared<defense_group>(group_size, world_pos, Vector2f(0, 0), std::shared_ptr<MapLevel>(this), 6.0f));
+		}
+	}
+	else{
+		if(rbutton_down){
+			rbutton_down = false;
 		}
 	}
 
@@ -1055,6 +1078,20 @@ void MapLevel::update(float elapsed_time) {
 				kill(unit->id);
 			}
 		}
+	}
+
+	if(Input::is_key_pressed(dissolve_key)){
+		if(!dissolve_down){
+			// dissolve all
+			for(auto& g : managers[0].groups){
+				g->marked = 1;
+			}
+		}
+		
+		dissolve_down = true;
+	}
+	else{
+		dissolve_down = 0;
 	}
 
 	// update group size
