@@ -119,6 +119,11 @@ void MapLevel::init_managers(){
 		std::cout << "Manager " << t << " rally: " << closest << std::endl;
 	}
 
+	// default team 1 groups
+	managers[1].groups.push_back(std::make_shared<defense_group>(100, Vector2f(tiles_x*tile_width * .6, 0), Vector2f(0, 0), std::shared_ptr<MapLevel>(this), 6.0f));
+	managers[1].groups.push_back(std::make_shared<attack_group>(50, Vector2f(5, tiles_y*tile_height * .33), managers[1].rally_point, std::shared_ptr<MapLevel>(this)));
+	managers[1].groups.push_back(std::make_shared<attack_group>(50, Vector2f(5, tiles_y*tile_height * .66), managers[1].rally_point, std::shared_ptr<MapLevel>(this)));
+
 	// test attack group
 	//managers[0].groups = {};
 	//managers[0].groups.push_back(std::make_shared<attack_group>(50, managers[1].rally_point, managers[0].rally_point, std::shared_ptr<MapLevel>(this)));
