@@ -47,9 +47,9 @@ struct commander : rts_unit{
             b = (team==0)*255*health_prop;
         }
         else{
-            r = 0;
+            r = 50;
             g = 255*health_prop;
-            b = 0;
+            b = 50;
         }
 
 #ifdef USE_SDL2_RENDERER
@@ -114,9 +114,10 @@ struct commander : rts_unit{
         }
 
         if(state == 0 && health < .4 * max_health){
+            std::cout << "Com retreat" << std::endl;
             state = 1;
         }
-        if(state == 1 && health > .9){
+        if(state == 1 && health > .9 * max_health){
             state = 0;
         }
 
@@ -179,10 +180,8 @@ struct commander : rts_unit{
 			set_v(Vector2f(v().x(), -v().y()));
 		}
 
-		if(calc){
-			update_path();
-			find_target();
-		}
+		update_path();
+		find_target();
 
 		Vector2f deliberate;
 
