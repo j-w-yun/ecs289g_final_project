@@ -196,7 +196,7 @@ struct commander : rts_unit{
 		auto dv = deliberate+avoidance;
 
         if(selected){
-            Vector2f dir;
+            Vector2f dir(0, 0);
 
             if(Input::is_key_pressed(SDLK_w)){
                 dir += Vector2f(0, -1);
