@@ -1,10 +1,10 @@
-# ECS 289G Final Project - Declarative RTS
+# Hal’s Pals - ECS 289G Final Project - Declarative RTS
 
 ---
 
 ## Instructions on Linux
 
-1. Prerequisites: use the package manager in your system to get the following packages. (apt as example here)
+1. Prerequisites: use the package manager in your system to get the following packages. (apt shown as example here)
 
 ```
 sudo apt-get install g++
