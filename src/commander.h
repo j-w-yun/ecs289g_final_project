@@ -47,9 +47,9 @@ struct commander : rts_unit{
             b = (team==0)*255*health_prop;
         }
         else{
-            r = 50;
-            g = 255*health_prop;
-            b = 50;
+            r = 255*health_prop;
+            g = 210*health_prop;
+            b = 120*health_prop;
         }
 
 #ifdef USE_SDL2_RENDERER
