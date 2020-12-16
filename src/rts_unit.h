@@ -178,7 +178,7 @@ struct rts_unit : GameObject {
 							auto casted = std::dynamic_pointer_cast<rts_unit>(map.get_units()[uind]);
 
 							// don't avoid idling units
-							if(casted && current_group != -1 && (casted->current_group == -1 || map.get_managers()[casted->team].groups[casted->current_group]->move_priority < map.get_managers()[team].groups[current_group]->move_priority)){
+							if(casted && !casted->max_priority && current_group != -1 && (casted->current_group == -1 || map.get_managers()[casted->team].groups[casted->current_group]->move_priority < map.get_managers()[team].groups[current_group]->move_priority)){
 								continue;
 							}
 
