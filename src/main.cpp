@@ -135,22 +135,7 @@ void run_test() {
 	// map_level.set_obstructions(map_level.generate_obstructions(bases, BASE_PADDING));
 
 	// Worms
-	// map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 4, BASE_PADDING, 4, 10, 30, 1, 2);
 	map_level.generate_worms(X_TILES, Y_TILES, TILE_WIDTH, TILE_HEIGHT, 4, BASE_PADDING + 2, 6, 10, 30, 1, 2);
-	// map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 20, 5, 4, 30, 70, 1, 2);
-	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 5, 4, 30, 70, 1, 2);
-	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 2, 1, 1, 5, 10, 0, 1);
-	//map_level.generate_worms(X_TILES, Y_TILES, SCREEN_WIDTH/X_TILES, SCREEN_HEIGHT/Y_TILES, 0, 1, 1, 5, 10, 0, 1);
-
-	// // Test pathfinding
-	// for (int j = 0; j < (int)bases.size(); j++) {
-	// 	for (int k = j+1; k < (int)bases.size(); k++) {
-	// 		auto path = find_path(map_level, bases.at(j), bases.at(k));
-	// 		paths.push_back(path);
-	// 		// for (auto& p : path)
-	// 		// 	std::cout << "(" << p.first << ", " << p.second << ")" << std::endl;
-	// 	}
-	// }
 
 	// initialize managers
 	map_level.init_managers();
@@ -282,75 +267,6 @@ void run_test() {
 		attack_point // attack point
 	);
 	map_level.add(c_ptr);
-
-	// // Test ball
-	// std::shared_ptr<GameObject> ball_ptr = std::make_shared<GameObject>(Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2), Vector2f(0, 0), 10, SCREEN_WIDTH, SCREEN_HEIGHT, X_TILES, Y_TILES);
-	// GameObject& ball = *ball_ptr;
-	// // Draw circle
-	// auto render_callback = [ball_ptr](SDL_Renderer* renderer) {
-	// 	GameObject& ball = *ball_ptr;
-	// 	float x = ball.p().x();
-	// 	float y = ball.p().y();
-	// 	int r = (int)ball.r();
-	// 	// SDL_SetRenderDrawColor(renderer, 0xFF, 0x77, 0x55, 0xFF);
-	// 	for (int w = 0; w < r * 2; w++) {
-	// 		for (int h = 0; h < r * 2; h++) {
-	// 			float dx = (float)r - w;
-	// 			float dy = (float)r - h;
-	// 			float distance = dx*dx + dy*dy;
-	// 			float max_length = r*r;
-	// 			if (distance <= max_length) {
-	// 				// Make edges more transluscent
-	// 				float transparency = distance / max_length;
-	// 				float opacity = 1.0f - (transparency * 0.8f);
-	// 				SDL_SetRenderDrawColor(renderer, 0xFF, 0x22, 0x22, (int)(255*opacity));
-	// 				SDL_RenderDrawPoint(renderer, (int)(x+dx), (int)(y+dy));
-	// 			}
-	// 		}
-	// 	}
-	// };
-	// // Enable user control and bouncing
-	// auto update_callback = [ball_ptr](float t) {
-	// 	GameObject& ball = *ball_ptr;
-	// 	Vector2f v = ball.v();
-	// 	Vector2f p = ball.p();
-	// 	int r = (int)ball.r();
-	// 	// Input changes velocity
-	// 	const float dv = 0.01;
-	// 	if (Input::is_key_pressed(SDLK_UP))
-	// 		v.set(v.x(), v.y()-dv);
-	// 	if (Input::is_key_pressed(SDLK_DOWN))
-	// 		v.set(v.x(), v.y()+dv);
-	// 	if (Input::is_key_pressed(SDLK_LEFT))
-	// 		v.set(v.x()-dv, v.y());
-	// 	if (Input::is_key_pressed(SDLK_RIGHT))
-	// 		v.set(v.x()+dv, v.y());
-	// 	// Bounce off walls
-	// 	if (p.x() > SCREEN_WIDTH-r) {
-	// 		p.set(SCREEN_WIDTH-r, p.y());
-	// 		v.set(v.x() * -1, v.y());
-	// 	}
-	// 	if (p.y() > SCREEN_HEIGHT-r) {
-	// 		p.set(p.x(), SCREEN_HEIGHT-r);
-	// 		v.set(v.x(), v.y() * -1);
-	// 	}
-	// 	if (p.x() < r) {
-	// 		p.set(r, p.y());
-	// 		v.set(v.x() * -1, v.y());
-	// 	}
-	// 	if (p.y() < r) {
-	// 		p.set(p.x(), r);
-	// 		v.set(v.x(), v.y() * -1);
-	// 	}
-	// 	// Discount velocity
-	// 	v = v.scale(0.99f);
-	// 	ball.set_p(p);
-	// 	ball.set_v(v);
-	// };
-	// // Set callbacks
-	// ball.set_render_callback(render_callback);
-	// ball.set_update_callback(update_callback);
-	// map_level.add(ball_ptr);
 
 	RenderingEngine::set_world(gWorld);
 }

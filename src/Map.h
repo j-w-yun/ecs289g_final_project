@@ -706,15 +706,6 @@ class MapLevel: public GameObject {
 
 			world_rect() = default;
 			world_rect(float xl, float yl, float xh, float yh): xl(xl), yl(yl), xh(xh), yh(yh) {}
-			//world_rect(const rect& r){
-			//	auto lows = to_world_space(std::make_pair(r.xl, r.yl));
-			//	auto highs = to_world_space(std::make_pair(r.xh, r.yh));
-
-			//	xl = lows.x();
-			//	yl = lows.y();
-			//	xh = highs.x();
-			//	yh = highs.y();
-			//}
 			world_rect(Vector2f v){
 				xl = xh = v.x();
 				yl = yh = v.y();
