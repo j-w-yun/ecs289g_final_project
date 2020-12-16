@@ -84,7 +84,7 @@ class MapLevel: public GameObject {
 		bool lbutton_down = false;
 		bool rbutton_down = false;
 
-		int dissolve_key = SDLK_d;
+		int dissolve_key = SDLK_k;
 		bool dissolve_down = false;
 
 	public:

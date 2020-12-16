@@ -44,6 +44,7 @@
 
 #include "algorithms.h"
 #include "rts_unit.h"
+#include "commander.h"
 #include "group.cpp"
 // #include "level.h"
 
@@ -227,6 +228,60 @@ void run_test() {
 		);
 		map_level.add(factory_ptr);
 	}
+	// commanders
+	auto position = Vector2f(bases.at(0).first * TILE_WIDTH, rand()%(int)WORLD_HEIGHT);
+	auto velocity = Vector2f(0, 0);
+	auto c_ptr = std::make_shared<commander>(
+		position,
+		velocity,
+		8.0f,  // Radius
+		WORLD_WIDTH,
+		WORLD_HEIGHT,
+		X_TILES,
+		Y_TILES,
+		0, // team
+		25, // health
+		0.025f,  // Acceleration
+		0.5f,  // Travel speed
+		map_level,
+		Vector2f(0, 0) // attack point
+	);
+	c_ptr->idle = true;
+	map_level.add(c_ptr);
+
+	// find attack point
+	int midy = Y_TILES/2;
+	int xid = X_TILES * .6;
+	int current = 0;
+
+	for(int i = 0; i < Y_TILES; i++){
+		if(!map_level.get_obgrid()[xid][i]){
+			if(std::abs(midy - i) < std::abs(midy - current)){
+				current = i;
+			}
+		}
+	}
+
+	Vector2f attack_point(xid*TILE_WIDTH, current*TILE_HEIGHT);
+
+	position = Vector2f(X_TILES*TILE_WIDTH - position.x(), rand()%(int)WORLD_HEIGHT);
+	velocity = Vector2f(0, 0);
+	c_ptr = std::make_shared<commander>(
+		position,
+		velocity,
+		8.0f,  // Radius
+		WORLD_WIDTH,
+		WORLD_HEIGHT,
+		X_TILES,
+		Y_TILES,
+		1, // team
+		25, // health
+		0.025f,  // Acceleration
+		0.5f,  // Travel speed
+		map_level,
+		attack_point // attack point
+	);
+	map_level.add(c_ptr);
 
 	// // Test ball
 	// std::shared_ptr<GameObject> ball_ptr = std::make_shared<GameObject>(Vector2f(SCREEN_WIDTH/2, SCREEN_HEIGHT/2), Vector2f(0, 0), 10, SCREEN_WIDTH, SCREEN_HEIGHT, X_TILES, Y_TILES);

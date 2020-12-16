@@ -40,6 +40,7 @@ struct rts_unit : GameObject {
 	int current_group = -1; // -1 means idle
 	int role = -1;
 
+	bool max_priority = false;
 
 	rts_unit(Vector2f p, Vector2f v, float r, int w, int h, int xt, int yt, int t, int hlt, float a, float ts, MapLevel& mp): GameObject(p, v, r, w, h, xt, yt, t, hlt), acc(a), topspeed(ts), map(mp) {}
 
@@ -67,19 +68,6 @@ struct rts_unit : GameObject {
 			SDL_RenderDrawRect(renderer, &box);
 		}
 
-		// path lines
-		/*if(path.size()){
-			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-			Vector2f p1 = RenderingEngine::world_to_screen(p());
-			Vector2f p2 = RenderingEngine::world_to_screen(path.back());
-			SDL_RenderDrawLine(renderer, p1.x(), p1.y(), p2.x(), p2.y());
-			for(size_t i = path.size() - 1; i; i--){
-				SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-				Vector2f p1 = RenderingEngine::world_to_screen(path[i]);
-				Vector2f p2 = RenderingEngine::world_to_screen(path[i - 1]);
-				SDL_RenderDrawLine(renderer, p1.x(), p1.y(), p2.x(), p2.y());
-			}
-		}*/
 #else
 		RenderingEngine::ogl_set_color(255 * (team == 1), 255 * (team == 2), 255 * (team == 0), 255);
 		//if(current_group != -1){
@@ -116,10 +104,6 @@ struct rts_unit : GameObject {
 
 		bool recomp = false;
 
-		//if(dist > std::max((float)xtwidth/2, (float)xtwidth/2)){
-		//	update_path();
-		//	recomp = true;
-		//}
 		if(dist < (float)xtwidth){
 			path.pop_back();
 			recomp = true;
@@ -144,27 +128,6 @@ struct rts_unit : GameObject {
 	inline bool inbounds(int x, int y) {
 		return x >= 0 && x < x_tiles && y >= 0 && y < y_tiles;
 	}
-
-	/*std::vector<ip> neighbors() {
-		auto src = to_tile_space(p());
-
-		short ctr = 0;
-		for (int i = -layers; i <= layers; i++) {
-			for (int j = -layers; j <= layers; j++) {
-				if (!i && !j)
-					continue;
-
-				ip p = {src.first + i, src.second + j};
-
-				if (inbounds(p.first, p.second))
-					retval.push_back(p);
-
-				ctr++;
-			}
-		}
-
-		return retval;
-	}*/
 
 	// returns unit
 	virtual Vector2f avoid_obstacles(){
@@ -206,8 +169,8 @@ struct rts_unit : GameObject {
 					}
 
 				}
-				// units
-				else if(checked < avoidance_limit){
+				// units (commander skips)
+				else if(checked < avoidance_limit && !max_priority){
 					for(int t = 0; t < map.get_teams(); t++){
 						for(auto uind : map.get_unitgrid()[t][x][y]){
 							if(uind == id) continue;
@@ -224,74 +187,14 @@ struct rts_unit : GameObject {
 							retval += 5.0f*d.unit()/(std::max(d.len2()/r2, .001f));
 
 							checked++;
-							//if(checked >= avoidance_limit){
-							//	goto escape_avoid_obstacles;
-							//}
 						}
 					}
 				}
 			}
 		}
 
-		//escape_avoid_obstacles:
-
 		return retval;
 	}
-
-	/*virtual Vector2f avoid_units(){
-		Vector2f retval(0, 0);
-		Vector2f d;
-		//Vector2f l;
-		int x, y;
-
-		int checked = 0;
-
-		Vector2f vu = v().unit();
-		Vector2f pu = par_unit(v());
-
-		auto pr = to_tile_space(p());
-
-		for(int i = 0; i < size; i++){
-			x = pr.first + i/side - layers;
-			y = pr.second + i%side - layers;
-			if(inbounds(x, y) && !map.get_obgrid()[x][y]){
-				for(auto uind : map.get_unitgrid()[x][y]){
-					//std::cout << "unid is  " << uind << std::endl;
-
-					// don't avoid self
-					if(uind == id) continue;
-
-					auto& unit = *(map.get_units()[uind]);
-
-					d = unit.p() - p();
-
-					d = components(v(), d);
-
-					// only influenced by units in front
-					//if(d.y() < 0) continue;
-
-					//float slow = -d.y() / d.x();
-					//float turn = d.x()/d.y();
-
-					int sign = (d.x() > 0) * 2 - 1;
-
-					auto fun = v().len() * exp(-(d.y() * d.x()));
-					float slow = fun/std::max(d.y(), .001f);
-					float turn = sign * fun/std::max(abs(d.x()), .001f);
-
-					retval = retval + slow*vu + turn*pu;
-
-					checked++;
-					if(checked >= avoidance_limit){
-						return retval;
-					}
-					//std::cout << "done" << std::endl;
-				}
-			}
-		}
-
-		return retval;
-	}*/
 
 	void find_target(){
 		//std::cout << std::endl << std::endl << "Find target" << std::endl;
