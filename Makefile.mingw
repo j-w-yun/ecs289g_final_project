@@ -29,4 +29,4 @@ all: .\bin\$(OUTPUT_FILE) ; xcopy .\lib\SDL2_mingw\i686-w64-mingw32\bin\SDL2.dll
 
 .\bin\main.o: .\src\main.cpp ; mkdir bin && $(CXX) $(CXXFLAGS) $< -o $@
 
-clean: ; del .\bin\*.o && del .\bin\*.dll && del .\bin\$(OUTPUT_FILE) && rmdir bin
+clean: ; del /F /Q .\bin\*.* && rmdir bin

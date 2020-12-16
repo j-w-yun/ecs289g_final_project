@@ -13,4 +13,4 @@ all: ./bin/$(OUTPUT_FILE)
 
 ./bin/main.o: ./src/main.cpp ; mkdir bin && $(CXX) $(CXXFLAGS) $< -o $@
 
-clean: ; rm -rf ./bin/*.o && rm -rf ./bin/*.dll && rm -rf ./bin/$(OUTPUT_FILE) && rmdir bin
+clean: ; rm -rf ./bin
