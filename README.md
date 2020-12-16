@@ -2,6 +2,10 @@
 
 ---
 
+## Compiled binary (Windows)
+
+You can run the compiled binary by clicking `.\run.bat` on Windows.
+
 ## Instructions on Linux
 
 1. Prerequisites: use the package manager in your system to get the following packages. (apt shown as example here)
@@ -26,7 +30,7 @@ $ ./bin/run
 
 ---
 
-## Instructions on Windows (MinGW)
+## Instructions on Windows (MinGW) 
 
 1. Get MinGW32 here if you do not have it in your system. 
 https://plug-mirror.rcac.purdue.edu/osdn//mingw/68260/mingw-get-setup.exe
